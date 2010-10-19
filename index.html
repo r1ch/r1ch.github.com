@@ -41,16 +41,6 @@ this.collide = collide
 }
 
 
-var x = new XMLHttpRequest();
- x.open('GET', 'https://bugzilla.mozilla.org/duplicates.cgi?sortby=delta&reverse=1&maxrows=100& changedsince=30');
-x.onreadystatechange = function() { 
-			if (x.readyState == 4)
-			alert(x.responseText);
-			else alert(x.responseText);			
-			};
-
-
-
 function move(){
 newx = (2-this.e)*this.x1 - (1-this.e)*this.x0 + this.ax*this.dt*this.dt
 newy = (2-this.e)*this.y1 - (1-this.e)*this.y0 + this.ay*this.dt*this.dt
