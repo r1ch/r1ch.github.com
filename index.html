@@ -5,28 +5,28 @@ bradi.sh
 </title>
 </head>
 <body>
-<div style='margin-left:auto;margin-right:auto'>
-<canvas width="250" height="100" id="a" style='margin-left:auto;margin-right:auto'></canvas>
+<canvas width="220" height="65" id="a" style='margin-left:auto;margin-right:auto'></canvas>
+<div style = 'margin-left:auto;margin:right:auto;border-top:1px solid black;width:200px'>
+<a href = 'http://mail.bradi.sh' style = 'text-decoration:none'>Mail</a>
 </div>
 <script type = 'text/javascript'>
 var TEXT_SIZE_PX = 48;
 var TEXT_STYLE = "bold "+TEXT_SIZE_PX+"px verdana";
 var OFFSET_X = 0;
-var OFFSET_Y = 20;
+var OFFSET_Y = 0;
 var OFFSET_REFLECTED = 4;
 var START_GRADIENT = '#bcd9f1';
 var STOP_GRADIENT = '#6291c0';
 var OUTLINE_STROKE = '#293a47';
 var OUTLINE_THICKNESS = 2;
-var TEXT = "brad\u0131 sh"
+var TEXT = "brad\u0131sh"
 var a_canvas = document.getElementById("a");
 var context = a_canvas.getContext("2d");
-
 function Dot(x,y,ax,ay){
 this.dt = 0.4
-this.e = 0.02
-this.width = 8
-this.height = 8
+this.e = 0.06
+this.width = 9
+this.height = 9
 this.x0 = x
 this.y0 = y
 this.x1 = x+1
@@ -40,6 +40,7 @@ this.put = put
 this.step = step
 this.collide = collide
 }
+
 
 function move(){
 newx = (2-this.e)*this.x1 - (1-this.e)*this.x0 + this.ax*this.dt*this.dt
@@ -97,7 +98,7 @@ function check(a){
 return false
 }
 
-dot = new Dot(126.5,10,0,1)
+dot = new Dot(127,8,0,1)
 
 function draw(){
 OUT = TEXT
@@ -108,11 +109,14 @@ gradient.addColorStop(1, STOP_GRADIENT);
 //draw and stroke text
 context.textBaseline = "alphabetic";
 context.font = TEXT_STYLE;
+context.style = "letter-spacing:-6pt"
 context.fillStyle = gradient;
 context.fillText(OUT,0,TEXT_SIZE_PX);
 context.strokeStyle = OUTLINE_STROKE;
 context.lineWidth = OUTLINE_THICKNESS;
 context.strokeText(OUT,0,TEXT_SIZE_PX);
+//context.moveTo(0,TEXT_SIZE_PX)
+//context.lineTo(400,TEXT_SIZE_PX)
 }
 function world(){
 context.clearRect(0,0,a_canvas.width,a_canvas.height)
@@ -137,12 +141,16 @@ fade.addColorStop(1, "rgba(255,255,255,0.5)");
 fade.addColorStop(0.75, "rgba(255,255,255,1)");
 context.fillStyle = fade;
 //and fade
-context.fillRect(0, 0, a_canvas.width, TEXT_SIZE_PX + OUTLINE_THICKNESS);
+context.fillRect(0, 0, context.measureText(TEXT).width, TEXT_SIZE_PX + OUTLINE_THICKNESS);
 context.restore()
 }
 
 world()
+
 setTimeout('setInterval("world()",10)',1000)
+setTimeout('TEXT = "brad\u0131\u2008sh"',1000)
+
+
 </script>
 </body>
 </html>
