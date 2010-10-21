@@ -36,9 +36,9 @@ this.dt = 0.4
 this.e = 0.06
 this.width = 9
 this.height = 9
-this.x0 = x
-this.y0 = y
-this.x1 = x+1
+this.x0 = x-1
+this.y0 = y+Math.floor(Math.random()*3)
+this.x1 = x
 this.y1 = y
 this.ax = ax
 this.ay = ay
@@ -107,7 +107,7 @@ function check(a){
 return false
 }
 
-dot = new Dot(127,8,0,1)
+dot = new Dot(128,8,0,1)
 
 function draw(){
 OUT = TEXT
