@@ -1,0 +1,188 @@
+<html>
+<head>
+<title>
+bradi.sh
+</title>
+<meta name="google-site-verification" content="mRU2d6CoO1n5n1Rk4yC5mk0M_rGPJZsndpT8Wud5RFg" />
+</head>
+<body>
+<div style = 'width:220px;margin-right:auto;margin-left:auto;margin-top:100px'>
+&nbsp;
+<canvas width="220" height="65" id="a" style='width:220px;height:65px;' onclick = 'randomize()'></canvas>
+<div style = 'margin-right:auto;width:216px;height:31px;text-align:left;text-align:center;border-top:2px solid #293a47;padding:3px;margin-top:20px;'>
+<a href = 'http://mail.bradi.sh' style = 'text-decoration:none;color:#6291c0;font:bold 25px verdana'>Mail</a>&nbsp;&nbsp;&nbsp;
+<a href = 'http://docs.bradi.sh' style = 'text-decoration:none;color:#6291c0;font:bold 25px verdana'>Docs</a>
+</div>
+
+</div>
+<div style  = 'position:absolute;bottom:0px;width:auto;height:10px;font-size:8px;text-align:left'>
+Site maintained by Richard Bradish
+</div>
+<script type="text/javascript" src="canvas.text.js?reimplement=true"></script>
+<script type = 'text/javascript'>
+var TEXT_SIZE_PX = 48
+var TEXT_STYLE = "bold "+TEXT_SIZE_PX+"px verdana";
+var OFFSET_X = 0;
+var OFFSET_Y = 0;
+var OFFSET_REFLECTED = 4;
+var START_GRADIENT = '#bcd9f1';
+var STOP_GRADIENT = '#6291c0';
+var OUTLINE_STROKE = '#293a47';
+var OUTLINE_THICKNESS = 2;
+var TEXT = "brad\u0131sh"
+var a_canvas = document.getElementById("a");
+var context = a_canvas.getContext("2d");
+function Dot(x,y,ax,ay){
+this.dt = 0.4
+this.e = 0.06
+this.width = 9
+this.height = 9
+this.x0 = x-1
+this.y0 = y+Math.floor(Math.random()*3)
+this.x1 = x
+this.y1 = y
+this.ax = ax
+this.ay = ay
+this.floorx = 100
+this.floory = TEXT_SIZE_PX
+this.move = move
+this.put = put
+this.step = step
+this.collide = collide
+}
+
+
+function move(){
+newx = (2-this.e)*this.x1 - (1-this.e)*this.x0 + this.ax*this.dt*this.dt
+newy = (2-this.e)*this.y1 - (1-this.e)*this.y0 + this.ay*this.dt*this.dt
+this.x0 = this.x1
+this.y0 = this.y1
+this.x1 = newx
+this.y1 = newy
+}
+
+function put(){
+context.fillRect(this.x0,this.y0,this.width,this.height)
+context.strokeRect(this.x0,this.y0,this.width,this.height)
+}
+
+function collide(){
+//check left , right
+if(
+check(context.getImageData(this.x1+OFFSET_X+this.width,this.y1+OFFSET_Y,1,this.height).data)
+||
+check(context.getImageData(this.x1+OFFSET_X,this.y1+OFFSET_Y,1,this.height).data)
+)
+{
+temp = this.x1
+this.x1 = this.x0
+this.x0 = temp
+}
+
+if(
+check(context.getImageData(this.x1+OFFSET_X,this.y1+OFFSET_Y+this.height,this.width,1).data)
+||
+check(context.getImageData(this.x1+OFFSET_X,this.y1+OFFSET_Y,this.width,1).data)
+||
+this.y1+this.height > this.floory
+)
+{
+temp = this.y1
+this.y1 = this.y0
+this.y0 = temp
+}
+}
+
+function step(){
+this.collide()
+this.move()
+this.put()
+}
+
+function check(a){
+    for(i=0;i<a.length/4;i++){
+        if(a[i]>0||a[i+1]>0||a[i+2]>0||a[i+3]>0){
+            return true
+        }
+    }
+return false
+}
+
+dot = new Dot(128,8,0,1)
+
+function draw(){
+OUT = TEXT
+//create gradient
+var gradient = context.createLinearGradient(0,0,0,TEXT_SIZE_PX);
+gradient.addColorStop(0, START_GRADIENT);
+gradient.addColorStop(1, STOP_GRADIENT);
+//draw and stroke text
+context.textBaseline = "alphabetic";
+context.font = TEXT_STYLE;
+context.style = "letter-spacing:-6pt"
+context.fillStyle = gradient;
+context.fillText(OUT,0,TEXT_SIZE_PX);
+context.strokeStyle = OUTLINE_STROKE;
+context.lineWidth = OUTLINE_THICKNESS;
+context.strokeText(OUT,0,TEXT_SIZE_PX);
+}
+function world(){
+context.clearRect(0,0,a_canvas.width,a_canvas.height)
+//offset and position
+context.save()
+context.translate(OFFSET_X,OFFSET_Y)
+//main text
+draw()
+dot.step();
+//now flip and reflect
+context.restore();
+context.save();
+context.scale(-1,1);
+context.translate(0,2*TEXT_SIZE_PX+OFFSET_REFLECTED+OFFSET_Y);
+context.rotate(Math.PI);
+//Reflected text
+draw();
+dot.put()
+//create a nice transparent gradient
+fade = context.createLinearGradient(0, 0, 0, TEXT_SIZE_PX);
+fade.addColorStop(1, "rgba(255,255,255,0.5)");
+fade.addColorStop(0.75, "rgba(255,255,255,1)");
+context.fillStyle = fade;
+//and fade
+context.fillRect(0, 0, context.measureText(TEXT).width, TEXT_SIZE_PX + OUTLINE_THICKNESS);
+context.restore()
+}
+function randomize(){
+START_GRADIENT = hexR()
+STOP_GRADIENT = hexR()
+}
+function hexR(){
+return '#'+hexS()+hexS()+hexS()
+}
+function hexS(){
+var R = Math.floor(Math.random()*255);
+return R < 16 ? '0'+R.toString(16) : R.toString(16)
+}
+
+
+world()
+
+setTimeout('setInterval("world()",60)',1000)
+setTimeout('TEXT = "brad\u0131\u2008sh"',1000)
+
+</script>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-446615-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</body>
+</html>
