@@ -1,12 +1,14 @@
 <html>
 <head>
 <title>
-Convergence
+bradi.sh
 </title>
+<meta name="google-site-verification" content="mRU2d6CoO1n5n1Rk4yC5mk0M_rGPJZsndpT8Wud5RFg" />
 </head>
 <body>
-<div id = 'a'></div>
-<div id = 'b'></div>
+<div style  = 'position:absolute;bottom:0px;width:auto;height:10px;font-size:8px;text-align:left'>
+Site maintained by Richard Bradish
+</div>
 <script type = 'text/javascript'>
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 200;
@@ -98,12 +100,19 @@ dot[i] = new Dot(Math.floor(Math.random()*CANVAS_WIDTH),Math.floor(Math.random()
 setInterval('orchestrate()',1);
 }
 
+function reInit(){
+for(i=0;i<N_DOTS;i++){
+dot[i] = new Dot(Math.floor(Math.random()*CANVAS_WIDTH),Math.floor(Math.random()*CANVAS_HEIGHT),0,0)
+}
+context.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+}
+
 function orchestrate(){
 for(n=0;n<N_DOTS;n++){
 dot[n].move();
 dot[n].put();
 }
-
+canvas.onclick = reInit;
 }
 
 
