@@ -6,6 +6,14 @@ bradi.sh
 <meta name="google-site-verification" content="mRU2d6CoO1n5n1Rk4yC5mk0M_rGPJZsndpT8Wud5RFg" />
 </head>
 <body>
+<div style = 'width:800px;margin-right:auto;margin-left:auto;margin-top:100px'>
+&nbsp;
+<canvas width="800" height="200" id="canvas" style='width:800px;height:200px;'></canvas>
+<div style = 'margin-right:auto;width:794px;height:31px;text-align:left;text-align:center;border-top:2px solid #293a47;padding:3px;margin-top:20px;'>
+<a href = 'http://mail.bradi.sh' style = 'text-decoration:none;color:#6291c0;font:bold 25px verdana'>Mail</a>&nbsp;&nbsp;&nbsp;
+<a href = 'http://docs.bradi.sh' style = 'text-decoration:none;color:#6291c0;font:bold 25px verdana'>Docs</a>
+</div>
+</div>
 <div style  = 'position:absolute;bottom:0px;width:auto;height:10px;font-size:8px;text-align:left'>
 Site maintained by Richard Bradish
 </div>
@@ -19,19 +27,14 @@ var JITTER = 0.6;
 var ACCELERATION_DAMPER = 20;
 
 //setup the canvases
-var canvas = document.createElement("canvas");
+var canvas = document.getElementById("canvas");
 var gcanvas = document.createElement("canvas");
-canvas.style.width = CANVAS_WIDTH;
-canvas.width = CANVAS_WIDTH;
-canvas.style.height = CANVAS_HEIGHT;
-canvas.height = CANVAS_HEIGHT
 gcanvas.style.width = CANVAS_WIDTH;
 gcanvas.width = CANVAS_WIDTH;
 gcanvas.style.height = CANVAS_HEIGHT;
 gcanvas.height = CANVAS_HEIGHT
 gcanvas.style.border = '1px solid black';
 gcanvas.style.visibility = 'hidden';
-document.body.appendChild(canvas);
 document.body.appendChild(gcanvas);
 var context = canvas.getContext("2d");
 var gcontext = gcanvas.getContext("2d");
