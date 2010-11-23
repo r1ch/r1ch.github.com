@@ -9,10 +9,13 @@ bradi.sh
 <div style = 'width:800px;margin-right:auto;margin-left:auto;margin-top:100px'>
 &nbsp;
 <canvas width="800" height="200" id="canvas" style='width:800px;height:200px;'><img src = 'canvas.png'></canvas>
-<div style = 'width:794px;height:31px;text-align:right;border-top:2px solid #293a47;padding:3px;margin-top:20px;'>
+<div style = 'width:794px;height:31px;text-align:left;border-top:2px solid #293a47;padding:3px;margin-top:20px;'>
 <a href = 'http://mail.bradi.sh' style = 'text-decoration:none;color:#000000;font:bold 25px verdana'>Mail</a>&nbsp;&nbsp;&nbsp;
 <a href = 'http://docs.bradi.sh' style = 'text-decoration:none;color:#000000;font:bold 25px verdana'>Docs</a>
 </div>
+<div style = 'text-align:right'><a NOHREF onclick = 'ATTRACTIVE *=-1'>invert</a>&nbsp;
+<a NOHREF onclick = 'reInit()'>restart</a>&nbsp;
+<a NOHREF onclick = 'DO_SOMETHING *=-1'>pause</a>&nbsp;</div>
 </div>
 <div style  = 'position:absolute;bottom:0px;width:auto;height:10px;font-size:8px;text-align:left'>
 Site maintained by Richard Bradish
@@ -23,8 +26,10 @@ var CANVAS_HEIGHT = 200;
 var PATCH_SIZE = 1;
 var N_DOTS = 50;
 var DOT_SIZE = 1;
-var JITTER = 0.6;
-var ACCELERATION_DAMPER = 20;
+var JITTER = 1;
+var ACCELERATION_DAMPER = 30;
+var ATTRACTIVE = -1;
+var DO_SOMETHING = 1;
 
 //setup the canvases
 var canvas = document.getElementById("canvas");
@@ -101,6 +106,7 @@ for(i=0;i<N_DOTS;i++){
 dot[i] = new Dot(Math.floor(Math.random()*CANVAS_WIDTH),Math.floor(Math.random()*CANVAS_HEIGHT),0,0)
 }
 setInterval('orchestrate()',1);
+canvas.onclick = reInit;
 }
 
 function reInit(){
@@ -111,11 +117,12 @@ context.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
 }
 
 function orchestrate(){
+if(DO_SOMETHING>0){
 for(n=0;n<N_DOTS;n++){
 dot[n].move();
 dot[n].put();
 }
-canvas.onclick = reInit;
+}
 }
 
 
@@ -139,15 +146,16 @@ for(dx=0,dy=0,j=0;j<(Math.pow(1 + PATCH_SIZE + PATCH_SIZE,2)-1-PATCH_SIZE-PATCH_
 dx += (pixel[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j+1] - pixel[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j])
 dy += (pixel[j+1+PATCH_SIZE+PATCH_SIZE] - pixel[j])
 }
-dx /= j;
-dy /= j;
+dx /= ATTRACTIVE*j;
+dy /= ATTRACTIVE*j;
 }
 this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 this.ay = dy/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 }
 
-init();
 
+
+init();
 
 
 </script>
