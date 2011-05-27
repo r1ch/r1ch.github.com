@@ -137,10 +137,11 @@ dx = 0
 dy = 0
 if(this.x0>=0 && this.y0 >=0 && this.x0<CANVAS_WIDTH && this.y0<CANVAS_HEIGHT){
 try{
-image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,this.x0-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,this.y0-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
+//always use a round number to get a patch
+image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
 }
 catch(e){
-alert("Failed getting patch:" +  Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,this.x0-PATCH_SIZE-1)) + "," + Math.min(CANVAS_HEIGHT-PATCH_SIZE-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,this.y0-PATCH_SIZE-1)) + "," + (1+2*PATCH_SIZE) + "," + (1+2*PATCH_SIZE))
+alert("Failed getting patch:" +  Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)) + "," + Math.min(CANVAS_HEIGHT-PATCH_SIZE-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)) + "," + (1+2*PATCH_SIZE) + "," + (1+2*PATCH_SIZE))
 }
 pixel = new Array();
 for(i = 0; i < Math.pow(1 + PATCH_SIZE + PATCH_SIZE,2); i++){
