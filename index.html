@@ -28,9 +28,9 @@ Site maintained by Richard Bradish
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 200;
 var PATCH_SIZE = 1;
-var N_DOTS = 1;
+var N_DOTS = 50;
 var DOT_SIZE = 1;
-var JITTER = 0;
+var JITTER = 0.6;
 var ACCELERATION_DAMPER = 50;
 var ATTRACTIVE = 1;
 var DO_SOMETHING = 1;
@@ -65,10 +65,10 @@ this.dt = 0.5
 this.e = 0.01
 this.width = DOT_SIZE
 this.height = DOT_SIZE
-this.x0 = 0
-this.y0 = CANVAS_HEIGHT/2
-this.x1 = 1
-this.y1 = CANVAS_HEIGHT/2
+this.x0 = x
+this.y0 = y
+this.x1 = x
+this.y1 = y
 this.ax = ax
 this.ay = ay
 this.move = move
@@ -153,8 +153,8 @@ dy += (pixel[j+1+PATCH_SIZE+PATCH_SIZE] - pixel[j])
 dx /= ATTRACTIVE*j;
 dy /= ATTRACTIVE*j;
 }
-this.ax = 0// dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
-this.ay = 0//dy/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
+this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
+this.ay = dy/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 }
 
 
@@ -165,3 +165,4 @@ init();
 </script>
 </body>
 </html>
+
