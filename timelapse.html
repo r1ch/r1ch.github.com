@@ -1,0 +1,64 @@
+<html>
+<head>
+<title>
+Slideshow
+</title>
+<body>
+<div id = "info">0% loaded</div>
+<img NOSRC width = "480" height = "320" id = "slideshow"/>
+<script type = "text/javascript">
+var N_IMAGES = 38;
+var INTERVAL = Math.floor(1000/2);
+var IMAGE_PREFIX = "timelapse/photo";
+var IMAGE_SUFFIX = ".jpg";
+function Loader(){
+	this.recordLoad = recordLoad;
+	this.images = N_IMAGES
+	this.loaded = 0
+	this.percentage = 0
+	this.object = document.getElementById("info")
+	this.startShow = startShow
+}
+function recordLoad(){
+	this.loaded++
+	this.percentage = this.loaded/this.images
+	this.object.innerHTML = this.percentage*100+"% loaded"
+	if(this.percentage == 1){
+		this.startShow()
+	}
+}
+function startShow(){
+	slideShow = new SlideShow()
+	move = setInterval("slideShow.changeImage()",INTERVAL)
+
+}
+function SlideShow(){
+	this.going = true
+	this.image = 0
+	this.minImage = 0
+	this.maxImage = N_IMAGES-1
+	this.changeImage = changeImage
+	this.object = document.getElementById("slideshow")
+	this.info = document.getElementById("info")
+}
+function changeImage(){
+	if(this.going){
+		this.image = (++this.image)%(this.maxImage-this.minImage+1)+this.minImage
+		this.object.src = image[this.image].src
+		this.info.innerHTML = this.image + "/" + this.maxImage
+		window.status = this.image
+	}
+}
+loader = new Loader();
+function init(){
+	image = new Array()
+	for(i=0;i<N_IMAGES;i++){
+		image[i] = new Image();
+		image[i].onload = function() {loader.recordLoad();}
+		image[i].src = IMAGE_PREFIX+i+IMAGE_SUFFIX
+	}
+}
+init();
+</script>
+</body>
+</html>
