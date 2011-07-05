@@ -5,6 +5,13 @@ Slideshow
 </title>
 <body>
 <div id = "info">0% loaded</div>
+<div id = "controls" style="visibility:false"/>
+<a href = "javascript:slideShow.beginning()">&lt;&lt;</a>
+<a href = "javascript:slideShow.back()">&lt;</a>
+<a href = "javascript:slideShow.pause()">||</a>
+<a href = "javascript:slideShow.forward()">&gt;</a>
+<a href = "javascript:slideShow.end()">&gt;&gt;</a>
+</div>
 <img NOSRC width = "480" height = "320" id = "slideshow"/>
 <script type = "text/javascript">
 var N_IMAGES = 38;
@@ -28,8 +35,9 @@ function recordLoad(){
 	}
 }
 function startShow(){
+	document.getElementById("controls").style.visibility = true;
 	slideShow = new SlideShow()
-	move = setInterval("slideShow.changeImage()",INTERVAL)
+	move = setInterval("slideShow.play()",INTERVAL)
 
 }
 function SlideShow(){
@@ -40,13 +48,40 @@ function SlideShow(){
 	this.changeImage = changeImage
 	this.object = document.getElementById("slideshow")
 	this.info = document.getElementById("info")
+	this.beginning = beginning
+	this.back = back
+	this.pause = pause
+	this.forward = forward
+	this.end = end
+	this.play = play
+}
+function beginning(){
+	this.image = this.minImage
+	this.changeImage()
+}
+function back(){
+	this.image = (--this.image+this.maxImage-this.minImage+1)%(this.maxImage-this.minImage+1)+this.minImage
+	this.changeImage()
+}
+function pause(){
+	this.going = this.going ? false : true;
+	this.changeImage()
+}
+function forward(){
+	this.image = (++this.image)%(this.maxImage-this.minImage+1)+this.minImage
+	this.changeImage()
+}
+function end(){
+	this.image = this.maxImage
+	this.changeImage()
 }
 function changeImage(){
+	this.object.src = image[this.image].src
+	this.info.innerHTML = this.image + "/" + this.maxImage
+}
+function play(){
 	if(this.going){
-		this.image = (++this.image)%(this.maxImage-this.minImage+1)+this.minImage
-		this.object.src = image[this.image].src
-		this.info.innerHTML = this.image + "/" + this.maxImage
-		window.status = this.image
+		this.forward();
 	}
 }
 loader = new Loader();
