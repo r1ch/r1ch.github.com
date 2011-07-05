@@ -5,14 +5,14 @@ Slideshow!
 </title>
 <body>
 <div id = "info">0% loaded</div>
-<div id = "controls" style="visibility:false"/>
-<a href = "javascript:slideShow.beginning()">&lt;&lt;</a>
-<a href = "javascript:slideShow.back()">&lt;</a>
-<a href = "javascript:slideShow.pause()">||</a>
-<a href = "javascript:slideShow.forward()">&gt;</a>
-<a href = "javascript:slideShow.end()">&gt;&gt;</a>
-</div>
 <img NOSRC width = "480" height = "320" id = "slideshow"/>
+<div id = "controls" style="visibility:hidden;width:480;font:36px verdana" align="center"/>
+<a style = "text-decoration:none" href = "javascript:slideShow.beginning()">|&lt;</a>&nbsp;&nbsp;
+<a style = "text-decoration:none" href = "javascript:slideShow.back()">&lt;</a>&nbsp;&nbsp;
+<a style = "text-decoration:none" href = "javascript:slideShow.pause()">||</a>&nbsp;&nbsp;
+<a style = "text-decoration:none" href = "javascript:slideShow.forward()">&gt;</a>&nbsp;&nbsp;
+<a style = "text-decoration:none" href = "javascript:slideShow.end()">&gt;|</a>
+</div>
 <script type = "text/javascript">
 var N_IMAGES = 38;
 var INTERVAL = Math.floor(1000/2);
@@ -35,7 +35,7 @@ function recordLoad(){
 	}
 }
 function startShow(){
-	document.getElementById("controls").style.visibility = true;
+	document.getElementById("controls").style.visibility = "visible";
 	slideShow = new SlideShow()
 	move = setInterval("slideShow.play()",INTERVAL)
 
