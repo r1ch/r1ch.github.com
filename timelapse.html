@@ -13,6 +13,7 @@ Slideshow!
 <a style = "text-decoration:none" href = "javascript:slideShow.forward()">&gt;</a>&nbsp;&nbsp;
 <a style = "text-decoration:none" href = "javascript:slideShow.end()">&gt;|</a>
 </div>
+<div id = "thumbs" style="width:480;font:36px verdana"></div>
 <script type = "text/javascript">
 var N_IMAGES = 38;
 var INTERVAL = Math.floor(1000/2);
@@ -26,10 +27,11 @@ function Loader(){
 	this.object = document.getElementById("info")
 	this.startShow = startShow
 }
-function recordLoad(){
+function recordLoad(j){
 	this.loaded++
 	this.percentage = this.loaded/this.images
 	this.object.innerHTML = this.percentage*100+"% loaded"
+	document.getElementById("thumbs").innerHTML += "<img src = '"+IMAGE_PREFIX+j+IMAGE_SUFFIX+"' width = '48' height = '32'/>"
 	if(this.percentage == 1){
 		this.startShow()
 	}
@@ -89,7 +91,8 @@ function init(){
 	image = new Array()
 	for(i=0;i<N_IMAGES;i++){
 		image[i] = new Image();
-		image[i].onload = function() {loader.recordLoad();}
+		image[i].number = i
+		image[i].onload = function() {loader.recordLoad(this.number);}
 		image[i].src = IMAGE_PREFIX+i+IMAGE_SUFFIX
 	}
 }
