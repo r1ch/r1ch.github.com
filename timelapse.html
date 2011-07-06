@@ -39,7 +39,7 @@ function recordLoad(j){
 function startShow(){
 	document.getElementById("slideshow").style.visibility = "visible";
 	document.getElementById("controls").style.visibility = "visible";
-	document.getElementById("thumbs").style.visibility = "hidden";
+	document.getElementById("thumbs").parentNode.removeChild(document.getElementById("thumbs"));
 	slideShow = new SlideShow()
 	move = setInterval("slideShow.play()",INTERVAL)
 
