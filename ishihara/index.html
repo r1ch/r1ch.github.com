@@ -13,8 +13,6 @@ bradi.sh
 <a href = 'http://mail.bradi.sh' style = 'text-decoration:none;color:#000000;font:bold 25px verdana'>Mail</a>&nbsp;&nbsp;&nbsp;
 <a href = 'http://docs.bradi.sh' style = 'text-decoration:none;color:#000000;font:bold 25px verdana'>Docs</a>
 </div>
-<div style = "align:right" id='obj'>
-</div>
 </div>
 <div style  = 'position:absolute;bottom:0px;width:auto;height:10px;font-size:8px;text-align:left'>
 Site maintained by Richard Bradish
@@ -22,7 +20,7 @@ Site maintained by Richard Bradish
 <script type = 'text/javascript'>
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 200;
-var MIN_RADIUS= 3;
+var MIN_RADIUS= 1;
 var MAX_RADIUS = 7;
 var ALLOW_BELOW_MINIMUM = false;
 var VISIBLE_MARGIN = 1;
@@ -37,8 +35,6 @@ OUT_COLOUR[3]="#a5a955"
 IN_COLOUR[0]="#d15e49";
 IN_COLOUR[1]="#ffbb98";
 IN_COLOUR[2]="#da955a";
-
-//IN_COLOUR=OUT_COLOUR;
 
 //setup the canvases
 var canvas = document.getElementById("canvas");
@@ -70,63 +66,46 @@ function Dot(){
 	this.radius = parseInt(Math.random()*(MAX_RADIUS-MIN_RADIUS))+MIN_RADIUS
 	this.put = put;
 	this.maxCircleAt = maxCircleAt;
-	this.fail = "";
-	this.out = document.getElementById("obj")
 	this.colourAt = colourAt;
 }
 
 function maxCircleAt(theContext,change){
 //to allow easy debugging, this function returns in as many places as possible ;)
-
 //get MAX_RADIUS, unless we'll hit the wall bottom left or top right
 maxXRadius = Math.min(Math.min(MAX_RADIUS,this.x),CANVAS_WIDTH-this.x-1)
 maxYRadius = Math.min(Math.min(MAX_RADIUS,this.y),CANVAS_HEIGHT-this.y-1)
 maxRadius = Math.min(maxXRadius,maxYRadius)
-//this.out.innerHTML+="I'm at: "+this.x+","+this.y+". Max patch is "+maxRadius+"<br>"
 if(maxRadius>0){
 	patchWidth = maxRadius*2+1
-	//this.out.innerHTML+="Getting from "+(this.x-maxRadius)+","+(this.y-maxRadius)+" a "+(2*maxRadius+1)+" section.<br>"
 	image = theContext.getImageData(this.x-maxRadius,this.y-maxRadius,patchWidth,patchWidth)
 	pixel = new Array();
 	for(i = 0; i < Math.pow(patchWidth,2); i++){
 		pixel[i] = image.data[4*i]+image.data[4*i+1]+image.data[4*i+2]+image.data[4*i+3];
-		//if(i%(patchWidth)==0){this.out.innerHTML+="<br>"}		
-		//this.out.innerHTML+=pixel[i]+","
 	}
-	//this.out.innerHTML+="<br>"
 	//now we expand from the center, going along N, NE, E, etc directions.. 
 	//fringe case, check the pixel we are on... (don't do this 8 times)	
 	middlePixel = (Math.pow(patchWidth,2)-1)/2
 	comparison = change ? pixel[middlePixel] : 0
 	margin = change ? INVISIBLE_MARGIN : VISIBLE_MARGIN
-	//this.out.innerHTML += "Middle pixel:"+middlePixel+"<br>"
 	if(pixel[middlePixel]!=comparison){return 0}
 	else{	
 		for(d=1;d<=maxRadius;d++){
 		//NORTH
 		if(pixel[middlePixel-d*patchWidth]!=comparison){return d-margin}
-		//this.out.innerHTML += "N clear at "+d+"<br>"
 		//NORTH EAST
 		if(pixel[middlePixel-d*patchWidth+d]!=comparison){return d-margin}
-		//this.out.innerHTML += "NE clear at "+d+"<br>"
 		//EAST
 		if(pixel[middlePixel+d]!=comparison){return d-margin}
-		//this.out.innerHTML += "E clear at "+d+"<br>"
 		//SOUTH EAST
 		if(pixel[middlePixel+d*patchWidth+d]!=comparison){return d-margin}
-		//this.out.innerHTML += "SE clear at "+d+"<br>"
 		//SOUTH
 		if(pixel[middlePixel+d*patchWidth]!=comparison){return d-margin}
-		//this.out.innerHTML += "S clear at "+d+"<br>"
 		//SOUTH WEST
 		if(pixel[middlePixel+d*patchWidth-d]!=comparison){return d-margin}
-		//this.out.innerHTML += "SW clear at "+d+"<br>"
 		//WEST
 		if(pixel[middlePixel-d]!=comparison){return d-margin}
-		//this.out.innerHTML += "W clear at "+d+"<br>"
 		//NORTH WEST
 		if(pixel[middlePixel-d*patchWidth-d]!=comparison){return d-margin}
-		//this.out.innerHTML += "NW clear at "+d+"<br>"
 		}
 		//dropped out of for - we are free in all directions
 		return maxRadius
@@ -157,7 +136,6 @@ function colourAt(){
 function put(){
 try{
 this.radius = Math.min(this.maxCircleAt(context,false),this.maxCircleAt(gcontext,true))
-//this.out.innerHTML+="<br>Thought that the max radius here was "+this.radius+"<br>"
 if(this.radius>MIN_RADIUS){
 context.beginPath()
 context.arc(this.x,this.y,this.radius,0,2*Math.PI,false);
@@ -172,7 +150,6 @@ alert(e.message)
 
 function init(){
 a=setInterval('orchestrate()',1);
-//setTimeout('clearInterval(a)',100);
 canvas.onclick = reInit;
 }
 
