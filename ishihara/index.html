@@ -1,0 +1,182 @@
+<html>
+<head>
+<title>
+bradi.sh
+</title>
+<meta name="google-site-verification" content="mRU2d6CoO1n5n1Rk4yC5mk0M_rGPJZsndpT8Wud5RFg"/>
+</head>
+<body>
+<div style = 'width:800px;margin-right:auto;margin-left:auto;margin-top:100px'>
+&nbsp;
+<canvas width="800" height="200" id="canvas" style='width:800px;height:200px;' title = "An Ishihara colour test"></canvas>
+<div style = 'width:794px;height:31px;text-align:left;border-top:2px solid #293a47;padding:3px;margin-top:20px;'>
+<a href = 'http://mail.bradi.sh' style = 'text-decoration:none;color:#000000;font:bold 25px verdana'>Mail</a>&nbsp;&nbsp;&nbsp;
+<a href = 'http://docs.bradi.sh' style = 'text-decoration:none;color:#000000;font:bold 25px verdana'>Docs</a>
+</div>
+<div style = "align:right" id='obj'>
+</div>
+</div>
+<div style  = 'position:absolute;bottom:0px;width:auto;height:10px;font-size:8px;text-align:left'>
+Site maintained by Richard Bradish
+</div>
+<script type = 'text/javascript'>
+var CANVAS_WIDTH = 800;
+var CANVAS_HEIGHT = 200;
+var MIN_RADIUS= 2;
+var MAX_RADIUS = 7;
+var ALLOW_BELOW_MINIMUM = false;
+var MARGIN = 2;
+var DO_SOMETHING = 1;
+IN_COLOUR = new Array();
+IN_COLOUR[0]="#ff0000";
+OUT_COLOUR = new Array();
+OUT_COLOUR[0]="#00ff00";
+
+//setup the canvases
+var canvas = document.getElementById("canvas");
+var gcanvas = document.createElement("canvas");
+gcanvas.style.width = CANVAS_WIDTH;
+gcanvas.width = CANVAS_WIDTH;
+gcanvas.style.height = CANVAS_HEIGHT;
+gcanvas.height = CANVAS_HEIGHT
+gcanvas.style.border = '1px solid black';
+gcanvas.style.visibility = 'hidden';
+document.body.appendChild(gcanvas);
+var context = canvas.getContext("2d");
+var gcontext = gcanvas.getContext("2d");
+var gimage = new Image();
+gimage.onload = function() {
+try{
+      gcontext.drawImage(gimage, 0, 0);
+}
+catch(e){
+alert(e.message)
+alert(gimage.src)
+}
+}
+gimage.src = "ishi.png";
+
+function Dot(){
+	this.x = parseInt(Math.random()*CANVAS_WIDTH)
+	this.y = parseInt(Math.random()*CANVAS_HEIGHT)
+	this.radius = parseInt(Math.random()*(MAX_RADIUS-MIN_RADIUS))+MIN_RADIUS
+	this.put = put;
+	this.maxCircleAt = maxCircleAt;
+	this.fail = "";
+	this.out = document.getElementById("obj")
+	this.colourAt = colourAt();
+}
+
+function maxCircleAt(){
+//to allow easy debugging, this function returns in as many places as possible ;)
+
+//get MAX_RADIUS, unless we'll hit the wall bottom left or top right
+maxXPatch = Math.min(Math.min(MAX_RADIUS,this.x),CANVAS_WIDTH-this.x-1)
+maxYPatch = Math.min(Math.min(MAX_RADIUS,this.y),CANVAS_HEIGHT-this.y-1)
+maxPatch = Math.min(maxXPatch,maxYPatch)
+//this.out.innerHTML+="I'm at: "+this.x+","+this.y+". Max patch is "+maxPatch+"<br>"
+if(maxPatch>0){
+	offset = maxPatch*2+1
+	//this.out.innerHTML+="Getting from "+(this.x-maxPatch)+","+(this.y-maxPatch)+" a "+(2*maxPatch+1)+" section.<br>"
+	image = context.getImageData(this.x-maxPatch,this.y-maxPatch,offset,offset)
+	pixel = new Array();
+	for(i = 0; i < Math.pow(offset,2); i++){
+		pixel[i] = image.data[4*i]+image.data[4*i+1]+image.data[4*i+2]+image.data[4*i+3];
+		//if(i%(offset)==0){this.out.innerHTML+="<br>"}		
+		//this.out.innerHTML+=pixel[i]+","
+	}
+	this.out.innerHTML+="<br>"
+	//now we expand from the center, going along N, NE, E, etc directions.. 
+	//fringe case, check the pixel we are on... (don't do this 8 times)	
+	middlePixel = (Math.pow(offset,2)-1)/2
+	//this.out.innerHTML += "Middle pixel:"+middlePixel+"<br>"
+	if(pixel[middlePixel]!=0){return 0}
+	else{	
+		for(d=1;d<=maxPatch;d++){
+		//NORTH
+		if(pixel[middlePixel-d*offset]!=0){return d-MARGIN}
+		//this.out.innerHTML += "N clear at "+d+"<br>"
+		//NORTH EAST
+		if(pixel[middlePixel-d*offset+d]!=0){return d-MARGIN}
+		//this.out.innerHTML += "NE clear at "+d+"<br>"
+		//EAST
+		if(pixel[middlePixel+d]!=0){return d-MARGIN}
+		//this.out.innerHTML += "E clear at "+d+"<br>"
+		//SOUTH EAST
+		if(pixel[middlePixel+d*offset+d]!=0){return d-MARGIN}
+		//this.out.innerHTML += "SE clear at "+d+"<br>"
+		//SOUTH
+		if(pixel[middlePixel+d*offset]!=0){return d-MARGIN}
+		//this.out.innerHTML += "S clear at "+d+"<br>"
+		//SOUTH WEST
+		if(pixel[middlePixel+d*offset-d]!=0){return d-MARGIN}
+		//this.out.innerHTML += "SW clear at "+d+"<br>"
+		//WEST
+		if(pixel[middlePixel-d]!=0){return d-MARGIN}
+		//this.out.innerHTML += "W clear at "+d+"<br>"
+		//NORTH WEST
+		if(pixel[middlePixel-d*offset-d]!=0){return d-MARGIN}
+		//this.out.innerHTML += "NW clear at "+d+"<br>"
+		}
+		//dropped out of for - we are free in all directions
+		return maxPatch
+	}
+}
+else{
+	return 0;
+}
+}
+
+function colourAt(){
+	gimage = gcontext.getImageData(this.x,this.y,1,1)
+	/*if(image.data[0]>0){
+		return IN_COLOUR[Math.floor(Math.random()*IN_COLOUR.length)]
+	}
+	else{
+		return OUT_COLOUR[Math.floor(Math.random()*OUT_COLOUR.length)]
+	}*/
+}
+
+function put(){
+try{
+this.radius = this.maxCircleAt()
+this.out.innerHTML+="<br>Thought that the max radius here was "+this.radius+"<br>"
+if(this.radius>MIN_RADIUS){
+context.beginPath()
+context.arc(this.x,this.y,this.radius,0,2*Math.PI,false);
+context.fillStyle = "#ff0000" //this.colourAt()
+context.fill();
+}
+}
+catch(e){
+alert(e.message)
+}
+}
+
+function init(){
+a=setInterval('orchestrate()',1);
+canvas.onclick = reInit;
+}
+
+function reInit(){
+context.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+}
+
+function orchestrate(){
+	if(DO_SOMETHING>0){
+		dot = new Dot()
+		dot.put()
+	}
+}
+
+
+
+
+
+init();
+
+
+</script>
+</body>
+</html>
+
