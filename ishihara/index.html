@@ -26,15 +26,18 @@ var ALLOW_BELOW_MINIMUM = false;
 var VISIBLE_MARGIN = 1;
 var INVISIBLE_MARGIN = 0;
 var DO_SOMETHING = 1;
-IN_COLOUR = new Array();
-OUT_COLOUR = new Array();
-OUT_COLOUR[0]="#808542";
-OUT_COLOUR[1]="#818643";
-OUT_COLOUR[2]="#a6aa56";
-OUT_COLOUR[3]="#a5a955"
-IN_COLOUR[0]="#d15e49";
-IN_COLOUR[1]="#ffbb98";
-IN_COLOUR[2]="#da955a";
+var COLOUR_SET_N = 0;	
+
+//some colour-ways
+COLOUR_SET = new Array()
+COLOUR_SET[0] = new ColourSet("#d15e49,#ffbb98,#da955a","#808542,#818643,#a6aa56,#a5a955");
+COLOUR_SET[1] = new ColourSet("#ff934f","#97a8a9");
+function ColourSet(in_colour,out_colour){
+this.IN_COLOUR = in_colour.split(",")
+this.OUT_COLOUR = out_colour.split(",")
+}
+var IN_COLOUR=COLOUR_SET[COLOUR_SET_N].IN_COLOUR;
+var OUT_COLOUR=COLOUR_SET[COLOUR_SET_N].OUT_COLOUR;
 
 //setup the canvases
 var canvas = document.getElementById("canvas");
@@ -155,13 +158,13 @@ canvas.onclick = reInit;
 
 function reInit(){
 context.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+COLOUR_SET_N = (++COLOUR_SET_N)%COLOUR_SET.length
+IN_COLOUR=COLOUR_SET[COLOUR_SET_N].IN_COLOUR
+OUT_COLOUR=COLOUR_SET[COLOUR_SET_N].OUT_COLOUR
 }
 
 function orchestrate(){
-	if(DO_SOMETHING>0){
-		dot = new Dot()
-		dot.put()
-	}
+	(new Dot()).put()
 }
 
 
