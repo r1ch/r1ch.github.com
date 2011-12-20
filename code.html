@@ -1,0 +1,96 @@
+<html>
+<head><title>Rich's QR treasure hunt</title></head>
+<body onLoad=loadHandler()>
+<div id = 'answer' style = 'border:1px solid green;font:1em verdana;width:20em;visibility:hidden'></div>
+<div id = 'form'>
+<input type = 'text' id = 'check'><br>
+<input type = 'button' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)'>
+</div>
+
+<script type = 'text/javascript'>
+var clues = new Array();
+var keys = new Array();
+
+matcher = /\?code=([A-Z0-9]{4})/;
+
+
+
+keys[0]="JGOE"
+keys[1]="HKLR"
+keys[2]="JHTD"
+keys[3]="IRDJ"
+keys[4]="IF3H"
+keys[5]="IO5G"
+keys[6]="ORFG"
+keys[7]="KI6F"
+keys[8]="94FJ"
+keys[9]="O9WG"
+keys[10]="U5RG"
+keys[11]="8RGI"
+keys[12]="U652"
+keys[13]="783F"
+keys[14]="5YHF"
+keys[15]="4YBR"
+keys[16]="9FFG"
+keys[17]="8955"
+keys[18]="G764"
+keys[19]="JI5R"
+
+clues[keys[0]] = "Clue 1" 
+clues[keys[1]] = "Clue 2"
+clues[keys[2]] = "Clue 3"
+clues[keys[3]] = "Clue 4"
+clues[keys[4]] = "Clue 5"
+clues[keys[5]] = "Clue 6"
+clues[keys[6]] = "Clue 7"
+clues[keys[7]] = "Clue 8"
+clues[keys[8]] = "Clue 9"
+clues[keys[9]] = "Clue 10"
+clues[keys[10]] = "Clue 11"
+clues[keys[11]] = "Clue 12"
+clues[keys[12]] = "Clue 13"
+clues[keys[13]] = "Clue 14"
+clues[keys[14]] = "Clue 15"
+clues[keys[15]] = "Clue 16"
+clues[keys[16]] = "Clue 17"
+clues[keys[17]] = "Clue 18"
+clues[keys[18]] = "Clue 19"
+clues[keys[19]] = "It's an answer, do with it what you will and what will you do with it?"
+
+
+function loadHandler(){
+	if(matcher.test(location.href)){
+		var match = matcher.exec(location.href)[1]
+		checkCode(match);
+	}
+}
+function checkCode(match){
+	if(typeof clues[match]!="undefined"){
+		hideForm();
+		document.getElementById("answer").innerHTML = "Correct: " + clues[match];
+		showAnswer();
+	}
+	else{
+		document.getElementById("answer").innerHTML = "I don't know that one - fancy trying another?";
+	}	
+}
+function hideForm(){
+	document.getElementById("form").style.visibility = "hidden"
+}
+
+function showAnswer(){
+	document.getElementById("answer").style.visibility = "visible"
+}
+
+function printAll(){
+	document.write("<table>");
+	for(i=0;i<keys.length;i++){
+		document.write("<tr><td><img src = 'http://qrcode.kaywa.com/img.php?s=2&d=http%3A%2F%2Fbradi.sh%2Fcode.html%3Fcode%3D"+keys[i]+"'></td><td><b>"+keys[i]+"</b><br></td></tr>");
+	}
+	document.write("</table>");
+}
+
+printAll()
+</script>
+</body>
+</html>
