@@ -67,7 +67,7 @@ function loadHandler(){
 function checkCode(match){
 	if(typeof clues[match]!="undefined"){
 		hideForm();
-		document.getElementById("answer").innerHTML = "Correct: " + clues[match];
+		document.getElementById("answer").innerHTML = "<h1>Correct: " + clues[match] + "</h1>";
 		showAnswer();
 	}
 	else{
