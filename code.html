@@ -12,9 +12,11 @@
 <script type = 'text/javascript'>
 var success = "You found a clue:<br>";
 var unknown = "I don't have a clue!";
+var confused = "Try entering a four letter code - should be all caps.";
 var clues = new Array();
 var keys = new Array();
 
+weak = /\?code=/;
 matcher = /\?code=([A-Z0-9]{4})$/;
 
 
@@ -63,20 +65,22 @@ clues[keys[19]] = "It's an answer, do with it what you will and what will you do
 
 
 function loadHandler(){
-	if(matcher.test(location.href)){
-		var match = matcher.exec(location.href)[1]
-		checkCode(match);
-	}
+	if(weak.test(location.href)){
+		if(matcher.test(location.href)){
+			var match = matcher.exec(location.href)[1]
+			checkCode(match);
+		}
+		else{
+			showAnswer(confused);
+		}
 }
 function checkCode(match){
 	if(typeof clues[match]!="undefined"){
 		hideForm();
-		document.getElementById("answer").innerHTML = success + clues[match];
-		showAnswer();
+		showAnswer(success + clues[match]);
 	}
 	else{
-		document.getElementById("answer").innerHTML = unknown;
-		showAnswer();
+		showAnswer(unknown);
 	}
 return false;
 }
@@ -84,7 +88,8 @@ function hideForm(){
 	document.getElementById("form").style.visibility = "hidden"
 }
 
-function showAnswer(){
+function showAnswer(text){
+	document.getElementById("answer").innerHTML = text;
 	document.getElementById("answer").style.visibility = "visible"
 }
 
