@@ -4,7 +4,7 @@
 <div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden'></div>
 <div id = 'form' style = 'font:2em verdana;width:30em' action = 'code.html' method = 'get'>
 <input type = 'text' id = 'check' name = 'code'><br>
-<input type = 'button' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)'>
+<input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)'>
 </div>
 
 <script type = 'text/javascript'>
@@ -75,7 +75,8 @@ function checkCode(match){
 	else{
 		document.getElementById("answer").innerHTML = unknown;
 		showAnswer();
-	}	
+	}
+return false;
 }
 function hideForm(){
 	document.getElementById("form").style.visibility = "hidden"
