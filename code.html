@@ -1,11 +1,11 @@
 <html>
 <head><title>Rich's QR treasure hunt</title></head>
 <body onLoad=loadHandler()>
-<div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden;border:0.1em solid blue;background:light blue'></div>
+<div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden;'></div>
 <div id = 'form' style = 'font:2em verdana;width:30em'>
 <form action = 'code.html' method = 'get'>
-<input type = 'text' id = 'check' name = 'code' height = '2em' width = '4em'><br>
-<input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)' height = '2em'>
+<input type = 'text' id = 'code' name = 'code'><br>
+<input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("code").value)'>
 </form>
 </div>
 
