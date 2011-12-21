@@ -1,18 +1,18 @@
 <html>
 <head><title>Rich's QR treasure hunt</title></head>
 <body onLoad=loadHandler()>
-<div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden'></div>
+<div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden;border:0.1em solid blue;background:light blue'></div>
 <div id = 'form' style = 'font:2em verdana;width:30em'>
 <form action = 'code.html' method = 'get'>
-<input type = 'text' id = 'check' name = 'code'><br>
-<input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)'>
+<input type = 'text' id = 'check' name = 'code' height = '2em' width = '4em'><br>
+<input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)' height = '2em'>
 </form>
 </div>
 
 <script type = 'text/javascript'>
 var success = "You found a clue:<br>";
 var unknown = "I don't have a clue!";
-var confused = "Try entering a four letter code - should be all caps.";
+var confused = "Try entering a four letter / number code - should be all caps.";
 var clues = new Array();
 var keys = new Array();
 
