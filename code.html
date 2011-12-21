@@ -2,8 +2,8 @@
 <head><title>Rich's QR treasure hunt</title></head>
 <body onLoad=loadHandler()>
 <div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden'></div>
-<div id = 'form' style = 'font:2em verdana;width:30em'>
-<input type = 'text' id = 'check'><br>
+<div id = 'form' style = 'font:2em verdana;width:30em' action = 'code.html' method = 'get'>
+<input type = 'text' id = 'check' name = 'code'><br>
 <input type = 'button' value = 'Check it!' onclick = 'checkCode(document.getElementById("check").value)'>
 </div>
 
