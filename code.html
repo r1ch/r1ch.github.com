@@ -19,6 +19,7 @@ var keys = new Array();
 weak = /\?code=/;
 matcher = /\?code=([A-Z0-9]{4})$/;
 alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-() ";
+alphabem = /[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-() ]/g;
 
 
 
@@ -112,11 +113,11 @@ function decoder(text,key){
 
 function coder(text,key,direction){
 	//test for odd characters
-	if(""!=text.replace("/["+alphabet+"]/g","")){
-		alert(text.replace("/["+alphabet+"]/g",""));
+	if(""!=text.replace(alphabem,"")){
+		alert(text.replace(alphabem,""));
 	}
 	else{
-		alert(text.replace("/["+alphabet+"]/g",""));
+		alert(text.replace(alphabem,""));
 	}
 	out = ""
 	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
