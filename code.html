@@ -115,6 +115,9 @@ function coder(text,key,direction){
 	if(""!=text.replace("/["+alphabet+"/]","")){
 		alert("there are odd");
 	}
+	else{
+		alert(text.replace("/["+alphabet+"/]",""));
+	}
 	out = ""
 	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
 	for(j=0;j<text.length;j++){
