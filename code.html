@@ -115,6 +115,10 @@ function coder(text,key,direction){
 	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
 	for(j=0;j<text.length;j++){
 		//encode the jth letter with the j mod key.length part of the key, then spit it back out
+		document.write("Letter is " + text.substring(j,j+1))
+		document.write(" with code" + alphabet.indexOf(text.substring(j,j+1)))
+		document.write(" key is " + key.substring((j%key.length),(j%key.length)+1))
+		document.write(" with code " + alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)))
 		out += 
 		alphabet.substr(
 		alphabet.indexOf(text.substring(j,j+1))
