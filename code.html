@@ -19,9 +19,6 @@ var keys = new Array();
 weak = /\?code=/;
 matcher = /\?code=([A-Z0-9]{4})$/;
 alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-() ";
-alphabem = /[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-() ]/g;
-
-
 
 keys[0]="JGOE"
 keys[1]="HKLR"
@@ -112,22 +109,18 @@ function decoder(text,key){
 }
 
 function coder(text,key,direction){
-	//test for odd characters
-	if(""!=text.replace(alphabem,"")){
-		alert(text.replace(alphabem,""));
-	}
-	else{
-		alert(text.replace(alphabem,""));
-	}
 	out = ""
 	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
 	for(j=0;j<text.length;j++){
-		//encode the jth letter with the j mod key.length part of the key, then spit it back out
-		out = out + alphabet.substr((alphabet.indexOf(text.substring(j,j+1))+(direction*alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1))))%alphabet.length,1)
+		if(alphabet.indexOf(text.substring(j,j+1)!=-1&&alphabet.indexOf(key.substring((j%key.length),(j%key.lenght)+1)){
+			//encode the jth letter with the j mod key.length part of the key, then spit it back out
+			out = out + alphabet.substr((alphabet.indexOf(text.substring(j,j+1))+(direction*alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1))))%alphabet.length,1)
+		}	
 	}
 	return out
 }
 alert("Encoding Hello World!>"+encoder("Hello World!","JGOE")+"<");
+alert("Encoding Hello World!>"+encoder("Hell***o World!","JGOE")+"<");
 alert("Decoding "+encoder("Hello World!","JGOE")+" - "+decoder(encoder("Hello World!","JGOE"),"JGOE"))
 //printAll()
 </script>
