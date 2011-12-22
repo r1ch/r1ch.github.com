@@ -104,6 +104,13 @@ function printAll(){
 }
 
 function encoder(text,key){
+	coder(text,key,1)
+}
+function decoder(text,key){
+	coder(text,key,-1)
+}
+
+function coder(text,key,direction){
 	out = ""
 	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
 	for(j=0;j<text.length;j++){
@@ -111,12 +118,13 @@ function encoder(text,key){
 		out += 
 		alphabet.substr(
 		alphabet.indexOf(text.substring(j,j+1))
-		+alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)
+		+direction*alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)
 		)%alphabet.length,1)
 	}
 	return out
 }
-alert(encoder("Hi","bb"));
+alert("Encoding Hello World!",encoder("Hello World!","JGOE"));
+alert("Decoding "+encoder("Hellow World!",JGOE)+decoder(encoder("Hello World!","JGOE"),"JGOE"))
 //printAll()
 </script>
 </body>
