@@ -124,6 +124,7 @@ function coder(text,key,direction){
 		alphabet.indexOf(text.substring(j,j+1))
 		+direction*alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)
 		)%alphabet.length,1)
+		document.write(out + "<br>")
 	}
 	return out
 }
