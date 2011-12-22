@@ -18,7 +18,7 @@ var keys = new Array();
 
 weak = /\?code=/;
 matcher = /\?code=([A-Z0-9]{4})$/;
-alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-() ";
+alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-()@ ";
 
 keys[0]="JGOE"
 keys[1]="HKLR"
@@ -75,12 +75,17 @@ function loadHandler(){
 	}
 }
 function checkCode(match){
-	if(typeof clues[match]!="undefined"){
-		hideForm();
-		showAnswer(success + clues[match]);
+	found = false;
+	for(k=0;k<clues.length;k++){
+		if("@CLUE"==decoder(clues[k].substr(0,5),match)){
+			hideForm()
+			showAnswer(decoder(clues[k],match).substr(5))
+			found = true;
+			break;
+		}
 	}
-	else{
-		showAnswer(unknown);
+	if(!found){
+		showAnswer(confused)
 	}
 return false;
 }
@@ -122,9 +127,7 @@ function coder(text,key,direction){
 	}
 	return out
 }
-alert("Encoding Hello World!>"+encoder("Hello World!","JGOE")+"<");
-alert("Encoding Hello World!>"+encoder("Hell***o World!","JGOE")+"<");
-alert("Decoding "+encoder("Hello World!","JGOE")+" - "+decoder(encoder("Hello World!","JGOE"),"JGOE"))
+document.write(encoder("@CLUEThis is the first clue","JGOE"));
 //printAll()
 </script>
 </body>
