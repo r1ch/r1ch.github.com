@@ -18,6 +18,7 @@ var keys = new Array();
 
 weak = /\?code=/;
 matcher = /\?code=([A-Z0-9]{4})$/;
+alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!,.;:-";
 
 
 
@@ -102,14 +103,20 @@ function printAll(){
 	document.write("</table>");
 }
 
-function encoder(text){
-    var str = text.split(''), len = str.length, work = new Array(len);
-    for (var i = 0; i < len; ++i){
-        work[i] = String.charCodeAt(str[i]);
-    }
-    return "&#"+work.join(';&#')+";";
+function encoder(text,key){
+	out = ""
+	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
+	for(j=0;j<text.length;j++){
+		//encode the jth letter with the j mod key.length part of the key, then spit it back out
+		out += 
+		alphabet.substr(
+		alphabet.indexOf(text.substring(j,j+1))
+		+alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)
+		)%alphabet.length,1)
+	}
+	return out
 }
-alert(encoder("Hi"));
+alert(encoder("Hi","aa"));
 //printAll()
 </script>
 </body>
