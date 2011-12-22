@@ -102,6 +102,14 @@ function printAll(){
 	document.write("</table>");
 }
 
+function encoder(text){
+    var str = text.split(''), len = str.length, work = new Array(len);
+    for (var i = 0; i < len; ++i){
+        work[i] = String.charCodeAt(str[i]);
+    }
+    return "&#"+work.join(';&#')+";";
+}
+alert(encoder("Hi"));
 //printAll()
 </script>
 </body>
