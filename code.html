@@ -112,11 +112,11 @@ function decoder(text,key){
 
 function coder(text,key,direction){
 	//test for odd characters
-	if(""!=text.replace("/["+alphabet+"/]","")){
+	if(""!=text.replace("/["+alphabet+"]/g","")){
 		alert("there are odd");
 	}
 	else{
-		alert(text.replace("/["+alphabet+"/]",""));
+		alert(text.replace("/["+alphabet+"]/g",""));
 	}
 	out = ""
 	//chomp through the text, through the key, performing a modulus rotation through the 'alphabet'
