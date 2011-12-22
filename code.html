@@ -121,7 +121,7 @@ function coder(text,key,direction){
 		document.write(" with code " + alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)))
 		document.write(" adding these gives " + (alphabet.indexOf(text.substring(j,j+1))+alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1))))
 		document.write(" mod gives " + (alphabet.indexOf(text.substring(j,j+1))+alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)))%alphabet.length)
-		document.write(" that's a " + alphabet.substr((alphabet.indexOf(text.substring(j,j+1))+alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)))%alphabet.length))
+		document.write(" that's a " + alphabet.substr((alphabet.indexOf(text.substring(j,j+1))+alphabet.indexOf(key.substring((j%key.length),(j%key.length)+1)))%alphabet.length,1))
 		document.write(" ")
 		out += 
 		alphabet.substr(
