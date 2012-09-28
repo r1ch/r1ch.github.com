@@ -161,17 +161,17 @@ dy += (pixel[j+1+PATCH_SIZE+PATCH_SIZE] - pixel[j])
 }
 dx /= ATTRACTIVE*j;
 dy /= ATTRACTIVE*j;
-xDiffAt[this.x0][this.y0] = dx;
-yDiffAt[this.x0][this.y0] = dy;
-}
-else{
 if(xDiffAt[this.x0]==undefined){
 xDiffAt[this.x0] = new Array();
-}  
-dx = xDiffAt[this.x0][this.y0];
+}
+xDiffAt[this.x0][this.y0] = dx;
 if(yDiffAt[this.x0]==undefined){
   yDiffAt[this.x0] = new Array();
 }
+yDiffAt[this.x0][this.y0] = dy;
+}
+else{
+dx = xDiffAt[this.x0][this.y0];
 dy = yDiffAt[this.x0][this.y0];
 }
 }
