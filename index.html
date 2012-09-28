@@ -38,6 +38,8 @@ var JITTER = 0.3;
 var ACCELERATION_DAMPER = 50;
 var ATTRACTIVE = 1;
 var DO_SOMETHING = 1;
+var xDiffAt;
+var yDiffAt;
 
 //setup the canvases
 var canvas = document.getElementById("canvas");
@@ -137,9 +139,11 @@ dot[n].put();
 
 //try to calculate a gradient
 function calculateAcceleration(){
+//attempt to memoize this function
 dx = 0
 dy = 0
 if(this.x0>=0 && this.y0 >=0 && this.x0<CANVAS_WIDTH && this.y0<CANVAS_HEIGHT){
+if(xDiffAt[this.x0][this.y0]==undefined||yDiffAt[this.x0][this.y0]==undefined){
 try{
 //always use a round number to get a patch
 image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
@@ -157,6 +161,13 @@ dy += (pixel[j+1+PATCH_SIZE+PATCH_SIZE] - pixel[j])
 }
 dx /= ATTRACTIVE*j;
 dy /= ATTRACTIVE*j;
+xDiffAt[this.x0][this.y0] = dx;
+yDiffAt[this.x0][this.y0] = dy;
+}
+else{
+dx = xDiffAt[this.x0][this.y0];
+dy = yDiffAt[this.y0][this.y0];
+}
 }
 this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 this.ay = dy/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
