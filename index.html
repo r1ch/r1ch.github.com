@@ -143,7 +143,7 @@ function calculateAcceleration(){
 dx = 0
 dy = 0
 if(this.x0>=0 && this.y0 >=0 && this.x0<CANVAS_WIDTH && this.y0<CANVAS_HEIGHT){
-if(xDiffAt[this.x0][this.y0]==undefined||yDiffAt[this.x0][this.y0]==undefined){
+if(xDiffAt[this.x0]==undefined||xDiffAt[this.x0][this.y0]==undefined||yDiffAt[this.x0]==undefined||yDiffAt[this.x0][this.y0]==undefined){
 try{
 //always use a round number to get a patch
 image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
@@ -165,8 +165,14 @@ xDiffAt[this.x0][this.y0] = dx;
 yDiffAt[this.x0][this.y0] = dy;
 }
 else{
+if(xDiffAt[this.x0]==undefined){
+xDiffAt[this.x0] = new Array();
+}  
 dx = xDiffAt[this.x0][this.y0];
-dy = yDiffAt[this.y0][this.y0];
+if(yDiffAt[this.x0]==undefined){
+  yDiffAt[this.x0] = new Array();
+}
+dy = yDiffAt[this.x0][this.y0];
 }
 }
 this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
