@@ -171,12 +171,14 @@ if(yDiffAt[Math.round(this.x0)]==undefined){
   yDiffAt[Math.round(this.x0)] = new Array();
 }
 yDiffAt[Math.round(this.x0)][Math.round(this.y0)] = dy;
-MISS++;
+//tracks cache misses
+//MISS++;
 }
 else{
 dx = xDiffAt[Math.round(this.x0)][Math.round(this.y0)];
 dy = yDiffAt[Math.round(this.x0)][Math.round(this.y0)];
-HIT++;
+//tracks cache hits
+//HIT++;
 }
 }
 this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
