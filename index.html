@@ -38,6 +38,8 @@ var JITTER = 0.3;
 var ACCELERATION_DAMPER = 50;
 var ATTRACTIVE = 1;
 var DO_SOMETHING = 1;
+var HIT = 0;
+var MISS = 0;
 var xDiffAt = new Array();
 var yDiffAt = new Array();
 
@@ -169,10 +171,12 @@ if(yDiffAt[Math.round(this.x0)]==undefined){
   yDiffAt[Math.round(this.x0)] = new Array();
 }
 yDiffAt[Math.round(this.x0)][Math.round(this.y0)] = dy;
+MISS++;
 }
 else{
 dx = xDiffAt[Math.round(this.x0)][Math.round(this.y0)];
 dy = yDiffAt[Math.round(this.x0)][Math.round(this.y0)];
+HIT++;
 }
 }
 this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
