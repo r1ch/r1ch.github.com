@@ -80,7 +80,8 @@ var path = d3.geo.path()
     .projection(projection)
     .pointRadius(0);
     
-var route = path
+var route = d3.geo.path()
+    .projection(projection)
     .pointRadius(3);    
 
 
