@@ -110,10 +110,12 @@ d3.json("uk2.json", function(error, uk) {
   svg.append("path")
       .datum(topojson.mesh(uk, uk.objects.collection, function(a, b) { return a !== b}))
       .attr("d", path)
-      .attr("class", "subunit-boundary");
+      .attr("class", "subunit-boundary")
+      .call(drawRoute)
 
 });
 
+function drawRoute(){
 
 d3.json("route2.json",function(error, rt){
 collection = topojson.feature(rt,rt.objects.collection);
@@ -143,6 +145,7 @@ route = svg.selectAll(".route")
 
 });
 
+}
 
 </script>
 <div class = "main">
