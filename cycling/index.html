@@ -129,6 +129,7 @@
                 });
         
         function drawRoute(){
+                pathF = Math.min(width,height)/6.3
             
             d3.json("route2.json",function(error, rt){
                     collection = topojson.feature(rt,rt.objects.collection);
@@ -136,18 +137,20 @@
                     
                     day = 0;
                     stay = 0;
-                    route = svg.selectAll(".route")
+                    mapline = svg.selectAll(".route")
                     .data(collection.features)
                     .enter()
                     .append("path")
                     .attr("d", route)
-                    .attr("stroke-dasharray",function(d){return 120 + " " + 120})
-                    .attr("stroke-dashoffset",function(d){return 120})
+                    .attr("stroke-dasharray",function(d){console.log(d); return pathF + " " + pathF})
+                    .attr("stroke-dashoffset",function(d){return pathF})
                     .attr("stroke","orange")
                     .attr("fill","none")
                     .attr("class", function(d){return d.geometry.type=="Point"?"stay stay"+ ++stay:"day day"+ ++day})
                     .attr("day",day)
                     .attr("stay",stay)
+                    
+                    mapline
                     .transition()
                     .duration(1000)
                     .delay(function(d,i){return i*750})
