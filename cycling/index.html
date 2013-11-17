@@ -1,159 +1,173 @@
 <!DOCTYPE html>
 <html><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta charset="utf-8">
-<style>
-svg {
-position:absolute;
-top:0;
-left:0;
-}
-
-
-.subunit { fill: #fff; 
-stroke: #777
-}
-
-.subunit-boundary {
-  fill: none;
-  stroke: #fff;
-  stroke-dasharray: 2,2;
-  stroke-linejoin: round;
-}
-
-.main{
-	position:absolute;
-	top:0;
-	right:0;
-	width: 500px;
-	font: 72px Helvetica;
-	float:right;
-}
-
-.sub{
-	width: 500px;
-	font: 36px Helvetica;
-	float:right;
-}
-
-b{
-	color:steelblue		
-}
-
-.sponsor{
-	width: 500px;
-	font: 24px Helvetica;
-	float:right;
-}
-
-.widget{
-	position:absolute;
-	bottom:0;
-	right:0;
-	float:right;
-}
-
-.stay1{
-	fill: green;
-	stroke:green;
-	stroke-width:10;
-}
-
-.stay12{
-	fill: red;
-	stroke:red;
-	stroke-width:10;
-}
-
-</style>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta charset="utf-8">
+        <style>
+            svg {
+                position:absolute;
+                top:0;
+                left:0;
+            }
+            
+            
+            .subunit {
+                fill: #fff;
+                stroke: #777;
+            }
+            
+            .subunit-boundary {
+                fill: none;
+                stroke: #fff;
+                stroke-dasharray: 2,2;
+                stroke-linejoin: round;
+            }
+            
+            .main{
+                margin:36px;
+                position:absolute;
+                top:0;
+                left:0;
+                width: 500px;
+                font: 72px Helvetica;
+                float:right;
+            }
+            
+            .sub{
+                margin-top:36px;
+                width: 500px;
+                font: 36px Helvetica;
+                float:right;
+            }
+            
+            b{
+                color:steelblue
+            }
+            
+            .sponsor{
+                margin-top:24px;
+                width: 500px;
+                font: 24px Helvetica;
+                float:right;
+            }
+            
+            .widget{
+                position:absolute;
+                bottom:0;
+                right:0;
+                float:right;
+            }
+            
+            .stay1{
+                fill: green;
+                stroke:green;
+                stroke-width:10;
+            }
+            
+            .stay12{
+                fill: red;
+                stroke:red;
+                stroke-width:10;
+            }
+            
+            </style>
 </head><body>
-<script src="map_files/d3.js"></script>
-<script src="map_files/topojson.js"></script>
-<script>
-
-var width = 500,
-    height = 700;
-
-var projection = d3.geo.albers()
-    .center([0, 53.4])
-    .rotate([4.4, 0])
-    .parallels([50, 60])
-    .scale(600 * 6)
-    .translate([width / 2, height / 2]);
-
-var path = d3.geo.path()
-    .projection(projection)
-    .pointRadius(0);
-    
-var route = d3.geo.path()
-    .projection(projection)
-    .pointRadius(3);    
-
-
-
-var svg = d3.select("body").append("svg")
-    .attr("width", width)
-    .attr("height", height);
-
-
-d3.json("uk2.json", function(error, uk) {
-  var subunits = topojson.feature(uk, uk.objects.collection);
-
-  svg.selectAll(".subunit")
-      .data(subunits.features)
-    .enter()
-	.append("path")
-      .attr("class", function(d) { return "subunit " + d.id; })
-      .attr("d", path);
-
-  svg.append("path")
-      .datum(topojson.mesh(uk, uk.objects.collection, function(a, b) { return a !== b}))
-      .attr("d", path)
-      .attr("class", "subunit-boundary")
-      .call(drawRoute)
-
-});
-
-function drawRoute(){
-
-d3.json("route2.json",function(error, rt){
-collection = topojson.feature(rt,rt.objects.collection);
-
-
-day = 0;
-stay = 0;
-route = svg.selectAll(".route")
-    .data(collection.features)
-	.enter()
-	.append("path")
-    .attr("d", route)
-	.attr("stroke-dasharray",function(d){return 120 + " " + 120})
-	.attr("stroke-dashoffset",function(d){return 120})
-	.attr("stroke","black")
-	.attr("fill","none")
-	.attr("class", function(d){return d.geometry.type=="Point"?"stay stay"+ ++stay:"day day"+ ++day})
-	.attr("day",day)
-	.attr("stay",stay)
-	.transition()
-	.duration(500)
-	.delay(function(d,i){return i*250})
-	.ease("linear")
-	.attr("fill",function(d){return d.geometry.type=="Point"?"steelblue":"none"})
-	.attr("stroke-dashoffset",0)
-	.attr("stroke","steelblue")
-
-});
-
-}
-
-</script>
-<div class = "main">
-<b>Rich</b>, <b>Chris</b>, <b>Jacko</b> and <b>Henry</b>
-<div class = "sub">are cycling Land's End to John O'Groats
-</div>
-<div class = "sponsor"><b>They'd love you to sponsor them</b> - and track their training!
-</div>
-</div>
-<div class = "widget">
-<iframe height='160' width='300' frameborder='0' allowtransparency='true' scrolling='no' src='http://www.strava.com/athletes/3095908/activity-summary/55614d114ca55bda367b030f2cf3844908fdbabb'></iframe>
-</div>
-</body></html>
+    <script src="map_files/d3.js"></script>
+    <script src="map_files/topojson.js"></script>
+    <script>
+        var w = window,
+        d = document,
+        e = d.documentElement,
+        g = d.getElementsByTagName('body')[0],
+        width = w.innerWidth || e.clientWidth || g.clientWidth,
+        height = w.innerHeight|| e.clientHeight|| g.clientHeight;
+        
+        var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g");
+        
+        function updateWindow(){
+            width = w.innerWidth || e.clientWidth || g.clientWidth;
+            height = w.innerHeight|| e.clientHeight|| g.clientHeight;
+            
+            svg.attr("width", width).attr("height", height);
+            drawRoute();
+        }
+        window.onresize = updateWindow;
+        
+        var projection = d3.geo.albers()
+        .center([0, 54.4])
+        .rotate([4.4, 0])
+        .parallels([50, 60])
+        .scale(Math.min(width,height)*6)
+        .translate([width / 1.5, height / 2]);
+        
+        var path = d3.geo.path()
+        .projection(projection)
+        .pointRadius(0);
+        
+        var route = d3.geo.path()
+        .projection(projection)
+        .pointRadius(5);
+        
+        
+        d3.json("uk2.json", function(error, uk) {
+                var subunits = topojson.feature(uk, uk.objects.collection);
+                
+                svg.selectAll(".subunit")
+                .data(subunits.features)
+                .enter()
+                .append("path")
+                .attr("class", function(d) { return "subunit " + d.id; })
+                .attr("d", path);
+                
+                svg.append("path")
+                .datum(topojson.mesh(uk, uk.objects.collection, function(a, b) { return a !== b}))
+                .attr("d", path)
+                .attr("class", "subunit-boundary")
+                .call(drawRoute)
+                
+                });
+        
+        function drawRoute(){
+            
+            d3.json("route2.json",function(error, rt){
+                    collection = topojson.feature(rt,rt.objects.collection);
+                    
+                    
+                    day = 0;
+                    stay = 0;
+                    route = svg.selectAll(".route")
+                    .data(collection.features)
+                    .enter()
+                    .append("path")
+                    .attr("d", route)
+                    .attr("stroke-dasharray",function(d){return 120 + " " + 120})
+                    .attr("stroke-dashoffset",function(d){return 120})
+                    .attr("stroke","orange")
+                    .attr("fill","none")
+                    .attr("class", function(d){return d.geometry.type=="Point"?"stay stay"+ ++stay:"day day"+ ++day})
+                    .attr("day",day)
+                    .attr("stay",stay)
+                    .transition()
+                    .duration(1000)
+                    .delay(function(d,i){return i*750})
+                    .ease("linear")
+                    .attr("fill",function(d){return d.geometry.type=="Point"?"steelblue":"none"})
+                    .attr("stroke-dashoffset",0)
+                    .attr("stroke","steelblue")
+                    
+                    });
+            
+        }
+        
+        </script>
+    <div class = "main">
+        <b>Rich</b>, <b>Chris</b>, <b>Jacko</b> and <b>Henry</b>
+        <div class = "sub">are cycling Land's End to John O'Groats
+        </div>
+        <div class = "sponsor"><b>They'd love you to sponsor them</b> - and track their training!
+        </div>
+    </div>
+    <div class = "widget">
+            </div>
+            </body></html>
