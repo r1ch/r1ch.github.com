@@ -10,59 +10,7 @@
 <!-- And, NOBODY knows what happens when zero is reached (horrible things I assume) -->
 <!-- Yes, I must try harder.  Whatever.... -->
 <script src="countdown.js" type="text/javascript"></script>
-<script src="jquery.js" type="text/javascript"></script>
-<script type="text/javascript">
-var $j = jQuery.noConflict();
-$j(document).ready(function () {
-});
-$j(document).ready(function(){
-$j.ajax({
-type: "GET",
-url: "www.whistlerblackcomb.com/local/xml/tom.xml",
-dataType: "xml",
-success: function(xml) {
-$j(xml).find('Date').each(function(){
-var date = $j(this).find('tomupdated').text();
-$j("#date").text(date);
-if (date == "2013-10-14")
-{
-date="Today";
-}
-});
-$j(xml).find('Conditions').each(function(){
-var snowCond = $j(this).find('SurfaceConditionPrimary').text();
-$j("#snowCond").text(snowCond);
-});
-$j(xml).find('Snow').each(function(){
-var snowBase = $j(this).find('Base').text();
-var snowNew = $j(this).find('Last12Hours').text();
-var snow24 = $j(this).find('Last24Hours').text();
-var snow48 = $j(this).find('Last48Hours').text();
-var snow7 = $j(this).find('Last7Days').text();
-var snowCumu = $j(this).find('CumulativeSnow').text();
-var snowBasei = Math.round(snowBase / 2.54);
-var snowNewi = Math.round(snowNew / 2.54);
-var snow24i = Math.round(snow24 / 2.54);
-var snow48i = Math.round(snow48 / 2.54);
-var snow7i = Math.round(snow7 / 2.54);
-var snowCumui = Math.round(snowCumu / 2.54);
-$j("#snowBase").text(snowBase);
-$j("#snowNew").text(snowNew);
-$j("#snow24").text(snow24);
-$j("#snow48").text(snow48);
-$j("#snow7").text(snow7);
-$j("#snowCumu").text(snowCumu);
-$j("#snowBasei").text(snowBasei);
-$j("#snowNewi").text(snowNewi);
-$j("#snow24i").text(snow24i);
-$j("#snow48i").text(snow48i);
-$j("#snow7i").text(snow7i);
-$j("#snowCumui").text(snowCumui);
-});
-}
-});
-});
-</script> 
+
 
 
 
@@ -83,37 +31,5 @@ var flight = new Countdown({year:2014,month:2,day:8+1,width:100,height:100,range
 var burger = new Countdown({year:2014,month:2,day:7+1,width:100,height:100,rangeHi:"day",rangeLo:"day",style:"flip"	});
 </script></div>
 </div></div>
-<div class="snowReport">
-<div class="snowNew"><span id="snowNew"></span><span class="cm">cm</span><br>
-<p class="us"><span id="snowNewi"></span>"</p>
-<p class="snowTitle">New</p>
-</div>
-<div class="snow24"><span id="snow24"></span><span class="cm">cm</span><br>
-<p class="us"><span id="snow24i"></span>"</p>
-<p class="snowTitle">24hr</p>
-</div>
-<div class="snow48"><span id="snow48"></span><span class="cm">cm</span><br>
-<p class="us"><span id="snow48i"></span>"</p>
-<p class="snowTitle">48hr</p>
-</div>
-<div class="snow7"><span id="snow7"></span><span class="cm">cm</span><br>
-<p class="us"><span id="snow7i"></span>"</p>
-<p class="snowTitle">7day</p>
-</div>
-<div class="snowBase"><span id="snowBase"></span><span class="cm">cm</span><br>
-<p class="us"><span id="snowBasei"></span>"</p>
-<p class="snowTitle">Base</p>
-</div>
-<div class="clearBox"></div>
-<div class="snowCumu"><span id="snowCumu"></span><span class="cm">cm</span><br>
-<p class="us"><span id="snowCumui"></span>"</p>
-<p class="cumuTitle">Cumulative</p>
-</div>
-<div class="snowCond"><span id="snowCond"></span>
-<p class="condTitle"></p>
-</div>
-<span class="miceType11">Snow depths are a based on the Walters' fever dream and bear a scant resemblance to reality</span>
-<div class="clearBox"></div>
-</div>
 </body>
 </html>
