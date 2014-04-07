@@ -1,0 +1,116 @@
+<html>
+<head>
+<title>
+bradi.sh
+</title>
+<meta name="google-site-verification" content="mRU2d6CoO1n5n1Rk4yC5mk0M_rGPJZsndpT8Wud5RFg"/>
+<script src="thatsformytvuh.json"/>
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-446615-6']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+<body>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script type = 'text/javascript'>
+var 	C_LINE = 0,
+	N_LINES = 2,
+	WIDTH = 1000,
+	HEIGHT = 200;
+
+var svg = d3.select("body")
+	.append("svg")
+	.attr("width", WIDTH)
+	.attr("height", HEIGHT)
+
+
+
+var nodes = new Array();
+var node = svg.selectAll(".node");
+var force = d3.layout.force()
+	.size([WIDTH, HEIGHT])
+	.gravity(0.1)
+	.start();
+force.on("tick", tick);
+
+
+
+
+
+function updateSet(){
+C_LINE = C_LINE%input.subs.length;
+var x = {
+	index: C_LINE,
+	line: input.subs[C_LINE]
+};
+
+console.log("l:"+nodes.length+","+C_LINE)
+if(nodes.length>=N_LINES){nodes.shift()}
+nodes.push(x);
+trigger = input.subs[(C_LINE+1)%input.subs.length].start - 
+		input.subs[C_LINE].start
+C_LINE = C_LINE+1;
+updateNodes();
+setTimeout('updateSet()',Math.min(3000,trigger*100000000))
+console.log("next:"+Math.min(3000,trigger*100000000))
+}
+
+
+function updateNodes(){
+
+node = svg.selectAll(".node").data(nodes, function(d) {return(d.line.row)})
+
+node.enter()
+	.append("text")
+	.attr("class", "node")
+	.attr("x", function(d) { return d.x; })
+	.attr("y", function(d) { return d.y; })
+	.attr("width",300)
+	.attr("heigth",12)
+	.text(function(d){
+		 return d.line.text0 + "\n"
+		+ d.line.text1 })
+	.attr("font-size",24)
+	.transition()
+	.duration(function(d){
+
+console.log(100000000*(d.line.stop - d.line.start))
+return 100000000*(d.line.stop - d.line.start)})
+	.delay(200)
+	.attr("font-size",12)
+
+node.exit().remove()
+	
+force.nodes(nodes).start()
+}
+
+
+function tick(e) {
+
+  // Push different nodes in different directions for clustering.
+  var k = 6 * e.alpha;
+  nodes.forEach(function(o, i) {
+    o.y += i & 1 ? k : -k;
+    o.x += i & 2 ? k : -k;
+  });
+
+  node.attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; });
+}
+
+
+updateSet();
+
+</script>
+</body>
+</html>
+
