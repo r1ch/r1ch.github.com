@@ -45,36 +45,20 @@ var yDiffAt = new Array();
 
 //setup the canvases
 var canvas = document.getElementById("canvas");
-//var gcanvas = document.createElement("canvas");
-//gcanvas.style.width = CANVAS_WIDTH;
-//gcanvas.width = CANVAS_WIDTH;
-//gcanvas.style.height = CANVAS_HEIGHT;
-//gcanvas.height = CANVAS_HEIGHT
-//gcanvas.style.border = '1px solid black';
-//gcanvas.style.visibility = 'hidden';
-//document.body.appendChild(gcanvas);
+var gcanvas = document.createElement("canvas");
+gcanvas.style.width = CANVAS_WIDTH;
+gcanvas.width = CANVAS_WIDTH;
+gcanvas.style.height = CANVAS_HEIGHT;
+gcanvas.height = CANVAS_HEIGHT
+gcanvas.style.border = '1px solid black';
+gcanvas.style.visibility = 'hidden';
+document.body.appendChild(gcanvas);
 var context = canvas.getContext("2d");
-//var gcontext = gcanvas.getContext("2d");
+var gcontext = gcanvas.getContext("2d");
 var gimage = new Image();
 gimage.onload = function() {
 try{
-      //gcontext.drawImage(gimage, 0, 0);
-      var getImageDataFaster = function (x, y, w, h, W, H, d) {
-        var arr = [];
-  
-	  for (var r=y; r<h+y; r+=1) {
-		  for (var c=x; c<w+x; c+=1) {
-			  var O = ((r*W) + c) * 4; 
-			if (c<0 || c>=W || r<0 || r>=H) {
-  			arr.push(0,0,0,0);
-			} else {
-				arr.push(d[O+0], d[O+1], d[O+2], d[O+3]);
-			}
-		}
-	}
-
-	return arr;
-};
+      gcontext.drawImage(gimage, 0, 0);
 }
 catch(e){
 alert(e.message)
@@ -164,8 +148,7 @@ if(this.x0>=0 && this.y0 >=0 && this.x0<CANVAS_WIDTH && this.y0<CANVAS_HEIGHT){
 if(xDiffAt[Math.round(this.x0)]==undefined||xDiffAt[Math.round(this.x0)][Math.round(this.y0)]==undefined||yDiffAt[Math.round(this.x0)]==undefined||yDiffAt[Math.round(this.x0)][Math.round(this.y0)]==undefined){
 try{
 //always use a round number to get a patch
-//image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
-image = getImageDataFaster(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE,gimage);
+image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
 }
 catch(e){
 alert("Failed getting patch:" +  Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)) + "," + Math.min(CANVAS_HEIGHT-PATCH_SIZE-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)) + "," + (1+2*PATCH_SIZE) + "," + (1+2*PATCH_SIZE))
@@ -209,4 +192,3 @@ init();
   
 </body>
 </html>
-
