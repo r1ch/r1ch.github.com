@@ -32,7 +32,7 @@ bradi.sh
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 200;
 var PATCH_SIZE = 1;
-var N_DOTS = 10;
+var N_DOTS = 500;
 var DOT_SIZE = 1;
 var ACCELERATION_DAMPER = 50;
 var ATTRACTIVE = 1;
@@ -162,6 +162,7 @@ for(n=0;n<N_DOTS;n++){
 dot[n].move();
 dot[n].put();
 }
+N_DOTS--
 }
 }
 
