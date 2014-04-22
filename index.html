@@ -42,6 +42,25 @@ var HIT = 0;
 var MISS = 0;
 var xDiffAt = new Array();
 var yDiffAt = new Array();
+var imageData;
+
+//helper
+var getImageDataFaster = function (x, y, w, h, W, H, d) {
+  var arr = [];
+
+for (var r=y; r<h+y; r+=1) {
+for (var c=x; c<w+x; c+=1) {
+var O = ((r*W) + c) * 4;
+if (c<0 || c>=W || r<0 || r>=H) {
+   arr.push(0);
+} else {
+arr.push(d[O])
+}
+}
+}
+
+return arr;
+};
 
 //setup the canvases
 var canvas = document.getElementById("canvas");
@@ -50,7 +69,7 @@ gcanvas.style.width = CANVAS_WIDTH;
 gcanvas.width = CANVAS_WIDTH;
 gcanvas.style.height = CANVAS_HEIGHT;
 gcanvas.height = CANVAS_HEIGHT
-gcanvas.style.border = '1px solid black';
+//gcanvas.style.border = '1px solid black';
 gcanvas.style.visibility = 'hidden';
 document.body.appendChild(gcanvas);
 var context = canvas.getContext("2d");
@@ -59,6 +78,8 @@ var gimage = new Image();
 gimage.onload = function() {
 try{
       gcontext.drawImage(gimage, 0, 0);
+	imageData = gcontext.getImageData(0,0,CANVAS_WIDTH,CANVAS_HEIGHT).data	
+init();
 }
 catch(e){
 alert(e.message)
@@ -148,18 +169,14 @@ if(this.x0>=0 && this.y0 >=0 && this.x0<CANVAS_WIDTH && this.y0<CANVAS_HEIGHT){
 if(xDiffAt[Math.round(this.x0)]==undefined||xDiffAt[Math.round(this.x0)][Math.round(this.y0)]==undefined||yDiffAt[Math.round(this.x0)]==undefined||yDiffAt[Math.round(this.x0)][Math.round(this.y0)]==undefined){
 try{
 //always use a round number to get a patch
-image = gcontext.getImageData(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE);
+image = getImageDataFaster(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE,CANVAS_WIDTH,CANVAS_HEIGHT,imageData);
 }
 catch(e){
 alert("Failed getting patch:" +  Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)) + "," + Math.min(CANVAS_HEIGHT-PATCH_SIZE-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)) + "," + (1+2*PATCH_SIZE) + "," + (1+2*PATCH_SIZE))
 }
-pixel = new Array();
-for(i = 0; i < Math.pow(1 + PATCH_SIZE + PATCH_SIZE,2); i++){
-pixel[i] = image.data[4*i];
-}
 for(dx=0,dy=0,j=0;j<(Math.pow(1 + PATCH_SIZE + PATCH_SIZE,2)-1-PATCH_SIZE-PATCH_SIZE);j++){
-dx += (pixel[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j+1] - pixel[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j])
-dy += (pixel[j+1+PATCH_SIZE+PATCH_SIZE] - pixel[j])
+dx += (image[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j+1] - image[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j])
+dy += (image[j+1+PATCH_SIZE+PATCH_SIZE] - image[j])
 }
 dx /= ATTRACTIVE*j;
 dy /= ATTRACTIVE*j;
@@ -185,7 +202,7 @@ this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 this.ay = dy/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 }
 
-init();
+
 </script>
 <!--<div style = 'bottom:0;position:absolute;color:white'>Perfume, pharmacy, doctor. Life-long learning.</div>
 -->
