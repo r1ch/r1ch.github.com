@@ -31,18 +31,16 @@ bradi.sh
 <script type = 'text/javascript'>
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 200;
-var PATCH_SIZE = 1;
-var N_DOTS = 500;
+var N_DOTS = 1000;
+var DECAY = 50
+var DECAYED = 10
 var DOT_SIZE = 1;
 var ACCELERATION_DAMPER = 50;
-var ATTRACTIVE = 1;
 var TOLERANCE = 5;
 var MAX = 255
 var DO_SOMETHING = 1;
 var GOING = 40;
 var INITIAL = 1;
-var xDiffAt = new Array();
-var yDiffAt = new Array();
 var imageData;
 
 //helper
@@ -162,7 +160,7 @@ for(n=0;n<N_DOTS;n++){
 dot[n].move();
 dot[n].put();
 }
-N_DOTS--
+N_DOTS=Math.max(N_DOTS-DECAY,DECAYED)
 }
 }
 
