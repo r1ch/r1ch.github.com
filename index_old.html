@@ -32,15 +32,14 @@ bradi.sh
 var CANVAS_WIDTH = 800;
 var CANVAS_HEIGHT = 200;
 var PATCH_SIZE = 1;
-var N_DOTS = 10;
+var N_DOTS = 100;
 var DOT_SIZE = 1;
+var JITTER = 0.3;
 var ACCELERATION_DAMPER = 50;
 var ATTRACTIVE = 1;
-var TOLERANCE = 5;
-var MAX = 255
 var DO_SOMETHING = 1;
-var GOING = 40;
-var INITIAL = 1;
+var HIT = 0;
+var MISS = 0;
 var xDiffAt = new Array();
 var yDiffAt = new Array();
 var imageData;
@@ -95,20 +94,16 @@ this.dt = 0.5
 this.e = 0.01
 this.width = DOT_SIZE
 this.height = DOT_SIZE
-this.last = 255
 this.x0 = x
 this.y0 = y
-this.x1 = x+INITIAL
+this.x1 = x
 this.y1 = y
 this.ax = ax
 this.ay = ay
 this.move = move
 this.put = put
 this.calculateAcceleration = calculateAcceleration
-this.on = false;
-this.boring = 'rgba(0,0,0,255)';
-this.cool = 'rgba('+Math.floor(Math.random()*255)+','+Math.floor(Math.random()*255)+','+Math.floor(Math.random()*255)+',255)';
-this.fill = 'rgba(0,0,0,255)';
+this.fill = 'rgba('+Math.floor(Math.random()*255)+','+Math.floor(Math.random()*255)+','+Math.floor(Math.random()*255)+',255)';
 }
 
 function move(){
@@ -128,14 +123,12 @@ this.y1 = Math.min(CANVAS_HEIGHT-1,Math.max(0,newy));
 }
 
 function put(){
-if(this.on){
 try{
 context.fillStyle = this.fill;
 context.fillRect(this.x0,this.y0,this.width,this.height)
 }
 catch(e){
 alert(e.message)
-}
 }
 }
 
@@ -169,26 +162,44 @@ dot[n].put();
 
 //try to calculate a gradient
 function calculateAcceleration(){
+//attempt to memoize this function
 dx = 0
 dy = 0
 if(this.x0>=0 && this.y0 >=0 && this.x0<CANVAS_WIDTH && this.y0<CANVAS_HEIGHT){
-image = getImageDataFaster(Math.min(CANVAS_WIDTH-1,Math.max(0,Math.round(this.x0)-1)),Math.min(CANVAS_HEIGHT-1,Math.max(0,Math.round(this.y0)-1)),1,1,CANVAS_WIDTH,CANVAS_HEIGHT,imageData);
-if(MAX-image[0]<TOLERANCE){
-this.fill = this.cool
-this.on = true;
-dy = INITIAL
-dx = -2*INITIAL
+//if(xDiffAt[Math.round(this.x0)]==undefined||xDiffAt[Math.round(this.x0)][Math.round(this.y0)]==undefined||yDiffAt[Math.round(this.x0)]==undefined||yDiffAt[Math.round(this.x0)][Math.round(this.y0)]==undefined){
+try{
+//always use a round number to get a patch
+image = getImageDataFaster(Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)),Math.min(CANVAS_HEIGHT-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)),1+2*PATCH_SIZE,1+2*PATCH_SIZE,CANVAS_WIDTH,CANVAS_HEIGHT,imageData);
 }
-else{
-this.x0 = Math.floor(Math.random()*CANVAS_WIDTH)
-this.x1 = this.x0 + INITIAL
-this.y0 = this.y1 = Math.floor(Math.random()*CANVAS_HEIGHT)
-this.fill = this.boring
-this.on = false;
+catch(e){
+alert("Failed getting patch:" +  Math.min(CANVAS_WIDTH-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.x0)-PATCH_SIZE-1)) + "," + Math.min(CANVAS_HEIGHT-PATCH_SIZE-(2*PATCH_SIZE+1),Math.max(PATCH_SIZE,Math.round(this.y0)-PATCH_SIZE-1)) + "," + (1+2*PATCH_SIZE) + "," + (1+2*PATCH_SIZE))
 }
+for(dx=0,dy=0,j=0;j<(Math.pow(1 + PATCH_SIZE + PATCH_SIZE,2)-1-PATCH_SIZE-PATCH_SIZE);j++){
+dx += (image[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j+1] - image[Math.floor(j/(PATCH_SIZE+PATCH_SIZE))+j])
+dy += (image[j+1+PATCH_SIZE+PATCH_SIZE] - image[j])
 }
-this.ax = dx/ACCELERATION_DAMPER 
-this.ay = dy/ACCELERATION_DAMPER 
+dx /= ATTRACTIVE*j;
+dy /= ATTRACTIVE*j;
+if(xDiffAt[Math.round(this.x0)]==undefined){
+xDiffAt[Math.round(this.x0)] = new Array();
+}
+xDiffAt[Math.round(this.x0)][Math.round(this.y0)] = dx;
+if(yDiffAt[Math.round(this.x0)]==undefined){
+  yDiffAt[Math.round(this.x0)] = new Array();
+}
+yDiffAt[Math.round(this.x0)][Math.round(this.y0)] = dy;
+//tracks cache misses
+//MISS++;
+//}
+//else{
+//dx = xDiffAt[Math.round(this.x0)][Math.round(this.y0)];
+//dy = yDiffAt[Math.round(this.x0)][Math.round(this.y0)];
+//tracks cache hits
+//HIT++;
+//}
+}
+this.ax = dx/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
+this.ay = dy/ACCELERATION_DAMPER + (Math.random()*JITTER - JITTER/2)
 }
 
 
