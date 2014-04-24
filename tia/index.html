@@ -25,7 +25,7 @@ bradi.sh
 var 	C_LINE = 0,
 	N_LINES = 4,
 	WIDTH = 1000,
-	HEIGHT = 200;
+	HEIGHT = 400;
 
 var svg = d3.select("body")
 	.append("svg")
@@ -53,7 +53,6 @@ var x = {
 	line: input.subs[C_LINE]
 };
 
-console.log("l:"+nodes.length+","+C_LINE)
 if(nodes.length>=N_LINES){nodes.shift()}
 nodes.push(x);
 trigger = input.subs[(C_LINE+1)%input.subs.length].start - 
@@ -61,7 +60,6 @@ trigger = input.subs[(C_LINE+1)%input.subs.length].start -
 C_LINE = C_LINE+1;
 updateNodes();
 setTimeout('updateSet()',Math.min(3000,trigger*100000000))
-console.log("next:"+Math.min(3000,trigger*100000000))
 }
 
 
@@ -69,26 +67,20 @@ function updateNodes(){
 
 node = svg.selectAll(".node").data(nodes, function(d) {return(d.line.row)})
 
-node.enter()
-	.append("text")
-	.attr("class", "node")
+	node.enter()
+	.append("foreignObject")
+	.attr("class","node")
+    .attr("width", 480)
+    .attr("height", 500)
+  	.append("xhtml:div")
 	.attr("x", function(d) { return d.x; })
 	.attr("y", function(d) { return d.y; })
 	.html(function(d){
-		 return "<div>"
-			+ d.line.text0 
-			+ "</div>a<tspan>"
-			+ d.line.text1
-			+ "</tspan>"
-			})
-	.attr("stroke","black")
+		 return d.line.text0 + "<br>" + d.line.text1
+		})
 	.transition()
-	.duration(function(d){
-
-console.log(100000000*(d.line.stop - d.line.start))
-return 100000000*(d.line.stop - d.line.start)})
-	.delay(1000)
-	.attr("stroke","grey")
+	.duration(3000)
+	.delay(100) 	
 
 node.exit().remove()
 	
