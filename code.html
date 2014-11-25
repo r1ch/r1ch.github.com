@@ -197,6 +197,7 @@ document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"
 //printAll();
 </script>
 	<div class="container">
+	<div class="jumbotron">
 		<div class="col-lg-6">
 			<form action = 'code.html' method = 'get'>
 				<div class="panel panel-info">
@@ -205,12 +206,13 @@ document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"
             				</div>
             				<div class="col-lg-4">
 	           				<div id = 'answer' style = 'visibility:hidden;' class="panel-body"></div>
-	           				<input type = 'text' id = 'code' name = 'code' class="form-control"><br>
-	           				<input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'>
+	           				<p><input type = 'text' id = 'code' name = 'code' class="form-control"></p>
+	           				<p><input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'></p>
 					</div>
 				</div>
 			</form>
 		</div>
+	</div>
 	</div>
  
     <!-- Bootstrap core JavaScript
