@@ -196,47 +196,23 @@ document.write("<br>clues[23] = \""+encoder("@CLUEOn Christmas Eve:",keys[23])+"
 document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"\"");*/
 //printAll();
 </script>
-    <div class="site-wrapper">
-      <div class="site-wrapper-inner">
-        <div class="cover-container">
-          <div class="masthead clearfix">
-            <div class="inner">
-              <nav>
-                <ul class="nav masthead-nav">
-                  <li><a href="/code.html">Enter code</a></li>
-                </ul>
-              </nav>
-            </div>
-          </div>
-
-          <div class="inner cover">
-            <h1 class="cover-heading">Advent Calendar</h1>
-          </div>
-
-          <div class="mastfoot">
-            <div class="inner">
-            <div class="col-sm-4">
-        	<form action = 'code.html' method = 'get'>
-        		<div class="panel panel-info">
-				<div class="panel-heading">
-                      			<h3 class="panel-title">So...</h3>
-            			</div>
-	           		<div id = 'answer' style = 'visibility:hidden;' class="panel-body"></div>
-	           		<input type = 'text' id = 'code' name = 'code' class="form-control"><br>
-	           		<input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'>
-			</div>
-		</form>
+	<div class="container">
+		<div class="col-lg-6">
+			<form action = 'code.html' method = 'get'>
+				<div class="panel panel-info">
+					<div class="panel-heading">
+						<h3 class="panel-title">Advent calendar</h3>
+            				</div>
+            				<div class="col-lg-4">
+	           				<div id = 'answer' style = 'visibility:hidden;' class="panel-body"></div>
+	           				<input type = 'text' id = 'code' name = 'code' class="form-control"><br>
+	           				<input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'>
+					</div>
+				</div>
+			</form>
 		</div>
-	    </div>
-	  </div>
-        </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
+	</div>
+ 
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
