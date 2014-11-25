@@ -25,15 +25,6 @@
     <![endif]-->
   </head>
 <body onLoad=loadHandler()>
-<div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden;'></div>
-<div id = 'form' style = 'font:2em verdana;width:30em'>
-
-<form action = 'code.html' method = 'get'>
-<input type = 'text' id = 'code' name = 'code'><br>
-<input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("code").value)'>
-</form>
-</div>
-
 <script type = 'text/javascript'>
 var success = "You found a clue:<br>";
 var unknown = "I don't have a clue!";
@@ -231,7 +222,14 @@ document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"
 
           <div class="mastfoot">
             <div class="inner">
-              <p>Cover template for <a href="http://getbootstrap.com">Bootstrap</a>, by <a href="https://twitter.com/mdo">@mdo</a>.</p>
+	           <div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden;'></div>
+<div id = 'form' style = 'font:2em verdana;width:30em'>
+<form action = 'code.html' method = 'get'>
+<input type = 'text' id = 'code' name = 'code' class="form-control"><br>
+<input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'>
+</form>
+</div>
+ 
             </div>
           </div>
 
