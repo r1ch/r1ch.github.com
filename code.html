@@ -1,8 +1,20 @@
 <html>
-<head><title>Rich's QR treasure hunt</title></head>
+<head><title>Advent Calender</title>
+	
+	<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+	
+</head>
 <body onLoad=loadHandler()>
 <div id = 'answer' style = 'font:2em verdana;width:30em;visibility:hidden;'></div>
 <div id = 'form' style = 'font:2em verdana;width:30em'>
+
 <form action = 'code.html' method = 'get'>
 <input type = 'text' id = 'code' name = 'code'><br>
 <input type = 'submit' value = 'Check it!' onclick = 'checkCode(document.getElementById("code").value)'>
