@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
  <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,8 +8,6 @@
     <meta name="author" content="Rich Bradish">
 
    <title>Advent Calender</title>
-
-
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
@@ -88,9 +86,6 @@ clues[21] = "4kokpw!Je02Jee2XegS305,X921Kj2,P5l2M0:YOcW"
 clues[22] = "B4eC8-12WIR2WXR-WZIbKJ56CENgCPS27FP7PCR x"
 clues[23] = "X4lCj-82hI,!)U73)Aed4v"
 clues[24] = "QikEcu74a8!.! 65!Zc5(U"
-
-
-
 
 function loadHandler(){
 	if(weak.test(location.href)){
@@ -206,7 +201,7 @@ document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"
 					<div class="panel-heading">
 						<h3 class="panel-title">Today is...</h3>
             				</div>
-            				<div class="col-lg-4">
+            				<div class="col-lg-2">
 	           				<div id = 'answer' style = 'visibility:hidden;' class="panel-body"></div>
 	           				<p><input type = 'text' id = 'code' name = 'code' class="form-control"></p>
 	           				<p><input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'></p>
