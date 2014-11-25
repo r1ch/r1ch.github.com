@@ -10,7 +10,6 @@
    <title>Advent Calender</title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
-
   </head>
 <body onLoad=loadHandler()>
 <script type = 'text/javascript'>
@@ -192,9 +191,12 @@ document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"
 						<h3 class="panel-title">Today is...</h3>
             				</div>
             				<div class="col-sm-2">
-	           				<div id = 'answer' style = 'visibility:hidden;' class="panel-body"></div>
+            				<div class="panel-body">
+	           				<div id = 'answer' style = 'visibility:hidden;'</div>
 	           				<p><input type = 'text' id = 'code' name = 'code' class="form-control"></p>
 	           				<p><input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'></p>
+					
+					</div>
 					</div>
 				</div>
 			</form>
