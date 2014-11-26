@@ -102,8 +102,8 @@ function checkCode(match){
 			try{
 				var obj = eval("("+decoder(clues[k],match).substr(5)+")")
 				HTMLanswer = ""+
-				"<h3>"+obj.caption+"</h3>"
-				"<img class = 'img-responsive imgClip' src='"+obj.src+"'>"
+				"<h3>"+obj.caption+"</h3>"+
+				"<img class = 'img-responsive imgClip' src='"+obj.src+"'>";
 				showAnswer(HTMLanswer)
 			}
 			catch(e){
