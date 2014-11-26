@@ -28,7 +28,7 @@ var keys = new Array();
 
 weak = /\?code=/;
 matcher = /\?code=([A-Z0-9]{4})$/;
-alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-()@ /<>'=_&?{}…";
+alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!,.;:-()@ /<>'=_&?{}…*";
 
 keys[0]="JGOE"
 keys[1]="HKLR"
@@ -56,7 +56,31 @@ keys[22]="DBN3"
 keys[23]="ZBU3"
 keys[24]="S1T5"
 
-
+clues[0] = "w9_=;DRE8pjkxIOT3O3Rsy@ZNTCMOu.S4BOTXYwVNu3F2K7WNJC1RZVs3KOwpu7VLpGL3Z4WsvDH1O0IqM3SPRSlLU1tOOZIyJDi!Aq@-daVjT<FaS?b<c'0…{d3&Qdt5OS1F17TCYVE1O2KBE";
+clues[1] = "u.>g,HOR6thxvML71SZ5qCsyvYVxvXZ!vATIHVWHwSCF1OLJny49JtDY1410qzAUYS7VoQZ6NVPyJYXGMSWVwNAv9Ena;h{9hX@SLWOY<bep&fNp?bNG3SP;D547A3SRYSYXzI";
+clues[2] = "w0…';EWD8qqjxJTS3P8Qsz'YNUHLOv)R4CTSXZBUNvTr2S8ZxJ)FUP,WBnHV1JCvQ1.S2qIsMY2YNoZRXN5HqJ8PyM2ONwWsn9Nf';q/1h7!KIkceJ5.X xS? @ y32H6D;VYA,KJY2QPzR";
+clues[3] = "v :}.OGJ7AbpwTDY2ZRWrJ85M5rRNF2X3MDYW0l1MFDU5R22w0HUTZQPwTX1ZVQ3wRFLW,Q31Jjx19FsAYW3X0myxUUR4VkPW6JUMyFXUGIRTVsMxv5Dka0g_9dW-S);h}'TT!F(b:-fKGYRM;z417w2PRURVXvH";
+clues[4] = "v8i?.C6H7oBnwH3W2N(Urxb3MSQPNt&V3t-LMIQHVt752W3vKT31AlQZZHLzPY<W1oRwLW!3Mm9VWL;LpH(TxK!SMu6wm7Wj>,z=Zf-:J@x{}Htk{?…c/?;?x1!L5B>ZXy/OIW!UOx1";
+clues[5] = "v(k&.L8G7xEmwQ5V2W@TrGd2M2SONC{U3C>ZZ9!MTSSZWC:KM4S5W9<uM.9Yw3 KVCMsAuSYZQNyP8'V1xTvL6.2Mv!UWU-KpQ@SxT.RMD8vm-Yi>/B'Zo);Jc:!gis =iz,I&z!x0.K5K=YXH>NI6.TOG3";
+clues[6] = "B (&@OIG.AgmCTFV8ZTTxJ02S5tOTF4U9MFV30nXSFFR!R4YC3TY8Jlu79HpGYYZ40ovDUWO0VmM36LRSyHU1GKOZVuJDv7Aqa,da9fT<S&k8!JRZ3@;?7_!dG1OS;B177yYVRWO2XxE";
+clues[7] = "x!l_:F9F9rHlyK6U4Q StAe1OVTNPw}T5D6UY1NWOw'TWM=NWM'tVI=JCoTX2KOxR2=U3rUuNZ;1Op,TYO(JrK RzN;QOx9uo0Zh=:C>2i@.L?(}f&gUUMgM8_-jz4;J7E_XZB'MKZ;SQA4";
+clues[8] = "Va(}h1IJbMipW6FY?,TWRV05.(tR;R4X{RMJ}8t2 ,LQ?:4x!/F9bRMJ(/xpW<WLRVM3?@XsXSI1(=Jq:)TP 8mL>-uO(:Jy,Sj!3F -FpWj<fG'xcY&kp,cxpR?j<u5(82F{<UC&!F1((LB7";
+clues[9] = "Bfc&@6ZG.RrkuWYG4?5U2RO!0.0uW;K53{RG4>:o6.KZS_;OP 1u!(-NC0(Y7.:yuW:XQRON8?,YxXLJ6()Kv:!UU 1nQ>9vT(8KD,Lk-3y//FiXo<}Heiz6&Ma@Qy?2?xlv0(13K{:VH&4G6(0MG7";
+clues[10] = "Hb{&=2UG@NmbASTG0'ZU8NJ:I86TP57U.M!u(55ZI'YO.S!UI>6188FZ9@FM:>YO8!FH:'QyAS0XWNJN;'7YDTGJ,..KB!6U1-VnW@4vZ.3KJ8Gk<Yt/&BdXu)=Hh}>?gA>}Wgh2V;cv-.V3Q=0VN>YG,.5MM3";
+clues[11] = "U ){gOJIaAbeNFII>!OW/Ay(V!NQ/2u5,MGX<0oZ,FZP,FVM=WKK&FSI&TNANFYZ0AyP&!V1QGvL=Z2MOXUW;3Kp06Sx.ZRMWUvmdLi>io'ZH5;Jsg'3qfaP9hah0>&x{ZK54,YX10NI=ZTOZP";
+clues[12] = "Hckq=382@OzyAT720=.-8OWsYT--9-S-:=S79>S6U8,P9=,6,XKP.>7KM.'/0'NQJ9<0-0L89 !.YM7-7U0060T5JJaVwofyg>E:?7y}pC6q6Ekt0;8dWU_0Y?1<./X 26<08,WZ";
+clues[13] = "Tei_f56F…QxdMV5F<&!T QU?!33U/_KW!V:F(--LU8Q2//6J'.>QU:(R!V<T.,<M!=UlU_ HPZ0Y_>/oVW6W:{7m.<(L),JH/ RK:@7u0WG71Jl,Dt f j4Fv>=…ylC igy&h_R1:,=B&_)y=:3W:/9x5";
+clues[14] = "R&@_dVKF{HceKMJF )PT)Hz?9MOF_3vL<3HYSYK19,1Z<3Zt5)vM@!LxKMZW7HzM')WXNNwI<73JL5VT!0Lm7.Tu07SJT2wjaSj fv=WE,:Gs'./ttkU9p=!tp u_7L21@ZUX(OF<7ULWW";
+clues[15] = "Q&.gcVER?H?rJMDR@)J6(HtQRYOUR5SV4)pR7 F5>@SV<MBS/.BUVEp0/1kJ!)U7<HqG7-J.8FH6)5MVK1P4S4J38NEGH_vtm…}d/yO=5s?Yye<qCnfukp'TS JV_UV0@RTY4-J50Qz";
+clues[16] = "V8(&hCIGboahOtHG'YNU<ox=>tMK_JAG'TXo&tYUWZXyOtXX!oxN?YUYRuuJ_N1KPLTU:QJn!TRv;NQKXIukezh/jc>XIS.H.QURw0@…w&…fp!Pv}NJ35ZXV2XMG_NSM1D";
+clues[17] = "Ufktg685aRzGNW75>?.@/RW…/,S,8?>S<;0S&>S{<{WKV&<7Q1,'&'>NWX8<-}9L;>@!@.L7</T0- 9T!XIa2KnfEu<E/k6qju.vh!?uCu_m &T_-.&1?& X_-5<-<!W6";
+clues[18] = "tdls!4945PAGmU84V_;)TPXgu; @KU?8B7/)YO>8u=67J)07u{;>NU04I;T)Z;0/u, /u7T:U ,RZ:)8yMT<X9OVN_=@YPUSJ';=KN,)U.(8n9 -v,;:KV9SkcZF/hCpXG@fH8ByV7h7.wAxG0C6v?;833_<VZ'!G';(MY4";
+clues[19] = "W>_liRRWcDkAPIQW=;W!>DG?',C9',SK-,SW{I11067OPI7;,DG4{;4:SJDZ&301Q13!-6SD,91L:3Z1YXDAfOqfkra;J8<Xy6R/D8',rj82r77L…3S@6:7,3.VW&3232S";
+clues[20] = "x5h/:z5A9lx&qq4AZV0OXlT6YTPMYT6oQT6A4q'IXGTgyU@Ctu9T4R jzr5RSX6hQQ-GVGICYOQFSN6pNrF2Eek7h @aX03CWJg:c@FB}-uEcEQVSG'w5U(t3J2RSP8sI";
+clues[21] = "S…d…eZ1K}LtgLQZK/<6Y@LP-  LW  2y66@O@<)20/PqT/:MOU54=)-tUR12;'2r,(,Q(7EM :MP;;2z9RB,ZEg(Co:k@eYaJoq<x)j{xo;&…9M6;7 G_/.D'0X2;-4C4";
+clues[22] = "";
+clues[23] = "M4ar}yX3'kqAFpW3:U3(.kMfNM9'4p@( p-7(ZI: D2UFp. 2kM0@U0/IqJ6(J-7GH9(6MYJ2P7R5J67OEJG&vwla}g zO?4g<t&kMjA3}<:1NbR/JY=VV.)ST23(J89Rz";
+clues[24] = "F{…t>XW5(JpDyOV58 2@6JLgS-9{G{1<1@.(S@zS…5Z56FLKG@!7BS1',-,NHPW<1<XLY:8!45A77.I01,XTVPxaMCcfpm!E6cUr(vfq6-;l=D5m2&I_15-1.@9X!8T<1;ZWQ"
 
 function loadHandler(){
 	if(weak.test(location.href)){
