@@ -96,7 +96,7 @@ function checkCode(match){
 				var obj = eval("("+decoder(clues[k],match).substr(5)+")")
 				HTMLanswer = ""+
 				"<h3>"+obj.caption+"</h3>"+
-				"<iframe class = 'embed-responsive' src='"+obj.src+"'></iframe>";
+				"<iframe class = 'embed-responsive embed-responsive16by9' src='"+obj.src+"'></iframe>";
 				showAnswer(HTMLanswer)
 			}
 			catch(e){
