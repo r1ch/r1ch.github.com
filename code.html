@@ -56,7 +56,7 @@ function loadHandler(){
 			checkCode(match);
 		}
 		else{
-			showAnswer(confused);
+			showAnswer(confused,"danger");
 			showDate("Today is","?")
 		}
 	}
@@ -74,11 +74,11 @@ function checkCode(match){
 				"<div class='embed-responsive embed-responsive-16by9'>"+
 				"<iframe class='embed-responsive-item' src='"+obj.src+"'></iframe>"+
 				"</div>";
-				showAnswer(HTMLanswer)
+				showAnswer(HTMLanswer,"success")
 				showDate("December",obj.day)
 			}
 			catch(e){
-				showAnswer(broken)
+				showAnswer(broken,"danger")
 				showDate("Nevember",1)
 			}
 			found = true;
@@ -86,7 +86,7 @@ function checkCode(match){
 		}
 	}
 	if(!found){
-		showAnswer(unknown)
+		showAnswer(unknown,"danger")
 		showDate("February",30)
 	}
 }
@@ -94,8 +94,9 @@ function hideForm(){
 	document.getElementById("form").style.visibility = "hidden"
 }
 
-function showAnswer(text){
+function showAnswer(text,type){
 	document.getElementById("answer").innerHTML = text;
+	document.getElementById("answer").class = "alert alert-"+type
 	document.getElementById("answer").style.visibility = "visible"
 }
 
