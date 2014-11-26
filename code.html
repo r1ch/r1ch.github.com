@@ -56,7 +56,7 @@ function loadHandler(){
 			checkCode(match);
 		}
 		else{
-			showAnswer(confused,"danger");
+			showAnswer(confused,"warning");
 			showDate("Today is","?")
 		}
 	}
@@ -96,7 +96,7 @@ function hideForm(){
 
 function showAnswer(text,type){
 	document.getElementById("answer").innerHTML = text;
-	document.getElementById("answer").class = "alert alert-"+type
+	document.getElementById("answer").className = "alert alert-"+type
 	document.getElementById("answer").style.visibility = "visible"
 }
 
