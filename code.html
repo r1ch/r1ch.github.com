@@ -26,6 +26,7 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga
 var success = "You found a clue:<br>";
 var unknown = "I don't have a clue!";
 var broken = "No, no, no, no, NO! Hit Rich. It's OK, I said to."
+var early = "Are you opening the right day? Sneaky?!"
 var confused = "Try entering a four letter / number code - should be all caps.";
 var clues = new Array();
 var keys = new Array();
@@ -80,13 +81,19 @@ function checkCode(match){
 			//JSON and the arg[0]
 			try{
 				var obj = eval("("+decoder(clues[k],match).substr(5)+")")
-				HTMLanswer = ""+
-				"<h3>"+obj.caption+"</h3>"+
-				"<div class='embed-responsive embed-responsive-16by9'>"+
-				"<iframe class='embed-responsive-item' src='"+obj.src+"'></iframe>"+
-				"</div>";
-				showAnswer(HTMLanswer,"")
+				if((new Date()).getFullYear()!=2014||(new Date()).getDate()<=obj.day){
+					HTMLanswer = ""+
+					"<h3>"+obj.caption+"</h3>"+
+					"<div class='embed-responsive embed-responsive-16by9'>"+
+					"<iframe class='embed-responsive-item' src='"+obj.src+"'></iframe>"+
+					"</div>";
+					showAnswer(HTMLanswer,"")
+				}
+				else{
+					showAnswer(early,"danger")
+				}
 				showDate("December",obj.day)
+				
 			}
 			catch(e){
 				showAnswer(broken,"danger")
