@@ -140,30 +140,39 @@ function coder(text,key,direction){
 
 
 </script>
-	<div class="container">
-      <div class="header">
-        <h3 class="text-muted">Advent calendar</h3>
-      </div>
-		<div class="col-xs-12">
-				<div class="panel panel-info">
-					<div class="panel-heading">
-						<h3 class="panel-title">Today is...</h3>
-            				</div>
-            				
-            				<div class="panel-body">
-	           				<div class="col-xs-12">
-	           					<div id = 'answer' style = 'visibility:hidden;'></div>
-	           				</div>
-	           				<div class="col-xs-8" id = "form">
-	           				<form action = 'code.html' method = 'get'>
-	           				<p><input type = 'text' id = 'code' name = 'code' class="form-control"></p>
-	           				<p><input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'></p>
-						</form>
+<div class="container">
+	<div class="header">
+        	<h3 class="text-muted">Advent calendar</h3>
+        </div>
+	<div class="col-xs-12">
+		<div class="panel panel-info">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+				<ul>
+				<li role="presentation" class="active">Home <span class="badge">42</span></li>
+				</ul>
+				</h3>
+			</div>
+            		<div class="panel-body">
+	           		<div class="col-xs-12">
+	           			<div id = 'answer' style = 'visibility:hidden;'></div>
+	           			<form class="form-horizontal" role ="form" action = 'code.html' method = 'get'>
+	           				<div class="form-group" id = "form">
+	           					<label for="code" class = "col-xs-2 control-label">Code</label>
+	           					<div class="col-xs-10">
+	           						<input type = 'text' id = 'code' name = 'code' class="form-control" placeholder="code">
+	       						</div>
+	       					</div>
+        					<div class = "form-group">
+	           					<div class = "col-xs-offset-2 col-xs-10">
+	           						<button type = 'submit' value = 'Check it!' class="btn btn-default" onclick = 'checkCode(document.getElementById("code").value)'></p>
+							</div>
 						</div>
-					</div>
-					</div>
+					</form>
 				</div>
+			</div>
 		</div>
 	</div>
-  </body>
+</div>
+ </body>
 </html>
