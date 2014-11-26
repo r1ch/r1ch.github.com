@@ -57,31 +57,6 @@ keys[23]="ZBU3"
 keys[24]="S1T5"
 
 
-clues[0] = "C9a=;CWQPAQPJY7yIAMMVGUIzXSWYU2WR2SyRSOKN9ZMYAQSUwZKzkMy2XQDHN8XYYDzE3!1wM3SPRSrLUBYTBWQJMSWEY6T1BZSPUpf6t4RPEL"
-clues[1] = "F.cr,eYQ1RPQZON6UNKUH9K6MJ:VJOXSL2F"
-clues[2] = "H0kd;b7C3OXC3O2UMGWD8G8II!XFNTUH1B"
-clues[3] = "G :j.lQI2YHIN6X12YCMI-CXNQ7NKVPKM9x"
-clues[4] = "G8th. -G2M7GNN81PE6H7E(MH97JMR4LZz"
-clues[5] = "G(vg.i)F2V9F1WhZPN8G7N@LH)9IM16KZI"
-clues[6] = "M (g@lSF8YJF7V1K2!MFRR4F3WE0STJSPVWA"
-clues[7] = "I!wf:c@E4P0EOQ,YRH9F9H KJ,0HOU7J2C"
-clues[8] = "7l(jsxSIh!JIb,S3-3IJm3TO8mJL.-GNfX"
-clues[9] = "Mqng@C0F8-1F8.0ZV8ZG.8!LNr1ISaXK63"
-clues[10] = "Smigey5F;,VFY-V2Y)!NT8R5T@WFd9TK76VXO"
-clues[11] = "6 )irlTHgYKHg;KTgYFL8-FW.Q0M0VSJ,9A"
-clues[12] = "SnvBez)1;.91;..@;09:;.45Uj4-Z5n6W0(3YcY"
-clues[13] = "5ptfqB-Ef:7E,b Y!,-Y;76Fk7(K6q7H! 4Jd2"
-clues[14] = "3g@fosUEd6LE071J9,1M42H44.MEn3JJ(ZLWY"
-clues[15] = "2g.rnsOQc6FQb7Y!83O!!XERhXPW3hFT8!CVaS"
-clues[16] = "78(gs SFhMJFgJ1KbYJKhMEJ94EU;E9K!JRH.Wz"
-clues[17] = "6qvErC)4g-94,(!,g.9)g-488m4@.8n90.(6,fY"
-clues[18] = "EowD!A@3Z;03T:@8Z!0(Z;57Gk5)L6o8I!)5KdZ"
-clues[19] = "8cfwto2Vi2SVi(S0i3S-(TRWnT329dSY;7P1gO"
-clues[20] = "I5sa:(:z4J6z4Y6N41WFST TJF2YJQ7z;G4EWD6RE"
-clues[21] = "4kokpw!Je02Jee2XegS305,X921Kj2,P5l2M0:YOcW"
-clues[22] = "B4eC8-12WIR2WXR-WZIbKJ56CENgCPS27FP7PCR x"
-clues[23] = "X4lCj-82hI,!)U73)Aed4v"
-clues[24] = "QikEcu74a8!.! 65!Zc5(U"
 
 function loadHandler(){
 	if(weak.test(location.href)){
@@ -169,7 +144,7 @@ function coder(text,key,direction){
 	}
 	return out
 }
-document.write("<br>clues[0] = \""+encoder("@CLUE{day:1, caption:'Even if you&apos;re obsessed with tea', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbWmN3M2JFVWUyRkU/view?usp=sharing'}",keys[0])+"\"");
+document.write("<script type='text/plain'>clues[0] = \""+encoder("@CLUE{day:1, caption:'Even if you&apos;re obsessed with tea', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbWmN3M2JFVWUyRkU/view?usp=sharing'}",keys[0])+"\"");
 document.write("<br>clues[1] = \""+encoder("@CLUE{day:2, caption:'.. ok, not <i>all</i> tea', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbemdhOWY4T1c4UWc/view?usp=sharing'}",keys[1])+"\"");
 document.write("<br>clues[2] = \""+encoder("@CLUE{day:3, caption:'Even if you&apos;re a slow cyclist', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbbW51clJoM0pSMzQ/view?usp=sharing'}",keys[2])+"\"");
 document.write("<br>clues[3] = \""+encoder("@CLUE{day:4, caption:'Even if you&apos;re always selling current accounts', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbOE5MUkltcHYxM2c/view?usp=sharing'}",keys[3])+"\"");
