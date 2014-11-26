@@ -95,6 +95,11 @@ function showAnswer(text){
 	document.getElementById("answer").style.visibility = "visible"
 }
 
+function showDate(month,day){
+	document.getElementById("month").innerHTML = month
+	document.getElementById("day").innerHTML = day
+}
+
 function printAll(){
 	document.write("<table>");
 	for(i=0;i<keys.length;i++){
@@ -149,7 +154,7 @@ function coder(text,key,direction){
 			<div class="panel-heading">
 				<h3 class="panel-title">
 				<ul class="nav nav-pills" role="tablist">
-				<li role="presentation" class="active">Home <span class="badge">42</span></li>
+				<li role="presentation" class="active"><span id="month">December</span> <span class="badge" id="day">42</span></li>
 				</ul>
 				</h3>
 			</div>
