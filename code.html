@@ -57,6 +57,7 @@ function loadHandler(){
 		}
 		else{
 			showAnswer(confused);
+			showDate("September",3)
 		}
 	}
 }
@@ -74,9 +75,11 @@ function checkCode(match){
 				"<iframe class='embed-responsive-item' src='"+obj.src+"'></iframe>"+
 				"</div>";
 				showAnswer(HTMLanswer)
+				showDate("December",obj.day)
 			}
 			catch(e){
 				showAnswer(broken)
+				showDate("Nevember",1)
 			}
 			found = true;
 			break;
@@ -84,6 +87,7 @@ function checkCode(match){
 	}
 	if(!found){
 		showAnswer(unknown)
+		showDate("February",29)
 	}
 }
 function hideForm(){
@@ -154,7 +158,7 @@ function coder(text,key,direction){
 			<div class="panel-heading">
 				<h3 class="panel-title">
 				<ul class="nav nav-pills" role="tablist">
-				<li role="presentation" class="active"><span id="month">December</span> <span class="badge" id="day">42</span></li>
+				<li role="presentation" class="active"><span id="month">Today is</span> <span class="badge" id="day">?</span></li>
 				</ul>
 				</h3>
 			</div>
