@@ -21,6 +21,7 @@
 <script type = 'text/javascript'>
 var success = "You found a clue:<br>";
 var unknown = "I don't have a clue!";
+var broken = "No, no, no, no, NO! Hit Rich. It's OK, I said to."
 var confused = "Try entering a four letter / number code - should be all caps.";
 var clues = new Array();
 var keys = new Array();
@@ -98,7 +99,17 @@ function checkCode(match){
 	for(k=0;k<clues.length;k++){
 		if("@CLUE"==decoder(clues[k].substr(0,5),match)){
 			hideForm()
-			showAnswer(decoder(clues[k],match).substr(5))
+			//JSON and the arg[0]
+			try{
+				var obj = eval(decoder(clues[k],match).substr(5)))
+				HTMLanswer = ""+
+				"<h3>"+obj.caption+"</h3>"
+				"<img class = 'img-responsive imgClip' src='"+obj.src+"'>"
+				showAnswer(HTMLanswer)
+			}
+			catch(e){
+				showAnswer(broken)
+			}
 			found = true;
 			break;
 		}
@@ -106,7 +117,6 @@ function checkCode(match){
 	if(!found){
 		showAnswer(unknown)
 	}
-return false;
 }
 function hideForm(){
 	document.getElementById("form").style.visibility = "hidden"
@@ -159,38 +169,39 @@ function coder(text,key,direction){
 	}
 	return out
 }
-document.write("<br>clues[0] = \""+encoder("@CLUE<img class = 'image-responsive imageClip col-lg-4' src='https://www.google.co.uk/images/srpr/logo11w.png'>",keys[0])+"\"");
-/*document.write("<br>clues[1] = \""+encoder("@CLUEOn the second day of December:",keys[1])+"\"");
-document.write("<br>clues[2] = \""+encoder("@CLUEOn the third day of December:",keys[2])+"\"");
-document.write("<br>clues[3] = \""+encoder("@CLUEOn the fourth day of December:",keys[3])+"\"");
-document.write("<br>clues[4] = \""+encoder("@CLUEOn the fifth day of December:",keys[4])+"\"");
-document.write("<br>clues[5] = \""+encoder("@CLUEOn the sixth day of December:",keys[5])+"\"");
-document.write("<br>clues[6] = \""+encoder("@CLUEOn the seventh day of December:",keys[6])+"\"");
-document.write("<br>clues[7] = \""+encoder("@CLUEOn the eigth day of December:",keys[7])+"\"");
-document.write("<br>clues[8] = \""+encoder("@CLUEOn the ninth day of December:",keys[8])+"\"");
-document.write("<br>clues[9] = \""+encoder("@CLUEOn the tenth day of December:",keys[9])+"\"");
-document.write("<br>clues[10] = \""+encoder("@CLUEOn the eleventh day of December:",keys[10])+"\"");
-document.write("<br>clues[11] = \""+encoder("@CLUEOn the twelth day of December:",keys[11])+"\"");
-document.write("<br>clues[12] = \""+encoder("@CLUEOn the thirteenth day of December:",keys[12])+"\"");
-document.write("<br>clues[13] = \""+encoder("@CLUEOn the forteenth day of December:",keys[13])+"\"");
-document.write("<br>clues[14] = \""+encoder("@CLUEOn the fiteenth day of December:",keys[14])+"\"");
-document.write("<br>clues[15] = \""+encoder("@CLUEOn the sixteenth day of December:",keys[15])+"\"");
-document.write("<br>clues[16] = \""+encoder("@CLUEOn the seventeeth day of December:",keys[16])+"\"");
-document.write("<br>clues[17] = \""+encoder("@CLUEOn the eighteenth day of December:",keys[17])+"\"");
-document.write("<br>clues[18] = \""+encoder("@CLUEOn the nineteenth day of December:",keys[18])+"\"");
-document.write("<br>clues[19] = \""+encoder("@CLUEOn the twentieth day of December:",keys[19])+"\"");
-document.write("<br>clues[20] = \""+encoder("@CLUEOn the twenty-first day of December:",keys[20])+"\"");
-document.write("<br>clues[21] = \""+encoder("@CLUEOn the twenty-second day of December:",keys[21])+"\"");
-document.write("<br>clues[22] = \""+encoder("@CLUEOn the twenty-third day of December:",keys[22])+"\"");
-document.write("<br>clues[23] = \""+encoder("@CLUEOn Christmas Eve:",keys[23])+"\"");
-document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"\"");*/
+document.write("<br>clues[0] = \""+encoder("@CLUE{day:1, caption:'Even if you&apos;re obsessed with tea', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbWmN3M2JFVWUyRkU/view?usp=sharing'}",keys[0])+"\"");
+document.write("<br>clues[1] = \""+encoder("@CLUE{day:2, caption:'.. ok, not <i>all</i> tea', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbemdhOWY4T1c4UWc/view?usp=sharing'}",keys[1])+"\"");
+document.write("<br>clues[2] = \""+encoder("@CLUE{day:3, caption:'Even if you&apos;re a slow cyclist', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbbW51clJoM0pSMzQ/view?usp=sharing'}",keys[2])+"\"");
+document.write("<br>clues[3] = \""+encoder("@CLUE{day:4, caption:'Even if you&apos;re always selling current accounts', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbOE5MUkltcHYxM2c/view?usp=sharing'}",keys[3])+"\"");
+document.write("<br>clues[4] = \""+encoder("@CLUE{day:5, caption:'Even if you need an extra coat', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbN1VVcW9UWC1MWlU/view?usp=sharing'}",keys[4])+"\"");
+document.write("<br>clues[5] = \""+encoder("@CLUE{day:6, caption:'Even if you struggle to keep your eyes open ;)', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbTkE4ZTNQZ1FaM1E/view?usp=sharing'}",keys[5])+"\"");
+document.write("<br>clues[6] = \""+encoder("@CLUE{day:7, caption:'Even if you&apos;re always lost', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbV0ttelllNHNpUEU/view?usp=sharing'}",keys[6])+"\"");
+document.write("<br>clues[7] = \""+encoder("@CLUE{day:8, caption:'Even if you&apos;re sometimes late', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbTlY1SGpkeGhxRk0/view?usp=sharing'}",keys[7])+"\"");
+document.write("<br>clues[8] = \""+encoder("@CLUE{day:9, caption:'Even if you have slightly crazy hair', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbOUEtRHRGYURmSGs/view?usp=sharing'}",keys[8])+"\"");
+document.write("<br>clues[9] = \""+encoder("@CLUE{day:10, caption:'Even if you&apos;re terrible with busses', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbVF9zM0JMcVFvNUU/view?usp=sharing'}",keys[9])+"\"");
+document.write("<br>clues[10] = \""+encoder("@CLUE{day:11, caption:'I don&apos;t want this to sound too gushing but…', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbSzFVR2FXcHVvbjQ/view?usp=sharing'}",keys[10])+"\"");
+document.write("<br>clues[11] = \""+encoder("@CLUE{day:12, caption:'I think we&apos;re the perfect match', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbQURuOTZhbVZ5cFU/view?usp=sharing'}",keys[11])+"\"");
+document.write("<br>clues[12] = \""+encoder("@CLUE{day:13, caption:'We look out for each other', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbZC13bUl5LXpidHc/view?usp=sharing'}",keys[12])+"\"");
+document.write("<br>clues[13] = \""+encoder("@CLUE{day:14, caption:'We&apos;re making a wonderful home together', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbaUpwZXJ6OHE2VGs/view?usp=sharing'}",keys[13])+"\"");
+document.write("<br>clues[14] = \""+encoder("@CLUE{day:15, caption:'We have great adventures at home', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbTzFPU19peWRFUWM/view?usp=sharing'}",keys[14])+"\"");
+document.write("<br>clues[15] = \""+encoder("@CLUE{day:16, caption:'… and great adventures abroad', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbZ1h1LU55U09MWWc/view?usp=sharing'}",keys[15])+"\"");
+document.write("<br>clues[16] = \""+encoder("@CLUE{day:17, caption:'So here&apos;s to us', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbelplTENYTVZ5MFk/view?usp=sharing'}",keys[16])+"\"");
+document.write("<br>clues[17] = \""+encoder("@CLUE{day:18, caption:'And hats off to you', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbRHRiWFcxV1RvNms/view?usp=sharing'}",keys[17])+"\"");
+document.write("<br>clues[18] = \""+encoder("@CLUE{day:19, caption:'I hope we&apos;re saddled with each other for a long time', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbb21paHdGV1Zad3c/view?usp=sharing'}",keys[18])+"\"");
+document.write("<br>clues[19] = \""+encoder("@CLUE{day:20, caption:'For more great meals', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbUldyZnJpNUtfNms/view?usp=sharing'}",keys[19])+"\"");
+document.write("<br>clues[20] = \""+encoder("@CLUE{day:21, caption:'For more great wine', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbcmhKOXQ0bTNYeXc/view?usp=sharing'}",keys[20])+"\"");
+document.write("<br>clues[21] = \""+encoder("@CLUE{day:22, caption:'For more adventures', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbV0RYLXpRSXRqQzg/view?usp=sharing'}",keys[21])+"\"");
+document.write("<br>clues[22] = \""+encoder("@CLUE{day:23, caption:'For more *ahem*', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbM2pMR1BOeUtMcVU/view?usp=sharing'}",keys[22])+"\"");
+document.write("<br>clues[23] = \""+encoder("@CLUE{day:24, caption:'I love you very much', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbMU5yQlU4d3BmbmM/view?usp=sharing'}",keys[23])+"\"");
+document.write("<br>clues[24] = \""+encoder("@CLUE{day:25, caption:'Happy Christmas, Megan!', src:'https://drive.google.com/file/d/0B_8OG3Rr6nHbSy1RRnpuMG9lNjA/view?usp=sharing'}",keys[24])+"\"");
+/*document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"\"");*/
 //printAll();
 </script>
 	<div class="container">
       <div class="header">
         <h3 class="text-muted">Advent calendar</h3>
       </div>
-		<div class="col-lg-6">
+		<div class="col-xs-6">
 			<form action = 'code.html' method = 'get'>
 				<div class="panel panel-info">
 					<div class="panel-heading">
@@ -198,10 +209,10 @@ document.write("<br>clues[24] = \""+encoder("@CLUEOn Christmas Day:",keys[24])+"
             				</div>
             				
             				<div class="panel-body">
-	           				<div class="col-lg-4">
+	           				<div class="col-xs-4">
 	           					<div id = 'answer' style = 'visibility:hidden;'></div>
 	           				</div>
-	           				<div class="col-lg-4" id = "form">
+	           				<div class="col-xs-4" id = "form">
 	           				<p><input type = 'text' id = 'code' name = 'code' class="form-control"></p>
 	           				<p><input type = 'submit' value = 'Check it!' class="btn btn-lg btn-default" onclick = 'checkCode(document.getElementById("code").value)'></p>
 						</div>
