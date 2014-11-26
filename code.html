@@ -6,7 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="A QR driven advent calender">
     <meta name="author" content="Rich Bradish">
-
+<style>
+	.imageClip{
+    width:30%;
+    height: auto;
+    overflow:hidden;
+}
+</style>
    <title>Advent Calender</title>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
@@ -153,7 +159,7 @@ function coder(text,key,direction){
 	}
 	return out
 }
-//document.write("<br>clues[0] = \""+encoder("@CLUE<img src='https://www.google.co.uk/images/srpr/logo11w.png'>",keys[0])+"\"");
+document.write("<br>clues[0] = \""+encoder("@CLUE<img class = 'image-responsive imageClip' src='https://www.google.co.uk/images/srpr/logo11w.png'>",keys[0])+"\"");
 /*document.write("<br>clues[1] = \""+encoder("@CLUEOn the second day of December:",keys[1])+"\"");
 document.write("<br>clues[2] = \""+encoder("@CLUEOn the third day of December:",keys[2])+"\"");
 document.write("<br>clues[3] = \""+encoder("@CLUEOn the fourth day of December:",keys[3])+"\"");
