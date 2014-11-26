@@ -74,7 +74,7 @@ function checkCode(match){
 				"<div class='embed-responsive embed-responsive-16by9'>"+
 				"<iframe class='embed-responsive-item' src='"+obj.src+"'></iframe>"+
 				"</div>";
-				showAnswer(HTMLanswer,"success")
+				showAnswer(HTMLanswer,"")
 				showDate("December",obj.day)
 			}
 			catch(e){
@@ -96,7 +96,9 @@ function hideForm(){
 
 function showAnswer(text,type){
 	document.getElementById("answer").innerHTML = text;
+	if(""!=type){
 	document.getElementById("answer").className = "alert alert-"+type
+	}
 	document.getElementById("answer").style.visibility = "visible"
 }
 
