@@ -22,6 +22,7 @@
     <!-- load sDashboard library -->
     <script src="https://raw.githubusercontent.com/ModelN/sDashboard/master/jquery-sDashboard.js" type="text/javascript"></script>
    <script type='text/javascript'>
+   $(function() {
    var dashboardJSON = [{
                         widgetTitle : "line Chart Widget", 
                         widgetId : "id003", 
@@ -31,9 +32,10 @@
                             data : myExampleData.lineChartData, 
                             options : myExampleData.lineChartOptions 
                         }
-   }]
+   };
 //initialise
 $("#myDashboard").sDashboard({ dashboardData : dashboardJSON });
+});
 </script>
 <ul id="myDashboard"></ul>
     </body>
