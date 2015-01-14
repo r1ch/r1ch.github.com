@@ -29,10 +29,8 @@
  
 		<!-- load dashboard library -->
 		<script src="https://raw.githubusercontent.com/ModelN/sDashboard/master/jquery-sDashboard.js" type="text/javascript"> </script>
-    	
-    </head>
-    <body>
-   <script>
+    
+   <script type = 'text/javascript'>
    var myData = {};
        myData.constructLineChartData = function() {
 	var d1 = [[0, 3], [4, 8], [8, 5], [9, 13]];
@@ -76,6 +74,8 @@ myData.lineChartOptions = {
 $("#myDashboard").sDashboard({ dashboardData : dashboardJSON });
 });
 </script>
+    </head>
+    <body>
 <ul id="myDashboard"></ul>
     </body>
     </html>
