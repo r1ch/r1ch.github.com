@@ -21,6 +21,34 @@
 
     <!-- load sDashboard library -->
     <script src="https://raw.githubusercontent.com/ModelN/sDashboard/master/jquery-sDashboard.js" type="text/javascript"></script>
+   <script>
+   var myData = {};
+       myData.constructLineChartData = function() {
+	var d1 = [[0, 3], [4, 8], [8, 5], [9, 13]];
+	var d2 = [];
+	var i;
+
+	for ( i = 0; i < 14; i += 0.5) {
+		d2.push([i, Math.sin(i)]);
+	}
+	return [d1, d2];
+};
+myData.lineChartData = myData.constructLineChartData();
+
+myData.lineChartOptions = {
+	xaxis : {
+		minorTickFreq : 4
+	},
+	grid : {
+		minorVerticalLines : true
+	},
+	selection : {
+		mode : "x",
+		fps : 30
+	}
+};
+   </script>
+   
    <script type='text/javascript'>
    $(function() {
    var dashboardJSON = [{
@@ -29,8 +57,8 @@
                         widgetType : "chart",  					
                         getDataBySelection : true, 
                         widgetContent : { 
-                            data : myExampleData.lineChartData, 
-                            options : myExampleData.lineChartOptions 
+                            data : myData.lineChartData, 
+                            options : myData.lineChartOptions 
                         }
    };
 //initialise
