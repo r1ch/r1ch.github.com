@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Heat</title>
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+</style>
+</head>
+<body>
+
+
+
+<script src="Tabletop.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+
+
+var public_spreadsheet_url = '1s6IoMzquItrTpo4KY6BH4tdcTA_l_ouek31egVhnCwM';
+
+function renderSpreadsheetData() {
+    Tabletop.init( { key: public_spreadsheet_url,
+                     callback: draw,
+                     simpleSheet: true } )
+}
+
+function draw(data, tabletop) {
+
+var margin = {top: 20, right: 80, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var parseDate = d3.time.format("%d/%m/%Y %X").parse;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var y2 = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.category10();
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var line = d3.svg.line()
+    .interpolate("stepafter")
+    .x(function(d) { return x(d.Time); })
+    .y(function(d) { return y(d.Temperature); });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+color.domain(d3.keys(data[0]).filter(function(key) { return key !== "Time" && key !== "On" }));
+
+data.forEach(function(d) {
+  d.Time = parseDate(d.Time);
+});
+
+
+var Temperatures = color.domain().map(function(name) {
+    return {
+      name: name,
+      values: data.map(function(d) {
+        return {Time: d.Time, Temperature: +d[name]};
+      })
+    };
+});
+
+
+x.domain(d3.extent(data, function(d) { return d.Time; }));
+
+y.domain([
+  d3.min(Temperatures, function(c) { return d3.min(c.values, function(v) { return v.Temperature; }); }),
+  d3.max(Temperatures, function(c) { return d3.max(c.values, function(v) { return v.Temperature; }); })
+]);
+
+y2.domain([0,1]);
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0,"+height+")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Temperature (ºC)");
+
+var active = svg.selectAll(".active")
+	.data(data)
+	.enter().append("g")
+	.attr("class","active");
+
+active.append("rect")
+	.attr("fill","yellow")
+	.attr("x",function(d){return x(d.Time)})
+	.attr("width",5)
+	.attr("dx",-5)
+	.attr("y",function(d){return y2(d.On)})
+	.attr("height",function(d){return height - y2(d.On)})
+
+var temperature = svg.selectAll(".temperature")
+      .data(Temperatures)
+    .enter().append("g")
+      .attr("class", "temperature");
+
+  temperature.append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { return line(d.values); })
+      .style("stroke", function(d) { return color(d.name); });
+
+
+}
+
+renderSpreadsheetData();
+
+</script>
+
+
+
+</body>
+</html>
