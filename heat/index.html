@@ -154,6 +154,11 @@ y2.domain(y.domain());
       .style("text-anchor", "end")
       .text("Temperature (ºC)");
 
+var legend = focus.select(".legend")
+	.data(Temperatures)
+	.enter().append("g")
+	.attr("class","legend")
+
 var temperature = focus.selectAll(".temperature")
       .data(Temperatures)
     .enter().append("g")
@@ -224,6 +229,38 @@ var heating2 = context.selectAll("heating")
         .attr("r", 3.5)
 	.attr("cx", function(d) { return x2(d.Time); })
         .attr("cy", function(d) { return y2(d.Temperature); });
+
+var legend = focus.selectAll('.legend')
+        .data(Temperatures)
+        .enter()
+      .append('g')
+        .attr('class', 'legend');
+
+    legend.append('rect')
+        .attr('x', width - 20)
+        .attr('y', function(d, i){ return (i+1) *  20;})
+        .attr('width', 10)
+        .attr('height', 10)
+        .style('fill', function(d) { 
+          return color(d.name);
+        });
+
+    legend.append('text')
+        .attr('x', width - 8)
+        .attr('y', function(d, i){ return ((i+1) *  20) + 9;})
+        .text(function(d){ return d.name; });
+
+    legend.append('circle')
+	.attr('r',3.5)
+	.attr('cx',width-15)
+	.attr('cy',5)
+	.style('fill',"red")
+
+    legend.append('text')
+        .attr('x', width - 8)
+        .attr('y',  9)
+        .text("Heating on");
+
 
 
 
