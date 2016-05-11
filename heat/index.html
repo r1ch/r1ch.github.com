@@ -25,6 +25,13 @@ body {
   stroke-width: 1.5px;
 }
 
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
 </style>
 </head>
 <body>
@@ -47,41 +54,62 @@ function renderSpreadsheetData() {
 
 function draw(data, tabletop) {
 
-var margin = {top: 20, right: 80, bottom: 30, left: 50},
+var margin = {top: 10, right: 10, bottom: 100, left: 40},
+    margin2 = {top: 430, right: 10, bottom: 20, left: 40},
     width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 500 - margin.top - margin.bottom,
+    height2 = 500 - margin2.top - margin2.bottom;
 
 var parseDate = d3.time.format("%d/%m/%Y %X").parse;
 
-var x = d3.time.scale()
-    .range([0, width]);
+var 	x = d3.time.scale().range([0, width]),
+	x2 = d3.time.scale().range([0, width]),
+	y = d3.scale.linear().range([height, 0]),
+	y2 = d3.scale.linear().range([height2, 0]);
 
-var y = d3.scale.linear()
-    .range([height, 0]);
-
-var y2 = d3.scale.linear()
-    .range([height, 0]);
 
 var color = d3.scale.category10();
 
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
+var 	xAxis = d3.svg.axis().scale(x).orient("bottom"),
+    	xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
+	yAxis = d3.svg.axis().scale(y).orient("left");
 
-var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("left");
+
+var brush = d3.svg.brush()
+    .x(x2)
+    .on("brush", brushed);
+
 
 var line = d3.svg.line()
     .interpolate("stepafter")
     .x(function(d) { return x(d.Time); })
     .y(function(d) { return y(d.Temperature); });
 
+var line2 = d3.svg.line()
+    .interpolate("stepafter")
+    .x(function(d) { return x2(d.Time); })
+    .y(function(d) { return y2(d.Temperature); });
+
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
+    .attr("height", height + margin.top + margin.bottom);
+
+svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+	.append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+var focus = svg.append("g")
+    .attr("class", "focus")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var context = svg.append("g")
+    .attr("class", "context")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+
+
 
 color.domain(d3.keys(data[0]).filter(function(key) { return key !== "Time" && key !== "On" }));
 
@@ -94,27 +122,28 @@ var Temperatures = color.domain().map(function(name) {
     return {
       name: name,
       values: data.map(function(d) {
-        return {Time: d.Time, Temperature: +d[name]};
+        return {Time: d.Time, Temperature: +d[name], On: d.On};
       })
     };
 });
 
 
 x.domain(d3.extent(data, function(d) { return d.Time; }));
+x2.domain(x.domain());
 
 y.domain([
   d3.min(Temperatures, function(c) { return d3.min(c.values, function(v) { return v.Temperature; }); }),
   d3.max(Temperatures, function(c) { return d3.max(c.values, function(v) { return v.Temperature; }); })
 ]);
+y2.domain(y.domain());
 
-y2.domain([0,1]);
 
-  svg.append("g")
+  focus.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0,"+height+")")
       .call(xAxis);
 
-  svg.append("g")
+  focus.append("g")
       .attr("class", "y axis")
       .call(yAxis)
     .append("text")
@@ -124,33 +153,93 @@ y2.domain([0,1]);
       .style("text-anchor", "end")
       .text("Temperature (ºC)");
 
-var active = svg.selectAll(".active")
-	.data(data)
-	.enter().append("g")
-	.attr("class","active");
-
-active.append("rect")
-	.attr("fill","yellow")
-	.attr("x",function(d){return x(d.Time)})
-	.attr("width",5)
-	.attr("dx",-5)
-	.attr("y",function(d){return y2(d.On)})
-	.attr("height",function(d){return height - y2(d.On)})
-
-var temperature = svg.selectAll(".temperature")
+var temperature = focus.selectAll(".temperature")
       .data(Temperatures)
     .enter().append("g")
       .attr("class", "temperature");
 
   temperature.append("path")
       .attr("class", "line")
+      .attr("clip-path", "url(#clip)")
       .attr("d", function(d) { return line(d.values); })
       .style("stroke", function(d) { return color(d.name); });
+
+var heating = focus.selectAll("heating")
+        .data(Temperatures[1].values)
+      .enter().append("g")
+	.attr("class","heating")
+
+	
+	heating.append("circle")
+     	.attr("clip-path", "url(#clip)")
+      .filter(function(d) {console.log(d); return (d.On > 0)})
+        .style("fill", "red")
+        .attr("r", 3.5)
+        .attr("cx", function(d) { return x(d.Time); })
+        .attr("cy", function(d) { return y(d.Temperature); });
+
+
+  context.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0,"+height2+")")
+      .call(xAxis2);
+
+
+  context.append("g")
+      .attr("class", "x brush")
+	.call(brush)
+    .selectAll("rect")
+      .attr("y", -6)
+      .attr("height", height2 + 7);
+
+
+var temperature2 = context.selectAll(".temperature")
+      .data(Temperatures)
+    .enter().append("g")
+      .attr("class", "temperature");
+
+  temperature2.append("path")
+      .attr("class", "line")
+      .attr("d", function(d) {return line2(d.values); })
+      .style("stroke", function(d) { return color(d.name); });
+
+var heating2 = context.selectAll("heating")
+        .data(Temperatures[1].values)
+      .enter().append("g")
+	.attr("class","heating")
+
+	
+	heating2.append("circle")
+      .filter(function(d) {return (d.On > 0)})
+        .style("fill", "red")
+        .attr("r", 3.5)
+	.attr("cx", function(d) { return x2(d.Time); })
+        .attr("cy", function(d) { return y2(d.Temperature); });
+
+
+
+function brushed() {
+  x.domain(brush.empty() ? x2.domain() : brush.extent());
+
+  focus.selectAll(".temperature path")
+    .attr("d", function(d) { return line(d.values); });
+  focus.selectAll(".heating circle")
+    	.attr("cx", function(d) { return x(d.Time); })
+        .attr("cy", function(d) { return y(d.Temperature); });
+  focus.select(".x.axis")
+    .call(xAxis);
+}
+
+
+
 
 
 }
 
 renderSpreadsheetData();
+
+
+
 
 </script>
 
