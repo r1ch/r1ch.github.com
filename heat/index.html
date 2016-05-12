@@ -82,12 +82,12 @@ var brush = d3.svg.brush()
 
 
 var line = d3.svg.line()
-    .interpolate("monotone")
+    .interpolate("bundle")
     .x(function(d) { return x(d.Time); })
     .y(function(d) { return y(d.Temperature); });
 
 var line2 = d3.svg.line()
-    .interpolate("monotone")
+    .interpolate("bundle")
     .x(function(d) { return x2(d.Time); })
     .y(function(d) { return y2(d.Temperature); });
 
