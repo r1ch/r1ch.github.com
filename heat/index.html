@@ -224,11 +224,12 @@ var heating2 = context.selectAll("heating")
         .attr("cy", function(d) { return y2(d.Temperature); });
 
 var legend = focus.selectAll('.legend')
+	.append('g')
+	.attr('class','legend')
         .data(Temperatures)
         .enter()
       .append('g')
-        .attr('class', 'legend')
-        .attr("transform", "translate(-30,0)")
+        .attr('class', 'entry');
 
     legend.append('rect')
         .attr('x', width - 20)
