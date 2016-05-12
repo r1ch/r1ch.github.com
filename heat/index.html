@@ -229,7 +229,8 @@ var legend = focus.selectAll('.legend')
         .data(Temperatures)
         .enter()
       .append('g')
-        .attr('class', 'entry');
+        .attr('class', 'legend');
+        .attr('transform','translate(-35,0)');
 
     legend.append('rect')
         .attr('x', width - 20)
@@ -244,17 +245,6 @@ var legend = focus.selectAll('.legend')
         .attr('x', width - 8)
         .attr('y', function(d, i){ return ((i+1) *  20) + 9;})
         .text(function(d){ return d.name; });
-
-    legend.append('circle')
-	.attr('r',3.5)
-	.attr('cx',width-15)
-	.attr('cy',5)
-	.style('fill',"red")
-
-    legend.append('text')
-        .attr('x', width - 8)
-        .attr('y',  9)
-        .text("Heating on");
 
 
 
