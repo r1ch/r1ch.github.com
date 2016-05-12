@@ -166,14 +166,13 @@ var temperature = focus.selectAll(".temperature")
       .style("stroke", function(d) { return color(d.name); });
 
 var heating = focus.selectAll("heating")
-        .data(Temperatures[1].values.filter(function(){return true}))
+        .data(Temperatures[1].values.filter(function(d) {return (d.On > 0)}))
       .enter().append("g")
 	.attr("class","heating")
 
 	
 	heating.append("circle")
      	.attr("clip-path", "url(#clip)")
-      .filter(function(d) {return (d.On > 0)})
         .style("fill", "red")
         .attr("r", 3.5)
         .attr("cx", function(d) { return x(d.Time); })
@@ -213,13 +212,12 @@ var temperature2 = context.selectAll(".temperature")
       .style("stroke", function(d) { return color(d.name); });
 
 var heating2 = context.selectAll("heating")
-        .data(Temperatures[1].values)
+        .data(Temperatures[1].values.filter(function(d) {return (d.On > 0)}))
       .enter().append("g")
 	.attr("class","heating")
 
 	
 	heating2.append("circle")
-      .filter(function(d) {return (d.On > 0)})
         .style("fill", "red")
         .attr("r", 3.5)
 	.attr("cx", function(d) { return x2(d.Time); })
