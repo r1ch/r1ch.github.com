@@ -82,7 +82,7 @@ var brush = d3.svg.brush()
 
 
 var line = d3.svg.line()
-    .interpolate("bundle")
+    .interpolate(function(d){return d.name==="Target"?"step-after":"bundle"})
     .x(function(d) { return x(d.Time); })
     .y(function(d) { return y(d.Temperature); });
 
