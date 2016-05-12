@@ -133,8 +133,8 @@ x2.domain(x.domain());
 console.log(x.domain());
 
 y.domain([
-  d3.min(Temperatures, function(c) { return d3.min(c.values, function(v) { return v.Temperature; }); }),
-  d3.max(Temperatures, function(c) { return d3.max(c.values, function(v) { return v.Temperature; }); })
+  d3.min(Temperatures, function(c) { return d3.min(c.values, function(v) { return v.Temperature; }); })-1,
+  d3.max(Temperatures, function(c) { return d3.max(c.values, function(v) { return v.Temperature; }); })+1
 ]);
 y2.domain(y.domain());
 
