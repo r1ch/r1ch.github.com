@@ -166,7 +166,7 @@ var temperature = focus.selectAll(".temperature")
       .style("stroke", function(d) { return color(d.name); });
 
 var heating = focus.selectAll("heating")
-        .data(Temperatures[1].values.filter(true))
+        .data(Temperatures[1].values.filter(function(){return true}))
       .enter().append("g")
 	.attr("class","heating")
 
