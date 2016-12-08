@@ -39,21 +39,59 @@ body {
 
 
 
-<script src="Tabletop.js"></script>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.12.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script>
 
-
-
-var public_spreadsheet_url = '1jpPyhuyQMoRhOXudUAsVgeV1SUQEmcX95nCt0WanbIE';
-
-function renderSpreadsheetData() {
-    Tabletop.init( { key: public_spreadsheet_url,
-                     callback: draw,
-                     simpleSheet: true } )
+AWS.config.region = 'eu-west-1';
+AWS.config.apiVersions = {
+  dynamodb : '2012-08-10'
 }
 
-function draw(data, tabletop) {
+var dynamodb = new AWS.DynamoDB({
+  accessKeyId : "AKIAJOC7QCUDMYRYI7WQ",
+  secretAccessKey : "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",
+  region: "eu-west-1",
+  endpoint: "http://dynamodb.eu-west-1.amazonaws.com",
+})
+
+var params = {
+  TableName : "hive-history",
+  KeyConditions : {
+    "dynamo":{
+      ComparisonOperator : "EQ",
+      AttributeValueList: [{S:"awful"}]
+    },
+    "time":{
+      ComparisonOperator : "GT",
+      AttributeValueList: [
+        {N:""+((new Date()).getTime()-1000000000)}
+      ]
+    }
+  }
+}
+
+console.log(params);
+
+dynamodb.query(params,
+  function(err,data){
+    if(err){
+      console.log(JSON.stringify(err))
+    } else {
+      var drawData = []
+      data.Items.forEach((i)=>{
+        drawData.push({
+          Time : (new Date(parseInt(i.time.N))),
+          On: i.on.N,
+          Target: i.target.N,
+          Current: i.current.N
+        })
+      })
+      draw(drawData)
+    }
+})
+
+function draw(data) {
 
 var margin = {top: 10, right: 10, bottom: 100, left: 40},
     margin2 = {top: 430, right: 10, bottom: 20, left: 40},
@@ -61,7 +99,7 @@ var margin = {top: 10, right: 10, bottom: 100, left: 40},
     height = 500 - margin.top - margin.bottom,
     height2 = 500 - margin2.top - margin2.bottom;
 
-var parseDate = d3.time.format("%d/%m/%Y %X").parse;
+//var parseDate = d3.time.format(d3.time.format.iso).parse;
 
 var 	x = d3.time.scale().range([0, width]),
 	x2 = d3.time.scale().range([0, width]),
@@ -114,9 +152,9 @@ var context = svg.append("g")
 
 color.domain(d3.keys(data[0]).filter(function(key) { return key !== "Time" && key !== "On" }));
 
-data.forEach(function(d) {
+/*data.forEach(function(d) {
   d.Time = parseDate(d.Time);
-});
+});*/
 
 
 var Temperatures = color.domain().map(function(name) {
@@ -171,7 +209,7 @@ var heating = focus.selectAll("heating")
       .enter().append("g")
 	.attr("class","heating")
 
-	
+
 	heating.append("circle")
      	.attr("clip-path", "url(#clip)")
         .style("fill", "red")
@@ -217,7 +255,7 @@ var heating2 = context.selectAll("heating")
       .enter().append("g")
 	.attr("class","heating")
 
-	
+
 	heating2.append("circle")
         .style("fill", "red")
         .attr("r", 3.5)
@@ -238,7 +276,7 @@ var legend = focus.selectAll('.legend')
         .attr('y', function(d, i){ return (i+1) *  20;})
         .attr('width', 10)
         .attr('height', 10)
-        .style('fill', function(d) { 
+        .style('fill', function(d) {
           return color(d.name);
         });
 
@@ -266,11 +304,6 @@ function brushed() {
 
 
 }
-
-renderSpreadsheetData();
-
-
-
 
 </script>
 
