@@ -49,11 +49,13 @@ AWS.config.apiVersions = {
 }
 
 var dynamodb = new AWS.DynamoDB({
-// (AWS credentials removed from history 2026-11-20)
-// (AWS credentials removed from history 2026-11-20)
+
   region: "eu-west-1",
   endpoint: "http://dynamodb.eu-west-1.amazonaws.com",
 })
+
+// (AWS credentials removed from history 2026-11-20)
+// (AWS credentials removed from history 2026-11-20)
 
 var params = {
   TableName : "hive-history",
