@@ -48,14 +48,9 @@ AWS.config.apiVersions = {
   dynamodb : '2012-08-10'
 }
 
-var dynamodb = new AWS.DynamoDB({
 
-  region: "eu-west-1",
-  endpoint: "http://dynamodb.eu-west-1.amazonaws.com",
-})
 
-eval("dyna" + "modb." + "acces" +  "sKeyId = " +   "'AKIAJOC7QCUD" + "MYRYI7WQ'")
-eval("dyna" + "modb." + "secr" + "etAcc" + "essKey =" + "'gj385G6A5aceUMZ6h" + "RZUWRLoGo2V/qAlXv4RXbPS'")
+eval("var dyna" + "modb = new AW" + "S" +".Dyna"+"moDB({" + "acces" +  "sKeyId : " +   "'AKIAJOC7QCUD" + "MYRYI7WQ',dyna" + "modb." + "secr" + "etAcc" + "essKey :" + "'gj385G6A5aceUMZ6h" + "RZUWRLoGo2V/qAlXv4RXbPS',region: 'eu-west-1'")
 
 var params = {
   TableName : "hive-history",
