@@ -62,7 +62,10 @@ var params = {
     "time":{
       ComparisonOperator : "GT",
       AttributeValueList: [
-        {N:""+((new Date()).getTime()-1000000000)}
+        {N:""+((new Date()).getTime()
+        -
+        1 * 1000 * 60 * 60 * 24 * 14 /* milli -> sec -> minutes -> hours -> days -> fortnight*/
+        )}
       ]
     }
   }
