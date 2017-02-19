@@ -1,0 +1,18 @@
+<div ng-if="!question.end && question.handler ==='select'" class="form-group">
+  <label for="select-for-{{$index}}">{{question.title}}</label>
+  <select class="form-control" id="select-for-{{$index}}" ng-model="answer" ng-change = "update($index, answer)" ng-options="answer.title for answer in question.answers">
+  </select>
+</div>
+
+<div ng-if="!question.end && question.handler ==='radio'" class="form-group">
+<h4>{{question.title}}</h4>
+  <div ng-repeat="answer in question.answers" class="row-fluid">
+      <label><input type="radio" name="{{$parent.$index}}" ng-value="{{answer}}" ng-model="value" ng-click = "update($parent.$index,answer)" />
+      &nbsp;<span ng-bind="answer.title"></span></label>
+  </div>
+</div>
+
+<div ng-if="question.end" class="alert alert-{{question.type}}">
+  <strong>{{question.title}}</strong><br/>
+  {{question.reason}}
+</div>
