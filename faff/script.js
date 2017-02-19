@@ -239,7 +239,7 @@ questions["noteam"]={
   end:true,
   type:"danger",
   title:"You're faffing",
-  reason:"Youre just not a team player."
+  reason:"You're just not a team player."
 }
 questions["faff"]={
   end:true,
