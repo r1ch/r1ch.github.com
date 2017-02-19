@@ -4,9 +4,7 @@ fApp.controller('faffController', function($scope) {
 $scope.kept=[];
 
 $scope.update = function(index,answer){
-  console.log("got index " + index + " "  +JSON.stringify(answer))
     $scope.interview = $scope.interview.slice(0,index+1)
-    console.log($scope.interview.length)
     $scope.interview.push(questions[answer.next])
 }
 
@@ -35,71 +33,169 @@ questions["doing"]={
       next: "notfaff"
     },{
       title: "Waiting at the bottom of a chairlift",
-      next: "anydanger"
+      next: "bindings"
     },{
       title: "Waiting at the top of a chairlift",
-      next: "anydanger"
+      next: "bindings"
     },{
       title: "On a chairlift",
-      next: "notfaff"
+      next: "planning"
     },{
       title: "Weeing",
-      next: "didyou"
+      next: "couldyou"
     },{
       title: "Fiddling with my boots",
-      next: "didyou"
+      next: "couldyou"
+    },{
+      title: "In the chalet",
+      next: "readyfornext"
     }
   ]
 }
 
-questions["didyou"]={
-  title:"Could you have done this earlier?",
-  handler:"radio",
-  answers:[
-    {
-      title: "Yes",
-      next: "youknow"
-    },
-    {
-      title: "No",
-      next: "notfaff"
-    }
-  ]
-}
-
-questions["anydanger"]={
+questions["bindings"]={
   title:"Do you need a wee / to do up your boots / piss about with binding",
   handler:"radio",
   answers:[
     {
       title: "Yes",
-      next: "faffdanger"
+      next: "now"
     },
     {
       title: "No",
-      next: "notfaff"
+      next: "planning"
     }
   ]
 }
 
-questions["faffdanger"]={
+questions["now"]={
   title:"Could you do that now?",
   handler:"radio",
   answers:[
-    {
-      title: "No - not enough time",
-      next: "notfaff"
-    },
     {
       title: "I could but...",
       next: "nonparallelfaff"
     },
     {
+      title: "No",
+      next: "notfaff"
+    },
+    {
       title: "Yes",
-      next: "faffavoidance"
+      next: "andyouregoingto"
     }
   ]
 }
+
+questions["andyouregoingto"]={
+  title:"And you're going to?",
+  handler:"radio",
+  answers:[
+    {
+      title: "Yes",
+      next: "notfaff"
+    },
+    {
+      title: "No",
+      next: "faff"
+    }
+  ]
+}
+
+questions["couldyou"]={
+  title:"Could you have done it earlier?",
+  handler:"radio",
+  answers:[
+    {
+      title: "Yes",
+      next: "faff"
+    },
+    {
+      title: "No",
+      next: "essential"
+    }
+  ]
+}
+
+questions["essential"]={
+  title:"Is it utterly essential?",
+  handler:"radio",
+  answers:[
+    {
+      title: "Yes",
+      next: "sure"
+    },
+    {
+      title: "No",
+      next: "faff"
+    }
+  ]
+}
+
+questions["sure"]={
+  title:"Are you sure?",
+  handler:"radio",
+  answers:[
+    {
+      title: "Yes",
+      next: "planned"
+    },
+    {
+      title: "No",
+      next: "faff"
+    }
+  ]
+}
+
+questions["planned"]={
+  title:"Did you plan this to reduce faff?",
+  handler:"radio",
+  answers:[
+    {
+      title: "No",
+      next: "faff"
+    },
+    {
+      title: "Yes",
+      next: "notfaff"
+    }
+  ]
+}
+
+
+questions["planning"]={
+  title:"Are you planning the next run?",
+  handler:"radio",
+  answers:[
+    {
+      title: "Yes",
+      next: "notfaff"
+    },
+    {
+      title: "No",
+      next: "noteam"
+    }
+  ]
+}
+
+
+questions["readyfornext"]={
+  title:"Are you ready for the next activity?",
+  handler:"radio",
+  answers:[
+    {
+      title: "Yes",
+      next: "notfaff"
+    },
+    {
+      title: "No",
+      next: "potential"
+    }
+  ]
+}
+
+
+
 
 
 //ends
@@ -139,6 +235,25 @@ questions["youknow"]={
   title:"You're faffing",
   reason:"You know what you did"
 }
+questions["noteam"]={
+  end:true,
+  type:"danger",
+  title:"You're faffing",
+  reason:"Youre just not a team player."
+}
+questions["faff"]={
+  end:true,
+  type:"danger",
+  title:"You're faffing",
+  reason:"Classic faff."
+}
+questions["potential"]={
+  end:true,
+  type:"warning",
+  title:"Erm...",
+  reason:"Just watch it right?"
+}
+
 $scope.interview = []
 $scope.interview[0] = questions["start"]
 
