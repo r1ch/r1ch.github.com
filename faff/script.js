@@ -9,6 +9,7 @@ $scope.update = function(index,answer){
 }
 
 
+
 questions = [];
 questions["start"]={
   title:"What is your name",
@@ -93,7 +94,7 @@ questions["andyouregoingto"]={
   answers:[
     {
       title: "Yes",
-      next: "notfaff"
+      next: "faffavoidance"
     },
     {
       title: "No",
@@ -127,7 +128,7 @@ questions["essential"]={
     },
     {
       title: "No",
-      next: "faff"
+      next: "youknow"
     }
   ]
 }
