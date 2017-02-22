@@ -213,7 +213,7 @@ var heating = focus.selectAll("heating")
 	heating.append("circle")
      	.attr("clip-path", "url(#clip)")
         .style("fill", "red")
-        .attr("r", 3.5)
+        .attr("r", 2)
         .attr("cx", function(d) { return x(d.Time); })
         .attr("cy", function(d) { return y(d.Temperature); });
 
