@@ -1,0 +1,56 @@
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<div id="container"></div>
+
+<script type = "text/javascript">
+
+var width = window.innerWidth, height = window.innerHeight;
+var growth = 0.2
+var data = (turn)=>{
+  var out = [];
+  for(var i = 0; i < 5000; i++){
+    out.push({
+        x : width/2 + i*growth*Math.sin(i*2*Math.PI/turn),
+        y : height/2 + i*growth*Math.cos(i*2*Math.PI/turn)
+      })
+  }
+  return out
+}
+
+
+var canvas = d3.select('#container')
+  .append('svg')
+  .attr('width', width)
+  .attr('height', height);
+
+var x = 1.61
+var theData = data(x)
+
+let scaleLinear = d3.scaleLinear()
+  .domain([0, width/2, width])
+  .range(['black', 'yellow', 'black']);
+
+var no = canvas
+    .selectAll("circle")
+    .data(theData)
+    .enter()
+    .append("text")
+  	.style('fill', (d, i) => scaleLinear(i%width))
+    .text((d,i)=>(i%2==0?"N":"o"))
+    .attr("text-anchor", "middle")
+    .attr("x",function(d){return d.x})
+    .attr("y",function(d){return d.y})
+
+
+
+function update(){
+  x = x + 0.000005
+  theData = data(x)
+  no
+  .attr("x",function(d,i){return theData[i].x})
+  .attr("y",function(d,i){return theData[i].y})
+}
+
+setInterval(update,1000/24)
+
+
+</script>
