@@ -66,14 +66,14 @@ gimage.src = "ishi.png";
 
 var WALK = {
 	on : false,
-	x : 0,
-	y : 0
+	x : CANVAS_WIDTH/2,
+	y : CANVAS_HEIGHT/2,
 }
 	
 function Dot(){
 	if(WALK.on){
-		this.x = WALK.x = parseInt(WALK.x + Math.random()*MAX_RADIUS)%CANVAS_WIDTH;
-		this.y = WALK.y = parseInt(WALK.y + Math.random()*MAX_RADIUS)%CANVAS_HEIGHT;
+		this.x = WALK.x = Math.abs(parseInt(WALK.x - MAX_RADIUS + Math.random()*MAX_RADIUS/2)%CANVAS_WIDTH);
+		this.y = WALK.y = Mat.abs(parseInt(WALK.y - MAX_RADIUS + Math.random()*MAX_RADIUS/2)%CANVAS_HEIGHT);
 	} else {
 		this.x = parseInt(Math.random()*CANVAS_WIDTH)
 		this.y = parseInt(Math.random()*CANVAS_HEIGHT)
