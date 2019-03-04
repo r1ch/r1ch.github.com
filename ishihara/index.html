@@ -64,9 +64,20 @@ init();
 }
 gimage.src = "ishi.png";
 
+var WALK = {
+	on : false,
+	x : 0,
+	y : 0
+}
+	
 function Dot(){
-	this.x = parseInt(Math.random()*CANVAS_WIDTH)
-	this.y = parseInt(Math.random()*CANVAS_HEIGHT)
+	if(WALK.on){
+		this.x = WALK.x = (WALK.x + MAX_RADIUS - Math.random()*MAX_RADIUS/2)%CANVAS_WIDTH;
+		this.y = WALK.y = (WALK.y + MAX_RADIUS - Math.random()*MAX_RADIUS/2)%CANVAS_HEIGHT;
+	} else {
+		this.x = parseInt(Math.random()*CANVAS_WIDTH)
+		this.y = parseInt(Math.random()*CANVAS_HEIGHT)
+	}
 	this.radius = 0;
 	this.put = put;
 	this.maxCircleAt = maxCircleAt;
