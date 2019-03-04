@@ -72,8 +72,8 @@ var WALK = {
 	
 function Dot(){
 	if(WALK.on){
-		this.x = WALK.x = (WALK.x + MAX_RADIUS - Math.random()*MAX_RADIUS/2)%CANVAS_WIDTH;
-		this.y = WALK.y = (WALK.y + MAX_RADIUS - Math.random()*MAX_RADIUS/2)%CANVAS_HEIGHT;
+		this.x = WALK.x = parseInt(WALK.x + Math.random()*MAX_RADIUS)%CANVAS_WIDTH;
+		this.y = WALK.y = parseInt(WALK.y + Math.random()*MAX_RADIUS)%CANVAS_HEIGHT;
 	} else {
 		this.x = parseInt(Math.random()*CANVAS_WIDTH)
 		this.y = parseInt(Math.random()*CANVAS_HEIGHT)
