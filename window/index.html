@@ -47,6 +47,8 @@
         
        let c10 = d3.schemePaired;
        
+       let nodes = [{}];
+       
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
@@ -92,9 +94,11 @@
         exit()
         update()
         enter()
+        nodes.push({})
+        simulation.restart()
        }
        
-       let simulation = d3.forceSimulation([{},{},{},{},{},{},{}])
+       let simulation = d3.forceSimulation(nodes)
       .force('charge', d3.forceManyBody())
       .force('center', d3.forceCenter(data.width / 2, data.height / 2))
       .on('tick', step);
