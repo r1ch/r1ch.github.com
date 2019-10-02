@@ -57,6 +57,12 @@
        
        let velocities = d3.range(40).map(i=>({vx:0,vy:0}))
        
+       svg.append("defs")
+      .append("filter")
+      .attr("id", "blur")
+      .append("feGaussianBlur")
+      .attr("stdDeviation", 1); 
+       
       let voronoi = d3.Delaunay
       .from(points, d => d.x, d => d.y)
       .voronoi([0, 0, data.width, data.height]);
@@ -82,6 +88,7 @@
           .attr("fill",(d,i)=>c10[i%10])
           .attr("stroke-width", 1)
           .attr("d", (d,i)=>voronoi.renderCell(i))
+          .attr("filter", "url(#blur)");
           
        }
        
@@ -118,7 +125,7 @@
           })
           voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
           cellUpdate()
-          meshUpdate()
+          //meshUpdate()
       }
        
     </script>
