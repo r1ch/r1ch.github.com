@@ -54,6 +54,8 @@
           y: Math.random() * (data.height - data.radius) + data.radius,
         }));
        
+       let velocities = d3.range(20).map(i=>({vx:0,vy:0}))
+       
       let voronoi = d3.Delaunay
       .from(points, d => d.x, d => d.y)
       .voronoi([0, 0, data.width, data.height]);
@@ -76,6 +78,12 @@
       .attr("d", (d,i)=>voronoi.renderCell(i))
 
       let update = ()=>{
+          points.forEach((point,i)=>{
+            point.x = point.x + velocities[i].vx % data.width
+            point.y = point.y + velocities[i].vy % data.height
+            velocities[i].vx = 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i].vx
+            velocities[i].vy = 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i].vy
+          })
           voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
           cell.attr("d", (d, i) => voronoi.renderCell(i));
           mesh.attr("d", voronoi.render());
