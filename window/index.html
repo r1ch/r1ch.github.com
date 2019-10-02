@@ -58,11 +58,29 @@
       .from(points, d => d.x, d => d.y)
       .voronoi([0, 0, data.width, data.height]);
        
-       let mesh = svg.append("path")
+       let mesh = svg.selectAll(".mesh")
+       .append("path")
       .attr("fill", "none")
       .attr("stroke", "#ccc")
       .attr("stroke-width", 1)
       .attr("d", voronoi.render());
+       
+       var cell = svg.selectAll(".cell")
+      .data(points)
+      .enter()
+      .append("path")
+      .attr("stroke", "#ccc")
+      .attr("fill",(d,i)=>c10[i%10])
+      .attr("stroke-width", 1)
+      .attr("d", (d,i)=>voronoi.renderCell(i))
+
+      let update()=>{
+          voronoi = d3.Delaunay.from(circles, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
+          cell.attr("d", (d, i) => voronoi.renderCell(i));
+          mesh.attr("d", voronoi.render());
+      }
+      
+      let simulation = d3.forceSimulation()
 
        
     </script>
