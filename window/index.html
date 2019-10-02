@@ -54,11 +54,13 @@
        
        let background = svg
        .selectAll(".voronoi.path")
-       .data( voronoi.polygons(vertices)  ).enter().append("path")
+       .data(voronoi.polygons(vertices))
+       .enter()
+       .append("path")
        .attr("stroke","white") 
        .attr("fill", function(d,i) {return c10[i % 10]} )
- //    .attr("d", function(d) { return "M" + d.join("L") + "Z" } );
-       .attr("d", polygon);
+       .attr("d", function(d) { return "M" + d.join("L") + "Z" } );
+       //.attr("d", polygon);
       
     </script>
   </body>
