@@ -52,7 +52,11 @@
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
-         return voronoi.polygons(simulation.nodes().map(node=>[node.x,node.y]))
+         nodes.forEach(node=>{
+          node.x = Math.max(0,Math.min(data.width,node.x))
+          node.y = Math.max(0,Math.min(data.height,node.y))
+         })
+         return voronoi.polygons(nodes)
        }
        
        let polyline = (line)=>{
@@ -94,7 +98,8 @@
         exit()
         update()
         enter()
-        //nodes.push({})
+        nodes.push({})
+        simulation.alpha(1).restart()
         simulation.restart()
        }
        
