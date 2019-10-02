@@ -60,22 +60,48 @@
       .from(points, d => d.x, d => d.y)
       .voronoi([0, 0, data.width, data.height]);
        
-       let mesh = svg.selectAll(".mesh")
-       .append("path")
-      .attr("fill", "none")
-      .attr("stroke", "#ccc")
-      .attr("stroke-width", 1)
-      .attr("d", voronoi.render());
+       let cellUpdate = ()=>{
+          let cell = svg
+          .selectAll(".cell")
+          .data(points)
+          
+          cell
+          .exit()
+          .remove()
+         
+          cell
+          
+          .attr('clip-path','url(#letter-clip)'
+          .attr("d", (d,i)=>voronoi.renderCell(i))
+         
+          cell
+          .enter()
+          .attr('class', function(d,i){return `cell${i}`})
+          .append("path")
+          .attr("stroke", "#ccc")
+          .attr("clip-path","url(#letter-clip)")
+          .attr("fill",(d,i)=>c10[i%10])
+          .attr("stroke-width", 1)
+          .attr("d", (d,i)=>voronoi.renderCell(i))
+          
+       }
        
-       var cell = svg.selectAll(".cell")
-      .data(points)
-      .enter()
-      .append("path")
-      .attr("stroke", "#ccc")
-      .attr("clip-path","url(#letter-clip)")
-      .attr("fill",(d,i)=>c10[i%10])
-      .attr("stroke-width", 1)
-      .attr("d", (d,i)=>voronoi.renderCell(i))
+      let meshUpdate = ()=>{
+        let mesh = svg
+        .selectAll(".mesh")
+        .data([0])
+        
+        mesh
+        .attr("d", voronoi.render());
+        
+        mesh
+        .enter()
+        .attr('class', "mesh")
+        .attr("fill", "none")
+        .attr("stroke", "#ccc")
+        .attr("stroke-width", 1)
+        .attr("d", voronoi.render());
+      }
 
       let update = ()=>{
           points.forEach((point,i)=>{
@@ -85,11 +111,11 @@
             velocities[i].vy = 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i].vy
           })
           voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
-          cell.attr("d", (d, i) => voronoi.renderCell(i));
-          mesh.attr("d", voronoi.render());
+          cellUpdate()
+          meshUpdate()
       }
       
-
+      
        
     </script>
   </body>
