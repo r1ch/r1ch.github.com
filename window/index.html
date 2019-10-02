@@ -30,12 +30,12 @@
         .append("clipPath")
         .attr("id", "letter-clip")
         .selectAll(".letter")
-        .data(Object.values(paths))
+        .data(paths)
         .enter()
-        .append("path")
-        .attr("d",function(d){return d})
-        .attr("class",()=>{console.log(this); return "a"})
-        .attr("transform",function(d,i,n,p){
+        .append("letters")
+        .attr("d",function(d){return d.path})
+        .attr("class",function(d){return `letter ${d.letter}`})
+        .attr("transform",function(d){
           space += this.getBBox().width
           return `translate(${space},0)`
         })
