@@ -37,7 +37,7 @@
         .append("filter")
         .attr("id", (d)=>`blur${d}`)
         .append("feGaussianBlur")
-        .attr("stdDeviation", (d)=>`blur${d}`);
+        .attr("stdDeviation", d=>d);
         
         svg
         .append("g")
