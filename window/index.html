@@ -36,9 +36,9 @@
         .attr("d",function(d){return d.path})
         .attr("class",function(d){return `letter ${d.letter}`})
         .attr("transform",function(d){
-          console.log(d.letter,this,this.getBBox())
+          let translate = `translate(${space},0)`
           space += this.getBBox().width
-          return `translate(${space},0)`
+          return translate
         })
         
         let background = svg
