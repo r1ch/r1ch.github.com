@@ -77,7 +77,7 @@
           cell
           .enter()
           .append("path")
-          .attr('class', function(d,i){return `cell${i}`})
+          .attr('class', function(d,i){return `cell`})
           .attr("stroke", "none")
           .attr("clip-path","url(#letter-clip)")
           .attr("fill",(d,i)=>c10[i%10])
@@ -102,7 +102,7 @@
           cell
           .enter()
           .append("path")
-          .attr('class', function(d,i){return `mesh${i}`})
+          .attr('class', function(d,i){return `mesh`})
           .attr("stroke", "#ccc")
           .attr("fill","none")
           .attr("stroke-width", 1)
