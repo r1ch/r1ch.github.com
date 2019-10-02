@@ -71,7 +71,7 @@
          
           cell
           .transition()
-          .duration(1000)
+          .duration(100)
           .attr("d", (d,i)=>voronoi.renderCell(i))
          
           cell
@@ -93,7 +93,7 @@
         
         mesh
         .transition()
-        .duration(1000)
+        .duration(100)
         .attr("d", voronoi.render());
         
         mesh
