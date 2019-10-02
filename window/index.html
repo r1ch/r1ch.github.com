@@ -70,6 +70,7 @@
       .enter()
       .append("path")
       .attr("stroke", "#ccc")
+      .attr("clip-path","url(#letter-clip)")
       .attr("fill",(d,i)=>c10[i%10])
       .attr("stroke-width", 1)
       .attr("d", (d,i)=>voronoi.renderCell(i))
