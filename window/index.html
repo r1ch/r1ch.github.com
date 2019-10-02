@@ -67,7 +67,7 @@
           .remove()
          
           cell
-          .attr("d", (d,i)=>voronoi.renderCell(i))
+          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
          
           cell
           .enter()
@@ -84,7 +84,7 @@
      
       let update = ()=>{
           for (let i = 0; i < positions.length; ++i) {
-            const size = i & 1 ? height : width;
+            const size = i & 1 ? data.height : data.width;
             positions[i] += velocities[i];
             if (positions[i] < 0) positions[i] += size;
             else if (positions[i] > size) positions[i] -= size;
