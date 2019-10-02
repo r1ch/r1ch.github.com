@@ -28,7 +28,7 @@
         .append("clipPath")
         .attr("id", "letter-clip")
         .selectAll(".letter")
-        .data(paths)
+        .data(Object.values(paths))
         .enter()
         .append("path")
         .attr("d",function(d){return d})
