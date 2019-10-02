@@ -69,8 +69,9 @@
           .exit()
           .remove()
          
-          cell 
-          .attr('clip-path','url(#letter-clip)')
+          cell
+          .transition()
+          .duration(1000)
           .attr("d", (d,i)=>voronoi.renderCell(i))
          
           cell
@@ -91,6 +92,8 @@
         .data([0])
         
         mesh
+        .transition
+        .duration(1000)
         .attr("d", voronoi.render());
         
         mesh
@@ -107,8 +110,8 @@
           points.forEach((point,i)=>{
             point.x = point.x + velocities[i].vx % data.width
             point.y = point.y + velocities[i].vy % data.height
-            velocities[i].vx = 2 * (Math.random() - 5) - 0.1 * velocities[i].vx
-            velocities[i].vy = 2 * (Math.random() - 5) - 0.1 * velocities[i].vy
+            velocities[i].vx = 1 * (Math.random() - 2) - 0.05 * velocities[i].vx
+            velocities[i].vy = 1 * (Math.random() - 2) - 0.05 * velocities[i].vy
           })
           voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
           cellUpdate()
