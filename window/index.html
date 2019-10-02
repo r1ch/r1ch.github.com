@@ -75,7 +75,7 @@
       .attr("d", (d,i)=>voronoi.renderCell(i))
 
       let update = ()=>{
-          voronoi = d3.Delaunay.from(circles, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
+          voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
           cell.attr("d", (d, i) => voronoi.renderCell(i));
           mesh.attr("d", voronoi.render());
       }
