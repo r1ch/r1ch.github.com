@@ -57,7 +57,7 @@
            Math.max(data.radius,Math.min(data.width-data.radius,node.x)),
            Math.max(data.radius,Math.min(data.height-data.radius,node.y))
           ])
-         return voronoi.polygons(boundedNodes)
+         return voronoi.polygons(boundedNodes).filter(polygon=>typeof polygon !== 'undefined')
        }
        
        let polyline = (line)=>{
