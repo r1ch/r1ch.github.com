@@ -49,71 +49,21 @@
         
        let c10 = d3.schemePaired;
        
-       let nodes = [{},{}];
+       let points = d3.range(20).map(i => ({
+          x: Math.random() * (data.width - data.radius) + data.radius,
+          y: Math.random() * (data.height - data.radius) + data.radius,
+        }));
        
-       let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
-        
-       let getPolygons = ()=>{
-         let boundedNodes = simulation.nodes().map(node=>[
-           Math.max(data.radius,Math.min(data.width-data.radius,node.x)),
-           Math.max(data.radius,Math.min(data.height-data.radius,node.y))
-          ])
-         return voronoi.polygons(boundedNodes).filter(polygon=>typeof polygon !== 'undefined')
-       }
+      let voronoi = d3.Delaunay
+      .from(points, d => d.x, d => d.y)
+      .voronoi([0, 0, data.width, data.height]);
        
-       let polyline = (line)=>{
-          return "M" + line.join("L") + "Z"
-       }
-       
-       let background;
-       
-       let bind = ()=>{
-         background = svg
-         .selectAll(".voronoi.path")
-         .data(getPolygons())
-       }
-       
-       let exit = ()=>{
-          background
-         .exit()
-         .remove()
-       }
-       
-       let update = ()=>{
-         background
-         .attr("d",polyline);
-       }
-      
-       let enter = ()=>{
-        background
-        .enter()
-        .append("path")
-        .attr('class', 'voronoi path')
-        //.attr("clip-path","url(#letter-clip)")
-        .attr("stroke","white") 
-        .attr("fill", function(d,i) {return c10[i % 10]} )
-        .attr("d",polyline);
-       }
-       
-       let step = ()=>{
-        bind()
-        exit()
-        update()
-        enter()
-       }
-       
-       let more = ()=>{
-        nodes.push({})
-        simulation.nodes(nodes)
-        simulation.alpha(1).restart()
-       }
-       
-       let simulation = d3.forceSimulation(nodes)
-      .force('charge', d3.forceManyBody())
-      .force('center', d3.forceCenter(data.width / 2, data.height / 2))
-      .on('tick', step);
-       
-       //setInterval(more,1000)
+       let mesh = svg.append("path")
+      .attr("fill", "none")
+      .attr("stroke", "#ccc")
+      .attr("stroke-width", 1)
+      .attr("d", voronoi.render());
+
        
     </script>
   </body>
