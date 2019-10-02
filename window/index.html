@@ -47,7 +47,7 @@
         
        let c10 = d3.schemePaired;
        
-       let nodes = [{}];
+       let nodes = [{},{}];
        
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
@@ -94,7 +94,7 @@
         exit()
         update()
         enter()
-        nodes.push({})
+        //nodes.push({})
         simulation.restart()
        }
        
