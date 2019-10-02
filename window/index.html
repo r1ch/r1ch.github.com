@@ -17,14 +17,16 @@
             bottom:10
           }
         };
+        data.width = data.fullWidth - data.margin.left - data.margin.right
+        data.height = data.fullHeight - data.margin.top - data.margin.bottom
         let svg = d3.select("#d3")
         .append("svg")
         .attr('width',data.fullWidth)
         .attr('height',data.fullHeight)
         .append("g")
-        .attr('width',data.fullWidth - data.margin.left - data.margin.right)
-        .attr('height',data.fullHeight -  data.margin.top - data.margin.bottom)      
-        .attr("transform", "translate(" + data.margin.left + "," + data.margin.top + ")")
+        .attr('width',data.width)
+        .attr('height',data.height)      
+        .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
         
         let space = 0;
         
@@ -43,16 +45,21 @@
           return translate
         })
         
-        let background = svg
-        .append("rect")
-        .attr("x",0)
-        .attr("y",0)
-        .attr("clip-path","url(#letter-clip)")
-        .attr("fill","SteelBlue")
-        .attr("height",data.fullHeight)
-        .attr("width",data.fullWidth)
-
-
+       let vertices = d3.range(10).map(function(d) {
+          return [Math.random() * data.width, Math.random() * data.height];
+        });
+       
+       let voronoi = d3.voronoi().extent([[0, 0], [width, height]]);
+       let c10 = d3.schemePaired;
+       
+       let background = svg
+       .selectAll(".voronoi.path")
+       .data( voronoi.polygons(vertices)  ).enter().append("path")
+       .attr("stroke","white") 
+       .attr("fill", function(d,i) {return c10[i % 10]} )
+ //    .attr("d", function(d) { return "M" + d.join("L") + "Z" } );
+       .attr("d", polygon);
+      
     </script>
   </body>
 </html>
