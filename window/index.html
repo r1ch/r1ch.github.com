@@ -50,7 +50,7 @@
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
-         return voronoi.polygons(simulation.nodes().map(node=>[node.x,node.y])
+         return voronoi.polygons(simulation.nodes().map(node=>[node.x,node.y]))
        }
        
        let polyline = (line)=>{
