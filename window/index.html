@@ -108,8 +108,8 @@
 
       let update = ()=>{
           points.forEach((point,i)=>{
-            point.x = data.width + point.x + velocities[i].vx % data.width
-            point.y = data.height + point.y + velocities[i].vy % data.height
+            point.x = (data.width + point.x + velocities[i].vx) % data.width
+            point.y = (data.height + point.y + velocities[i].vy) % data.height
             velocities[i].vx = 1 * (Math.random() - 2) - 0.05 * velocities[i].vx
             velocities[i].vy = 1 * (Math.random() - 2) - 0.05 * velocities[i].vy
           })
