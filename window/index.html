@@ -49,7 +49,7 @@
       
 
        
-       let vertices = d3.range(1).map(function(d) {
+       let vertices = d3.range(10).map(function(d) {
            return [Math.random() * data.width, Math.random() * data.height]
        })
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
@@ -93,7 +93,6 @@
        }
        
        let step = (something)=>{
-         console.log(something)
         bind()
         exit()
         update()
