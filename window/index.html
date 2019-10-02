@@ -38,7 +38,7 @@
         .attr("d",function(d){return d.path})
         .attr("class",function(d){return `letter ${d.letter}`})
         .attr("transform",function(d){
-          let translate = `scale(4,4) translate(${space},0)`
+          let translate = `scale(3,3) translate(${space},0)`
           space += this.getBBox().width + 10
           return translate
         })
