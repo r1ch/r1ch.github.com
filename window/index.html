@@ -56,7 +56,7 @@
           node.x = Math.max(0,Math.min(data.width,node.x))
           node.y = Math.max(0,Math.min(data.height,node.y))
          })
-         return voronoi.polygons(nodes)
+         return voronoi.polygons(nodes.map(node=>[node.x,node.y]))
        }
        
        let polyline = (line)=>{
