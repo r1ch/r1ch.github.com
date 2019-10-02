@@ -94,7 +94,7 @@
           .remove()
          
           mesh
-          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
+          .attr("d",d=>d)
          
           mesh
           .enter()
@@ -104,7 +104,7 @@
           .attr("fill","none")
           .attr("stroke-width", 1)
           //.attr("clip-path","url(#letter-clip)")
-          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
+          .attr("d",d=>d)
           //.attr("filter", "url(#blur)");
           
        }
