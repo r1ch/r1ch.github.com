@@ -91,7 +91,7 @@
           .attr("stroke", "none")
           .attr("fill",(d,i)=>c10[i%10])
           .attr("stroke-width", 1)
-          .attr("clip-path","url(#letter-clip)")
+          .attr("clip-path",(d,i)=>{return i%10 == 0 ? "url(#letter-clip)" : "")
           .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
           .attr("filter", (d,i)=>`url(#blur${i%5})`);
           
@@ -129,11 +129,11 @@
             velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
           }
           voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-          meshUpdate()
+          //meshUpdate()
           cellUpdate()
 
       }
-      
+      setInterval(update,20)
     </script>
   </body>
 </html>
