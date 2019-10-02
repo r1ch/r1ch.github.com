@@ -116,9 +116,7 @@
           .attr("stroke", "#ccc")
           .attr("fill","none")
           .attr("stroke-width", 1)
-          //.attr("clip-path","url(#letter-clip)")
           .attr("d",d=>d)
-          //.attr("filter", "url(#blur)");
           
        }
      
@@ -132,7 +130,7 @@
           }
           voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
           cellUpdate()
-          //meshUpdate()
+          meshUpdate()
       }
       
     </script>
