@@ -32,7 +32,7 @@
         .selectAll(".letter")
         .data(paths)
         .enter()
-        .append("letters")
+        .append("path")
         .attr("d",function(d){return d.path})
         .attr("class",function(d){return `letter ${d.letter}`})
         .attr("transform",function(d){
