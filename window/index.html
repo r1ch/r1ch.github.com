@@ -75,8 +75,8 @@
          
           cell
           .enter()
-          .attr('class', function(d,i){return `cell${i}`})
           .append("path")
+          .attr('class', function(d,i){return `cell${i}`})
           .attr("stroke", "#ccc")
           .attr("clip-path","url(#letter-clip)")
           .attr("fill",(d,i)=>c10[i%10])
