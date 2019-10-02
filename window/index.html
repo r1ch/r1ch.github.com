@@ -55,7 +55,7 @@
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
-         return voronoi.polygons(vertices)
+         return voronoi.polygons(simulation.nodes())
        }
        
        let polyline = (line)=>{
@@ -92,7 +92,7 @@
         .attr("d",polyline);
        }
        
-       let step = (something)=>{
+       let step = ()=>{
         bind()
         exit()
         update()
