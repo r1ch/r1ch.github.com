@@ -33,6 +33,14 @@
         .attr('height',data.height)      
         .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
         
+        let filter = svg.append("defs")
+        .data([0,1,2,3,4,5])
+        .enter()
+        .append("filter")
+        .attr("id", (d)=>`blur${d}`)
+        .append("feGaussianBlur")
+        .attr("stdDeviation", (d)=>`blur${d}`);
+        
         let space = 0;
         
         let clip = svg
@@ -80,7 +88,7 @@
           .attr("stroke-width", 1)
           .attr("clip-path","url(#letter-clip)")
           .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
-          //.attr("filter", "url(#blur)");
+          .attr("filter", (d,i)=>`url(#blur${i%5})`);
           
        }
        
