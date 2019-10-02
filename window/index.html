@@ -23,6 +23,7 @@
         };
         data.width = data.fullWidth - data.margin.left - data.margin.right
         data.height = data.fullHeight - data.margin.top - data.margin.bottom
+       
         let svg = d3.select("#d3")
         .append("svg")
         .attr('width',data.fullWidth)
@@ -48,6 +49,10 @@
           space += this.getBBox().width + 10
           return translate
         })
+       
+       let clipper = svg
+       .selectAll("g")
+       .attr("clip-path","url(#letter-clip)")
         
        let c10 = d3.schemePaired;
         
@@ -74,7 +79,6 @@
           .append("path")
           .attr("cell", "cell")
           .attr("stroke", "none")
-          //.attr("clip-path","url(#letter-clip)")
           .attr("fill",(d,i)=>c10[i%10])
           .attr("stroke-width", 1)
           .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
