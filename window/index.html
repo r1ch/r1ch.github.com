@@ -98,6 +98,9 @@
         exit()
         update()
         enter()
+       }
+       
+       let more = ()=>{
         nodes.push({})
         simulation.nodes(nodes)
         simulation.alpha(1).restart()
@@ -107,6 +110,8 @@
       .force('charge', d3.forceManyBody())
       .force('center', d3.forceCenter(data.width / 2, data.height / 2))
       .on('tick', step);
+       
+       setInterval(more,1000)
        
     </script>
   </body>
