@@ -48,6 +48,7 @@
         })
         
        let c10 = d3.schemePaired;
+       let t = d3.transition().duration(750);
        
        let points = d3.range(20).map(i => ({
           x: Math.random() * (data.width - data.radius) + data.radius,
@@ -70,7 +71,7 @@
           .remove()
          
           cell
-          .transition(d3.transition().duration(1000))
+          .transition(t)
           .attr("d", (d,i)=>voronoi.renderCell(i))
          
           cell
@@ -95,7 +96,7 @@
           .remove()
          
           cell
-          .transition(d3.transition().duration(1000))
+          .transition(t)
           .attr("d", (d,i)=>voronoi.renderCell(i))
          
           cell
@@ -119,7 +120,7 @@
           })
           voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
           cellUpdate()
-          //meshUpdate()
+          meshUpdate()
       }
        
     </script>
