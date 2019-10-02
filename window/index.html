@@ -56,7 +56,8 @@
          vertices = vertices.map((vertex)=>{
             return [
               Math.max(0,Math.min(data.width,vertex[0]+Math.random()*4 -2)),
-              Math.max(0,Math.min(data.height,vertex[1]+Math.random()*4 -2)),
+              Math.max(0,Math.min(data.height,vertex[1]+Math.random()*4 -2))
+            ]
          })
          return voronoi.polygons(vertices)
        }
