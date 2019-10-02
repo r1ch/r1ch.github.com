@@ -24,6 +24,8 @@
         .append("g")
         .attr("transform", "translate(" + data.margin.left + "," + data.margin.top + ")")
         
+        let space = 0;
+        
         let clip = svg
         .append("clipPath")
         .attr("id", "letter-clip")
@@ -34,8 +36,8 @@
         .attr("d",function(d){return d})
         .attr("class",()=>{console.log(this); return "a"})
         .attr("transform",function(d,i,n,p){
-          console.log(d,i,n,p);
-          return `translate(${50*i},0)`
+          space += this.getBBox().width
+          return `translate(${space},0)`
         })
         
         let background = svg
