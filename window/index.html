@@ -55,7 +55,7 @@
        velocities = new Float64Array(data.n * 2)
 
        
-      let voronoi = d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
+      let voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
        
        let cellUpdate = ()=>{
           let cell = svg
