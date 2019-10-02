@@ -50,9 +50,6 @@
           return translate
         })
        
-       let clipper = svg
-       .selectAll("g")
-       .attr("clip-path","url(#letter-clip)")
         
        let c10 = d3.schemePaired;
         
@@ -81,6 +78,7 @@
           .attr("stroke", "none")
           .attr("fill",(d,i)=>c10[i%10])
           .attr("stroke-width", 1)
+          .attr("clip-path","url(#letter-clip)")
           .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
           //.attr("filter", "url(#blur)");
           
