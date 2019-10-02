@@ -7,7 +7,7 @@
   <body>
      <div id = "d3" style="width:100 vw;height:100 vh"></div>
      <script>
-        const data = {
+        let data = {
           fullWidth:600,
           fullHeight:300,
           margin:{
@@ -16,14 +16,30 @@
             top:10,
             bottom:10
           }
-        },
-        const svg = d3.select("#d3")
-          .append("svg")
-          .attr('width',data.fullWidth)
-          .attr('height',data.fullHeight)
-          .append("g")
-          .attr("transform", "translate(" + data.margin.left + "," + data.margin.top + ")")
+        };
+        let svg = d3.select("#d3")
+        .append("svg")
+        .attr('width',data.fullWidth)
+        .attr('height',data.fullHeight)
+        .append("g")
+        .attr("transform", "translate(" + data.margin.left + "," + data.margin.top + ")")
         
+        let clip = svg.selectAll(".clip")
+        .append("clipPath")
+        .attr("id", "ellipse-clip")
+        .append("path")
+        .attr("d",paths.b)
+        
+        let background = svg.selectAll('.background')
+        .append("rect")
+        .attr("x",0)
+        .attr("y",0)
+        .attr("clip-path","url(#letter-clip)")
+        .attr("fill","SteelBlue")
+        .attr("height",data.height)
+        .attr("width",data.width)
+
+
     </script>
   </body>
 </html>
