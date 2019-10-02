@@ -77,8 +77,6 @@
        
        let update = ()=>{
          background
-         .transition()
-         .duration(750)
          .attr("d",polyline);
        }
       
@@ -100,7 +98,7 @@
         enter()
        }
        
-       setInterval(step,1000)
+       setInterval(step,100)
        
     </script>
   </body>
