@@ -46,14 +46,20 @@
         })
         
        let c10 = d3.schemePaired;
+      
+
        
        let vertices = d3.range(1).map(function(d) {
            return [Math.random() * data.width, Math.random() * data.height]
        })
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
+       
+       let simulation = d3.forceSimulation(vertices)
+      .force('charge', d3.forceManyBody())
+      .force('center', d3.forceCenter(data.width / 2, data.height / 2))
+      .on('tick', step);
         
        let getPolygons = ()=>{
-         vertices.push([Math.random() * data.width, Math.random() * data.height])
          return voronoi.polygons(vertices)
        }
        
@@ -91,14 +97,13 @@
         .attr("d",polyline);
        }
        
-       let step = ()=>{
+       let step = (something)=>{
+         console.log(something)
         bind()
         exit()
         update()
         enter()
        }
-       
-       setInterval(step,100)
        
     </script>
   </body>
