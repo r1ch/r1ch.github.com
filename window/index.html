@@ -10,12 +10,12 @@
         let data = {
           fullWidth:800,
           fullHeight:300,
+          radius:5,
           margin:{
             left:10,
             right:10,
             top:10,
             bottom:10,
-            radius:5
           }
         };
         data.width = data.fullWidth - data.margin.left - data.margin.right
@@ -53,10 +53,11 @@
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
-         return voronoi.polygons(simulation.nodes().map(node=>[
+         let boundedNodes = simulation.nodes().map(node=>[
            Math.max(data.radius,Math.min(data.width-data.radius,node.x)),
            Math.max(data.radius,Math.min(data.height-data.radius,node.y))
-          ]))
+          ])
+         return voronoi.polygons(boundedNodes)
        }
        
        let polyline = (line)=>{
