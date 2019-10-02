@@ -78,6 +78,31 @@
           .attr("stroke", "none")
           .attr("fill",(d,i)=>c10[i%10])
           .attr("stroke-width", 1)
+          .attr("clip-path","url(#letter-clip)")
+          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
+          //.attr("filter", "url(#blur)");
+          
+       }
+       
+       let meshUpdate = ()=>{
+          let mesh = svg
+          .selectAll(".mesh")
+          .data([voronoi.render()])
+          
+          mesh
+          .exit()
+          .remove()
+         
+          mesh
+          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
+         
+          mesh
+          .enter()
+          .append("path")
+          .attr("class", "mesh")
+          .attr("stroke", "#ccc")
+          .attr("fill","none")
+          .attr("stroke-width", 1)
           //.attr("clip-path","url(#letter-clip)")
           .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
           //.attr("filter", "url(#blur)");
