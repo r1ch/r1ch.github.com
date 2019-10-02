@@ -24,13 +24,13 @@
         .append("g")
         .attr("transform", "translate(" + data.margin.left + "," + data.margin.top + ")")
         
-        let clip = svg.selectAll(".clip")
+        let clip = svg
         .append("clipPath")
         .attr("id", "ellipse-clip")
         .append("path")
         .attr("d",paths.b)
         
-        let background = svg.selectAll('.background')
+        let background = svg
         .append("rect")
         .attr("x",0)
         .attr("y",0)
