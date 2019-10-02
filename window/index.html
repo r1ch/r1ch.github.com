@@ -55,13 +55,23 @@
        let background = svg
        .selectAll(".voronoi.path")
        .data(voronoi.polygons(vertices))
+       
+       background
+       .exit()
+       .remove()
+       
+       backround
+       .transition()
+       .delay(1000)
+       .attr("d", function(d) { return "M" + d.join("L") + "Z" } );
+       
+       background
        .enter()
        .append("path")
        .attr("clip-path","url(#letter-clip)")
        .attr("stroke","white") 
        .attr("fill", function(d,i) {return c10[i % 10]} )
        .attr("d", function(d) { return "M" + d.join("L") + "Z" } );
-       //.attr("d", polygon);
       
     </script>
   </body>
