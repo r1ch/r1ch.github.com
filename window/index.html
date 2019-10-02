@@ -28,18 +28,22 @@
         .append("svg")
         .attr('width',data.fullWidth)
         .attr('height',data.fullHeight)
-        .append("g")
-        .attr('width',data.width)
-        .attr('height',data.height)      
-        .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
         
-        let filter = svg.append("defs")
+        svg
+        .append("defs")
         .data([0,1,2,3,4,5])
         .enter()
         .append("filter")
         .attr("id", (d)=>`blur${d}`)
         .append("feGaussianBlur")
         .attr("stdDeviation", (d)=>`blur${d}`);
+        
+        svg
+        .append("g")
+        .attr('width',data.width)
+        .attr('height',data.height)      
+        .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
+        
         
         let space = 0;
         
