@@ -52,7 +52,7 @@
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
-         return voronoi.polygons(simulation.nodes.map(node=>[
+         return voronoi.polygons(simulation.nodes().map(node=>[
            Math.max(0,Math.min(data.width,node.x)),
            Math.max(0,Math.min(data.height,node.y))
           ]))
