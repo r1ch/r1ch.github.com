@@ -5,7 +5,25 @@
     <script src="paths.js"></script>
   </head>
   <body>
+     <div id = "d3" style="width:100 vw;height:100 vh"></div>
      <script>
+        const data = {
+          fullWidth:600,
+          fullHeight:300,
+          margin:{
+            left:10,
+            right:10,
+            top:10,
+            bottom:10
+          }
+        },
+        const svg = d3.select("#d3")
+          .append("svg")
+          .attr('width',data.fullWidth)
+          .attr('height',data.fullHeight)
+          .append("g")
+          .attr("transform", "translate(" + data.margin.left + "," + data.margin.top + ")")
+        
     </script>
   </body>
 </html>
