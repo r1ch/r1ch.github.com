@@ -70,15 +70,14 @@
           .remove()
          
           cell
-          .transition()
-          .duration(1000)
+          .transition(d3.transition.duration(1000))
           .attr("d", (d,i)=>voronoi.renderCell(i))
          
           cell
           .enter()
           .append("path")
           .attr('class', function(d,i){return `cell${i}`})
-          .attr("stroke", "#ccc")
+          .attr("stroke", "none")
           .attr("clip-path","url(#letter-clip)")
           .attr("fill",(d,i)=>c10[i%10])
           .attr("stroke-width", 1)
@@ -86,25 +85,30 @@
           
        }
        
-      let meshUpdate = ()=>{
-        let mesh = svg
-        .selectAll(".mesh")
-        .data([0])
-        
-        mesh
-        .transition()
-        .duration(100)
-        .attr("d", voronoi.render());
-        
-        mesh
-        .enter()
-        .append("path")
-        .attr('class', "mesh")
-        .attr("fill", "none")
-        .attr("stroke", "#ccc")
-        .attr("stroke-width", 1)
-        .attr("d", voronoi.render());
-      }
+       let meshUpdate = ()=>{
+          let cell = svg
+          .selectAll(".mesh")
+          .data(points)
+          
+          cell
+          .exit()
+          .remove()
+         
+          cell
+          .transition(d3.transition.duration(1000))
+          .attr("d", (d,i)=>voronoi.renderCell(i))
+         
+          cell
+          .enter()
+          .append("path")
+          .attr('class', function(d,i){return `mesh${i}`})
+          .attr("stroke", "#ccc")
+          .attr("fill","none")
+          .attr("stroke-width", 1)
+          .attr("d", (d,i)=>voronoi.renderCell(i))
+          
+       }
+       
 
       let update = ()=>{
           points.forEach((point,i)=>{
