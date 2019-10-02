@@ -50,12 +50,12 @@
        let c10 = d3.schemePaired;
        let t = d3.transition().duration(750);
        
-       let points = d3.range(20).map(i => ({
+       let points = d3.range(40).map(i => ({
           x: Math.random() * (data.width - data.radius) + data.radius,
           y: Math.random() * (data.height - data.radius) + data.radius,
         }));
        
-       let velocities = d3.range(20).map(i=>({vx:0,vy:0}))
+       let velocities = d3.range(40).map(i=>({vx:0,vy:0}))
        
       let voronoi = d3.Delaunay
       .from(points, d => d.x, d => d.y)
