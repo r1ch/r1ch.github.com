@@ -69,9 +69,8 @@
           .exit()
           .remove()
          
-          cell
-          
-          .attr('clip-path','url(#letter-clip)'
+          cell 
+          .attr('clip-path','url(#letter-clip)')
           .attr("d", (d,i)=>voronoi.renderCell(i))
          
           cell
