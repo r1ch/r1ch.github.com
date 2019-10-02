@@ -50,12 +50,13 @@
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
-         console.log(simulation.nodes())
-         return voronoi.polygons(simulation.nodes())
+         return voronoi.polygons(simulation.nodes().map(node=>[node.x,node.y])
        }
        
        let polyline = (line)=>{
-          return "M" + line.join("L") + "Z"
+          console.log(line)
+         
+          //return "M" + line.join("L") + "Z"
        }
        
        let background;
