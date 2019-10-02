@@ -27,8 +27,11 @@
         let clip = svg
         .append("clipPath")
         .attr("id", "letter-clip")
+        .selectAll(".letter")
+        .data(paths)
+        .enter()
         .append("path")
-        .attr("d",paths.b)
+        .attr("d",function(d){return d})
         
         let background = svg
         .append("rect")
