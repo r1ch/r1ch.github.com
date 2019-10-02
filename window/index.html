@@ -46,15 +46,11 @@
         })
         
        let c10 = d3.schemePaired;
-      
-
        
-       let vertices = d3.range(10).map(function(d) {
-           return [Math.random() * data.width, Math.random() * data.height]
-       })
        let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
         
        let getPolygons = ()=>{
+         console.log(simulation.nodes())
          return voronoi.polygons(simulation.nodes())
        }
        
@@ -99,7 +95,7 @@
         enter()
        }
        
-       let simulation = d3.forceSimulation(vertices)
+       let simulation = d3.forceSimulation([{},{},{},{},{},{},{}])
       .force('charge', d3.forceManyBody())
       .force('center', d3.forceCenter(data.width / 2, data.height / 2))
       .on('tick', step);
