@@ -113,8 +113,8 @@
           points.forEach((point,i)=>{
             point.x = (data.width + point.x + velocities[i].vx) % data.width
             point.y = (data.height + point.y + velocities[i].vy) % data.height
-            velocities[i].vx = 0.4 * (Math.random() - 1) - 0.02 * velocities[i].vx
-            velocities[i].vy = 0.4 * (Math.random() - 1) - 0.02 * velocities[i].vy
+            velocities[i].vx = 0.8 * (Math.random() - 2) - 0.04 * velocities[i].vx
+            velocities[i].vy = 0.8 * (Math.random() - 2) - 0.04 * velocities[i].vy
           })
           voronoi = d3.Delaunay.from(points, d => d.x, d => d.y).voronoi([0, 0, data.width, data.height]);
           cellUpdate()
