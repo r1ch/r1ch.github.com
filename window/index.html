@@ -88,7 +88,7 @@
         .enter()
         .append("path")
         .attr('class', 'voronoi path')
-        .attr("clip-path","url(#letter-clip)")
+        //.attr("clip-path","url(#letter-clip)")
         .attr("stroke","white") 
         .attr("fill", function(d,i) {return c10[i % 10]} )
         .attr("d",polyline);
