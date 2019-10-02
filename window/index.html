@@ -45,16 +45,19 @@
           return translate
         })
         
-       let vertices = d3.range(10).map(function(d) {
-          return [Math.random() * data.width, Math.random() * data.height];
-        });
-       
-       let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
-       let c10 = d3.schemePaired;
+        let c10 = d3.schemePaired;
+        
+       let getPolygons = ()=>{
+         let vertices = d3.range(10).map(function(d) {
+           return [Math.random() * data.width, Math.random() * data.height]
+         })
+         let voronoi = d3.voronoi().extent([[0, 0], [data.width, data.height]]);
+         return voronoi.polygons(vertices)
+       } 
        
        let background = svg
        .selectAll(".voronoi.path")
-       .data(voronoi.polygons(vertices))
+       .data(getPolygons())
        
        background
        .exit()
