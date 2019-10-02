@@ -61,28 +61,47 @@
           return "M" + line.join("L") + "Z"
        }
        
-       let background = svg
-       .selectAll(".voronoi.path")
-       .data(getPolygons())
+       let background;
        
-       background
-       .exit()
-       .remove()
+       let bind = ()=>{
+         background = svg
+         .selectAll(".voronoi.path")
+         .data(getPolygons())
+       }
        
-       background
-       .transition()
-       .delay(1000)
-       .attr("d",polyline);
+       let exit = ()=>{
+          background
+         .exit()
+         .remove()
+       }
        
-       background
-       .enter()
-       .append("path")
-       .attr('class', 'voronoi path')
-       .attr("clip-path","url(#letter-clip)")
-       .attr("stroke","white") 
-       .attr("fill", function(d,i) {return c10[i % 10]} )
-       .attr("d",polyline);
+       let update = ()=>{
+         background
+         .transition()
+         .delay(750)
+         .attr("d",polyline);
+       }
       
+       let enter = ()=>{
+        background
+        .enter()
+        .append("path")
+        .attr('class', 'voronoi path')
+        .attr("clip-path","url(#letter-clip)")
+        .attr("stroke","white") 
+        .attr("fill", function(d,i) {return c10[i % 10]} )
+        .attr("d",polyline);
+       }
+       
+       let step = (){
+        bind()
+        exit()
+        update()
+        enter()
+       }
+       
+       setInterval(step,1000)
+       
     </script>
   </body>
 </html>
