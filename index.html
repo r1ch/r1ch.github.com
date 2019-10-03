@@ -66,7 +66,7 @@
        
        clipHolder
         .attr("transform-origin","center")
-        .attr('transform', `scale(${data.width/letterWidth},${data.width/letterWidth}) translate(${data.width/2-letterWidth/2},${data.height/2-letterHeight/2})`)
+        .attr('transform', `scale(${data.width/letterWidth},${data.width/letterWidth}) translate(${data.width/2-letterWidth/2},${data.height/2-(letterHeight-data.kerning)/2})`)
        
        let background = stage
        .append('g')
