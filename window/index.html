@@ -62,7 +62,7 @@
          return translate
         })
         .transition(d3.transition().duration(5000))
-        .attr("d",function(d,i,n){return n[2]})
+        .attr("d",(d,i)=>paths[i])
        
        let background = stage
        .append('g')
