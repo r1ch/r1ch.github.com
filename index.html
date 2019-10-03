@@ -11,7 +11,7 @@
        let data = {
         fullWidth: window.innerWidth,
         fullHeight: window.innerHeight,
-        radius: 5,
+        kerning: 10,
         N: 20,
         margin: {
          left: 10,
@@ -57,8 +57,8 @@
         .attr("d",function(d){return d})
         .attr("class", "letter")
         .attr("transform", function(d) {
-         let translate = `translate(${space},0)`
-         letterWidth += this.getBBox().width + 10
+         let translate = `translate(${letterWidth},0)`
+         letterWidth += this.getBBox().width + data.kerning
          letterHeight  = Math.max(letterHeight,this.getBBox().height)
          return translate
         })
