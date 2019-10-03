@@ -45,7 +45,6 @@
         .attr('height', data.height)
         .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
 
-
        let space = 0;
 
        let clip = svg
@@ -67,6 +66,11 @@
        .append('g')
        .attr("width",data.width)
        .attr("height",data.height)
+       
+       let foreground = svg
+       .append('g')
+       .attr("width",data.width)
+       .attr("height",data.height)
        .attr("clip-path","url(#letter-clip)")
        
 
@@ -81,7 +85,7 @@
        let voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
 
        let cellUpdate = () => {
-        let cell = background
+        let cell = foreground
          .selectAll(".cell")
          .data([...voronoi.cellPolygons()])
 
