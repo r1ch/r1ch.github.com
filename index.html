@@ -43,7 +43,7 @@
         .append("g")
         .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
 
-       let space = 0;
+       let letterWidth = 0;
 
        let clipHolder = stage
         .append("clipPath")
@@ -58,13 +58,14 @@
         .attr("class", "letter")
         .attr("transform", function(d) {
          let translate = `translate(${space},0)`
-         space += this.getBBox().width + 10
+         letterWidth += this.getBBox().width + 10
+         letterHeight  = Math.max(letterHeight,this.getBBox().height)
          return translate
         })
        
        clipHolder
         .attr("transform-origin","center")
-        .attr('transform', `scale(${data.width}/space,${data.width}/space}) translate(${data.width/2-space/2},${data.height/2})`)
+        .attr('transform', `scale(${data.width/letterWidth},${data.width/letterWidth}) translate(${data.width/2-letterWidth/2},${data.height/2-letterHeight/2})`)
        
        let background = stage
        .append('g')
