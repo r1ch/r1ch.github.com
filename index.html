@@ -6,11 +6,11 @@
     <script src="window/paths.js"></script>
   </head>
   <body bgcolor="#000000">
-     <div id = "d3" style="margin:auto;width:100vw"></div>
+     <div id = "d3" style="width:100vw;height:100vh"></div>
      <script>
        let data = {
-        fullWidth: 980,
-        fullHeight: 960,
+        fullWidth: parseInt(document.getElementById("d3").style("width"));,
+        fullHeight: parseInt(document.getElementById("d3").style("height")),
         radius: 5,
         N: 20,
         margin: {
