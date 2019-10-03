@@ -59,7 +59,7 @@
         .attr("d",function(d){return d})
         .attr("class", "letter")
         .attr("transform", function(d) {
-         let translate = `translate(${letterWidth},0)`
+         let translate = `scale(2) translate(${letterWidth},0)`
          letterWidth += this.getBBox().width + data.kerning
          letterHeight  = Math.max(letterHeight,this.getBBox().height)
          return translate
@@ -68,8 +68,8 @@
        let scaleFactor = data.width*data.letterScale/letterWidth
        
        clipHolder
-        .attr('transform', `scale(${scaleFactor},${scaleFactor}) translate(${(data.width-letterWidth-data.kerning)/2*scaleFactor},${(data.height-letterHeight)/2*scaleFactor})`)
-       //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
+       //.attr('transform', `scale(${scaleFactor},${scaleFactor}) translate(${(data.width-letterWidth-data.kerning)/2*scaleFactor},${(data.height-letterHeight)/2*scaleFactor})`)
+       .attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
        
        let background = stage
