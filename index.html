@@ -11,7 +11,7 @@
        let data = {
         fullWidth: 900,
         fullHeight: 300,
-        kerning: 10,
+        kerning: 0,
         letterScale:0.8,
         N: 100,
         margin: {
@@ -41,7 +41,6 @@
         .attr("stdDeviation", d => d);
 
        let letterWidth = 0;
-       let letterHeight = 0;
        
        let clipPath = svg
         .append("clipPath")
@@ -54,18 +53,18 @@
         .append("path")
         .attr("d",function(d){return d})
         .attr("class", "letter")
-        .attr("transform", function(d) {
-         letterHeight = Math.max(letterHeight,this.getBBox().height)
-         let translate = `translate(${letterWidth},0)`
-         letterWidth += this.getBBox().width + data.kerning
+        .attr("transform", function(d,i) {
+         let translate = `translate(${letterWidth + i*data.kerning},0)`
+         letterWidth += this.getBBox().width
          return translate
         })
        
-       letterWidth -= data.kerning;
-       let scaleFactor = data.width/(letterWidth)*data.letterScale
+       let clipWidth = clipPath.node().getBBox().width
+       let clipHeight = clipPath.node().getBBox().height
+       let clipScale = data.width/clipWidth*data.letterScale
        
        clipPath
-       .attr('transform', `translate(${(data.width-letterWidth)/2/scaleFactor},${(data.height-letterHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
+       .attr('transform', `translate(${(data.width-clipWidth)/2/scaleFactor},${(data.height-clipHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
        //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
        
