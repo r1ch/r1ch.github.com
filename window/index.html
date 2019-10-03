@@ -100,7 +100,6 @@
          .attr("stroke", "#ccc")
          .attr("fill", (d, i) => c10[i % 10])
          .attr("stroke-width", 5)
-         .attr("clip-path", "url(#letter-clip)")
          .attr("d", (d) => {
           return "M" + d.join("L") + "Z"
          })
