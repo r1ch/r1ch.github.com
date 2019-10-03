@@ -46,17 +46,12 @@
 
        let letterWidth = 0;
        let letterHeight = 0;
-
-       let clipG = stage
-        .append('g')
-        .attr("transform-origin","center")
        
-       let clipHolder = clipG
+       let clipPath = stage
         .append("clipPath")
         .attr("id", "letter-clip")
-        
-       
-       let clipPaths = clipHolder
+               
+       let letters = clipPath
         .selectAll(".letter")
         .data(paths)
         .enter()
@@ -72,7 +67,7 @@
        
        let scaleFactor = data.width/letterWidth*data.letterScale
        
-       clipG
+       clipPath
        .attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2*scaleFactor},${(data.height-letterHeight)/2*scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
        //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
