@@ -49,13 +49,14 @@
 
        let clip = stage
         .append("clipPath")
-        .attr("transform","translate(0,100)")
+        .attr("transform-origin","center")
+        .attr("transform","translate(0,${data.height/2})")
         .attr("id", "letter-clip")
         .selectAll(".letter")
         .data(paths)
         .enter()
         .append("path")
-        .attr("transform-origin","center")
+
         .attr("d",function(d){return d})
         .attr("class", "letter")
         .attr("transform", function(d) {
