@@ -47,11 +47,11 @@
 
        let space = 0;
 
-       let clip = stage
+       let clipHolder = stage
         .append("clipPath")
-        .attr("transform-origin","center")
-        .attr('transform', `translate(${data.width/2},${data.height/2})`)
         .attr("id", "letter-clip")
+       
+       let clipPaths = clipHolder
         .selectAll(".letter")
         .data(paths)
         .enter()
@@ -63,6 +63,10 @@
          space += this.getBBox().width + 10
          return translate
         })
+       
+       clipHolder
+        .attr("transform-origin","center")
+        .attr('transform', `translate(${data.width/2},${data.height/2})`)
        
        let background = stage
        .append('g')
