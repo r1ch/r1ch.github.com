@@ -40,7 +40,7 @@
         .append("feGaussianBlur")
         .attr("stdDeviation", d => d * 2);
 
-       svg
+       let stage = 
         .append("g")
         .attr('width', data.width)
         .attr('height', data.height)
@@ -48,7 +48,7 @@
 
        let space = 0;
 
-       let clip = svg
+       let clip = stage
         .append("clipPath")
         .attr("id", "letter-clip")
         .selectAll(".letter")
@@ -63,12 +63,12 @@
          return translate
         })
        
-       let background = svg
+       let background = stage
        .append('g')
        .attr("width",data.width)
        .attr("height",data.height)
        
-       let foreground = svg
+       let foreground = stage
        .append('g')
        .attr("width",data.width)
        .attr("height",data.height)
