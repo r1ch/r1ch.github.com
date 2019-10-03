@@ -58,7 +58,7 @@
         .attr("d",function(d){return d})
         .attr("class", "letter")
         .attr("transform", function(d) {
-         let translate = `scale(3,3) translate(${space},${data.height/2})`
+         let translate = `scale(3,3) translate(${space},20)`
          space += this.getBBox().width + 10
          return translate
         })
