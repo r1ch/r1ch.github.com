@@ -5,7 +5,7 @@
     <script src="d3-delaunay.min.js"></script>
     <script src="paths.js"></script>
   </head>
-  <body>
+  <body style:"colour:black">
      <div id = "d3" style="width:100 vw;height:100 vh"></div>
      <script>
        let data = {
@@ -102,7 +102,7 @@
          .enter()
          .append("path")
          .attr("class", "cell")
-         .attr("stroke", "#ccc")
+         .attr("stroke", "black")
          .attr("fill", (d, i) => c10[i % 10])
          .attr("stroke-width", 5)
          .attr("d", (d) => {
