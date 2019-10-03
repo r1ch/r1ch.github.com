@@ -54,13 +54,15 @@
         .data(paths)
         .enter()
         .append("path")
-        .attr("d",function(d){return d})
+        .attr("d",function(d,i,n){return n[1]})
         .attr("class", "letter")
         .attr("transform", function(d) {
          let translate = `scale(3,3) translate(${space},0)`
          space += this.getBBox().width + 10
          return translate
         })
+        .transition(d3.transition().duration(5000))
+        .attr("d",function(d){return d})
        
        let background = stage
        .append('g')
