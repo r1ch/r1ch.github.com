@@ -13,6 +13,7 @@
         fullHeight: 400,
         radius: 5,
         n: 40,
+        N: 200,
         margin: {
          left: 10,
          right: 10,
@@ -45,7 +46,7 @@
         .attr('height', data.height)
         .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
 
-       let space
+       let space = 0;
 
        let clip = svg
         .append("clipPath")
@@ -77,12 +78,12 @@
        let c10 = d3.schemePaired;
 
        positions = Float64Array.from({
-        length: data.n * 2
+        length: data.N * 2
        }, (_, i) => Math.random() * (i & 1 ? data.height : data.width))
-       velocities = new Float64Array(data.n * 2)
+       velocities = new Float64Array(data.N * 2)
 
 
-       let voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
+       let voronoi = new d3.Delaunay(positions.slice).voronoi([0, 0, data.width, data.height]);
 
        let cellUpdate = () => {
         let cell = foreground
