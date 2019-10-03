@@ -68,7 +68,7 @@
        let scaleFactor = data.width/letterWidth*data.letterScale
        
        clipPath
-       .attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2*scaleFactor},${(data.height-letterHeight)/2*scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
+       .attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2/scaleFactor},${(data.height-letterHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
        //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
        
