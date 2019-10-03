@@ -83,7 +83,7 @@
        velocities = new Float64Array(data.N * 2)
 
 
-       let voronoi = new d3.Delaunay(positions.slice).voronoi([0, 0, data.width, data.height]);
+       let voronoi = new d3.Delaunay(positions.slice(0,n*2)).voronoi([0, 0, data.width, data.height]);
 
        let cellUpdate = () => {
         let cell = foreground
@@ -137,14 +137,14 @@
        }
 
        let update = () => {
-        for (let i = 0; i < positions.length; ++i) {
+        for (let i = 0; i < n*2; ++i) {
          const size = i & 1 ? data.height : data.width;
          positions[i] += velocities[i];
          if (positions[i] < 0) positions[i] += size;
          else if (positions[i] > size) positions[i] -= size;
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
         }
-        voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
+        voronoi = new d3.Delaunay(positions.slice(n*2)).voronoi([0, 0, data.width, data.height]);
         meshUpdate()
         cellUpdate()
 
