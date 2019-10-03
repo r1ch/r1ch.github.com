@@ -65,9 +65,11 @@
          return translate
         })
        
+       let scaleFactor = data.width*data.letterScale/letterWidth
+       
        clipHolder
-        //.attr('transform', `scale(${data.width*data.letterScale/letterWidth},${data.width*data.letterScale/letterWidth}) translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
-       .attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
+        .attr('transform', `scale(${scaleFactor},${scaleFactor}) translate(${(data.width-letterWidth-data.kerning)/2*scaleFactor},${(data.height-letterHeight)/2*scaleFactor})`)
+       //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
        
        let background = stage
