@@ -60,7 +60,7 @@
         .attr("class", "letter")
         .attr("transform", function(d) {
          letterHeight = Math.max(letterHeight,this.getBBox().height)
-         let translate = `translate(${letterWidth*2},0)`
+         let translate = `translate(${letterWidth},0)`
          letterWidth += this.getBBox().width + data.kerning
          return translate
         })
