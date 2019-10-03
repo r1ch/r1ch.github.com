@@ -54,7 +54,7 @@
         .data(paths)
         .enter()
         .append("path")
-        .attr("d",function(d,i,n){return n[1]})
+        .attr("d",function(d){return d})
         .attr("class", "letter")
         .attr("transform", function(d) {
          let translate = `scale(3,3) translate(${space},0)`
@@ -62,7 +62,7 @@
          return translate
         })
         .transition(d3.transition().duration(5000))
-        .attr("d",function(d){return d})
+        .attr("d",function(d,i,n){return n[2]})
        
        let background = stage
        .append('g')
