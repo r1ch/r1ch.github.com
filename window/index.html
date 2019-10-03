@@ -8,132 +8,147 @@
   <body>
      <div id = "d3" style="width:100 vw;height:100 vh"></div>
      <script>
-       
-        let data = {
-          fullWidth:800,
-          fullHeight:300,
-          radius:5,
-          n:40,
-          margin:{
-            left:10,
-            right:10,
-            top:10,
-            bottom:10,
-          }
-        };
-        data.width = data.fullWidth - data.margin.left - data.margin.right
-        data.height = data.fullHeight - data.margin.top - data.margin.bottom
-       
-        let svg = d3.select("#d3")
+       let data = {
+        fullWidth: 800,
+        fullHeight: 300,
+        radius: 5,
+        n: 40,
+        margin: {
+         left: 10,
+         right: 10,
+         top: 10,
+         bottom: 10,
+        }
+       };
+       data.width = data.fullWidth - data.margin.left - data.margin.right
+       data.height = data.fullHeight - data.margin.top - data.margin.bottom
+
+       let svg = d3.select("#d3")
         .append("svg")
-        .attr('width',data.fullWidth)
-        .attr('height',data.fullHeight)
-        
-        svg
+        .attr('width', data.fullWidth)
+        .attr('height', data.fullHeight)
+
+       svg
         .append("defs")
         .selectAll("filter")
-        .data([0,1,2,3,4,5])
+        .data([0, 1, 2, 3, 4, 5])
         .enter()
         .append("filter")
-        .attr("id", (d)=>`blur${d}`)
+        .attr("id", (d) => `blur${d}`)
         .append("feGaussianBlur")
-        .attr("stdDeviation", d=>d*2);
-        
-        svg
+        .attr("stdDeviation", d => d * 2);
+
+       svg
         .append("g")
-        .attr('width',data.width)
-        .attr('height',data.height)      
+        .attr('width', data.width)
+        .attr('height', data.height)
         .attr("transform", `translate(${data.margin.left},${data.margin.right})`)
-        
-        
-        let space = 0;
-        
-        let clip = svg
+
+
+       let space = 0;
+
+       let clip = svg
         .append("clipPath")
         .attr("id", "letter-clip")
         .selectAll(".letter")
         .data(paths)
         .enter()
         .append("path")
-        .attr("d",function(d){return d.path})
-        .attr("class",function(d){return `letter ${d.letter}`})
-        .attr("transform",function(d){
-          let translate = `scale(3,3) translate(${space},0)`
-          space += this.getBBox().width + 10
-          return translate
+        .attr("d", function(d) {
+         return d.path
+        })
+        .attr("class", function(d) {
+         return `letter ${d.letter}`
+        })
+        .attr("transform", function(d) {
+         let translate = `scale(3,3) translate(${space},0)`
+         space += this.getBBox().width + 10
+         return translate
         })
        
-        
+       let background = svg
+       .append(g)
+       .attr("width",data.width)
+       .attr("height",data.height)
+       .attr("clip-path","url(#letter-clip)")
+       
+
        let c10 = d3.schemePaired;
-        
-       positions = Float64Array.from({length: data.n * 2}, (_, i) => Math.random() * (i & 1 ? data.height : data.width))
+
+       positions = Float64Array.from({
+        length: data.n * 2
+       }, (_, i) => Math.random() * (i & 1 ? data.height : data.width))
        velocities = new Float64Array(data.n * 2)
 
-       
-      let voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-       
-       let cellUpdate = ()=>{
-          let cell = svg
-          .selectAll(".cell")
-          .data([...voronoi.cellPolygons()])
-          
-          cell
-          .exit()
-          .remove()
-         
-          cell
-          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
-         
-          cell
-          .enter()
-          .append("path")
-          .attr("class", "cell")
-          .attr("stroke", "#ccc")
-          .attr("fill",(d,i)=>c10[i%10])
-          .attr("stroke-width", 5)
-          .attr("clip-path","url(#letter-clip)")
-          .attr("d", (d)=>{ return "M" + d.join("L") + "Z" })
-          .attr("filter", (d,i)=>`url(#blur${i%5})`);
-          
-       }
-       
-       let meshUpdate = ()=>{
-          let mesh = svg
-          .selectAll(".mesh")
-          .data([voronoi.render()])
-          
-          mesh
-          .exit()
-          .remove()
-         
-          mesh
-          .attr("d",d=>d)
-         
-          mesh
-          .enter()
-          .append("path")
-          .attr("class", "mesh")
-          .attr("stroke", "#ccc")
-          .attr("fill","none")
-          .attr("stroke-width", 1)
-          .attr("d",d=>d)
-          
-       }
-     
-      let update = ()=>{
-          for (let i = 0; i < positions.length; ++i) {
-            const size = i & 1 ? data.height : data.width;
-            positions[i] += velocities[i];
-            if (positions[i] < 0) positions[i] += size;
-            else if (positions[i] > size) positions[i] -= size;
-            velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
-          }
-          voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-          //meshUpdate()
-          cellUpdate()
 
-      }
-      setInterval(update,20)
+       let voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
+
+       let cellUpdate = () => {
+        let cell = background
+         .selectAll(".cell")
+         .data([...voronoi.cellPolygons()])
+
+        cell
+         .exit()
+         .remove()
+
+        cell
+         .attr("d", (d) => {
+          return "M" + d.join("L") + "Z"
+         })
+
+        cell
+         .enter()
+         .append("path")
+         .attr("class", "cell")
+         .attr("stroke", "#ccc")
+         .attr("fill", (d, i) => c10[i % 10])
+         .attr("stroke-width", 5)
+         .attr("clip-path", "url(#letter-clip)")
+         .attr("d", (d) => {
+          return "M" + d.join("L") + "Z"
+         })
+         .attr("filter", (d, i) => `url(#blur${i%5})`);
+
+       }
+
+       let meshUpdate = () => {
+        let mesh = background
+         .selectAll(".mesh")
+         .data([voronoi.render()])
+
+        mesh
+         .exit()
+         .remove()
+
+        mesh
+         .attr("d", d => d)
+
+        mesh
+         .enter()
+         .append("path")
+         .attr("class", "mesh")
+         .attr("stroke", "#ccc")
+         .attr("fill", "none")
+         .attr("stroke-width", 1)
+         .attr("d", d => d)
+
+       }
+
+       let update = () => {
+        for (let i = 0; i < positions.length; ++i) {
+         const size = i & 1 ? data.height : data.width;
+         positions[i] += velocities[i];
+         if (positions[i] < 0) positions[i] += size;
+         else if (positions[i] > size) positions[i] -= size;
+         velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
+        }
+        voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
+        //meshUpdate()
+        cellUpdate()
+
+       }
+       setInterval(update, 20)
     </script>
   </body>
 </html>
