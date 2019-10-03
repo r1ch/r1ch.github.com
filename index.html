@@ -38,7 +38,7 @@
         .append("filter")
         .attr("id", (d) => `blur${d}`)
         .append("feGaussianBlur")
-        .attr("stdDeviation", d => d * 2);
+        .attr("stdDeviation", d => d);
 
        let stage = svg
         .append("g")
@@ -68,7 +68,7 @@
        let scaleFactor = data.width/letterWidth*data.letterScale
        
        clipPath
-       .attr('transform', `translate(${(data.width-letterWidth)/2/scaleFactor},${(data.height-letterHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
+       .attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2/scaleFactor},${(data.height-letterHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
        //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
        
@@ -118,7 +118,7 @@
          .attr("d", (d) => {
           return "M" + d.join("L") + "Z"
          })
-         //.attr("filter", (d, i) => `url(#blur${i%5})`);
+         .attr("filter", (d, i) => `url(#blur${i%5})`);
 
        }
 
@@ -154,7 +154,7 @@
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
         }
         voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-        meshUpdate()
+        //meshUpdate()
         cellUpdate()
 
        }
