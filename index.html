@@ -50,7 +50,7 @@
        let clip = stage
         .append("clipPath")
         .attr("transform-origin","center")
-        .attr('transform', `translate(${data.height/2}),${data.height/2})`)
+        .attr('transform', `translate(${data.width/2}),${data.height/2})`)
         .attr("id", "letter-clip")
         .selectAll(".letter")
         .data(paths)
