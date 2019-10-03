@@ -136,7 +136,7 @@
        }
 
        let update = () => {
-        for (let i = 0; i < data.n*2; ++i) {
+        for (let i = 0; i < positions.length ; ++i) {
          const size = i & 1 ? data.height : data.width;
          positions[i] += velocities[i];
          if (positions[i] < 0) positions[i] += size;
