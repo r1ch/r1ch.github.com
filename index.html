@@ -48,6 +48,7 @@
         .attr("id", "letter-clip")
                
        let letters = clipPath
+        .append('g')
         .selectAll(".letter")
         .data(paths)
         .enter()
@@ -65,7 +66,7 @@
        let scaleFactor = data.width/(letterWidth)*data.letterScale
        
        clipPath
-       .attr('transform', `rotate(45) translate(${(data.width-letterWidth)/2/scaleFactor},${(data.height-letterHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
+       .attr('transform', `translate(${(data.width-letterWidth)/2/scaleFactor},${(data.height-letterHeight)/2/scaleFactor}) scale(${scaleFactor},${scaleFactor})`)
        //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
 
        
