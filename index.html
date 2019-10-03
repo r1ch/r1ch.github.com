@@ -6,11 +6,11 @@
     <script src="window/paths.js"></script>
   </head>
   <body bgcolor="#000000">
-     <div id = "d3" style="margin:auto"></div>
+     <div id = "d3" style="padding-top:25%"></div>
      <script>
        let data = {
-        fullWidth: 900,
-        fullHeight: 300,
+        fullWidth: window.innerWidth,
+        fullHeight: window.innerHeight,
         kerning: 5,
         letterScale:0.8,
         N: 100,
@@ -28,7 +28,7 @@
         .append("svg")
         .attr('width', data.fullWidth)
         .attr('height', data.fullHeight)
-        //.call(responsivefy)
+        .call(responsivefy)
 
        svg
         .append("defs")
