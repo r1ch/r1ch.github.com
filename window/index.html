@@ -57,12 +57,10 @@
         .attr("d",function(d){return d})
         .attr("class", "letter")
         .attr("transform", function(d) {
-         let translate = `scale(3,3) translate(${space},0)`
+         let translate = `scale(0,0) translate(${space},0)`
          space += this.getBBox().width + 10
          return translate
         })
-        .transition(d3.transition().duration(5000))
-        .attr("d",(d,i)=>paths[2])
        
        let background = stage
        .append('g')
