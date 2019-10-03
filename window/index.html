@@ -54,7 +54,7 @@
         .data(paths)
         .enter()
         .append("path")
-        .attr("d",d=>d)
+        .attr("d",d)
         .attr("class", "letter")
         .attr("transform", function(d) {
          let translate = `scale(3,3) translate(${space},0)`
