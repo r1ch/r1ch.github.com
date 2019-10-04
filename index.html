@@ -10,7 +10,7 @@
      <script>
        let data = {
         fullWidth: window.innerWidth,
-        fullHeight: 200,
+        fullHeight: window.innerHeight,
         kerning: 5,
         letterScale:0.8,
         N: 100,
@@ -122,7 +122,7 @@
          .append("path")
          .attr("class", "mesh")
          .attr("stroke", "white")
-         .attr("fill", (d, i) => c10[i % 10])
+         .attr("fill", (d, i) => c10[(i+1) % 10])
          .attr("stroke-width", 1)
          .attr("d",function(d){return d})
 
@@ -137,7 +137,7 @@
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
         }
         voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-        //meshUpdate()
+        meshUpdate()
         cellUpdate()
 
        }
