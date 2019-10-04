@@ -51,8 +51,10 @@
        .attr("dominant-baseline","middle")
        .attr("text-anchor","middle")
        .text("bradish")
-       .style("font","Helvetica Black")
-       .style("font-size", function(d) { return (data.width / this.getComputedTextLength() * 20) + "px"; })
+       .style({
+         "font-size":"`${data.width / this.getComputedTextLength() * 20)}px`",
+         "font":"Helvetica Black"
+        })
        .attr("dy", ".35em");
 
        /*let letterWidth = 0;
