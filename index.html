@@ -26,7 +26,7 @@
         .append("svg")
         .attr('width', data.fullWidth)
         .attr('height', data.fullHeight)
-        .call(responsivefy)
+        //.call(responsivefy)
 
        let defs = svg
         .append("defs")
@@ -35,8 +35,6 @@
        .append("clipPath")
        .attr("id","letter-clip")
        .append("text")
-       .attr("x","50%")
-       .attr("y","50%")
        .attr("dominant-baseline","middle")
        .attr("text-anchor","middle")
        .text("bradish")
@@ -87,7 +85,7 @@
 
        }
        
-       let voronoi
+       let voronoi = new d3.Delaunay(positions).voronoi([0, 0, bounds.width, bounds.height]);
        
        let update = () => {
         for (let i = 0; i < positions.length ; ++i) {
