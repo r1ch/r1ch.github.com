@@ -30,15 +30,6 @@
 
        let defs = svg
         .append("defs")
-        
-       let filters = defs
-        .selectAll("filter")
-        .data([0, 1, 2, 3, 4, 5])
-        .enter()
-        .append("filter")
-        .attr("id", (d) => `blur${d}`)
-        .append("feGaussianBlur")
-        .attr("stdDeviation", d => d/3);
        
        let clipPath = defs
        .append("clipPath")
@@ -52,18 +43,15 @@
        .attr("font-size", function(d) { return Math.min(data.height,(data.width / this.getComputedTextLength() * 12)) + "px"; })
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
-
-       let background = svg
-       .append('g')
-       .attr("width",data.width)
-       .attr("height",data.height)
+       
+       let bounds = d3.select("#letter-clip").node().getBBox()
        
        let foreground = svg
        .append('g')
-       .attr("width",data.width)
-       .attr("height",data.height)
+       .attr("width",bounds.width)
+       .attr("height",bounds.height)
        .attr("clip-path","url(#letter-clip)")
-       
+       .attr("transform","translate(${(data.width-bounds.width)/2},${(data.height-bounds.height)/2})")
 
        let c10 = d3.schemePaired;
 
@@ -99,30 +87,6 @@
          .attr("d", (d) => {
           return "M" + d.join("L") + "Z"
          })
-         .attr("filter", (d, i) => `url(#blur${i%5})`);
-
-       }
-
-       let meshUpdate = () => {
-        let mesh = background
-         .selectAll(".mesh")
-         .data([voronoi.render()])
-
-        mesh
-         .exit()
-         .remove()
-
-        mesh
-         .attr("d",function(d){return d})
-
-        mesh
-         .enter()
-         .append("path")
-         .attr("class", "mesh")
-         .attr("stroke", "white")
-         .attr("fill", (d, i) => c10[(i+1) % 10])
-         .attr("stroke-width", 1)
-         .attr("d",function(d){return d})
 
        }
 
@@ -135,7 +99,6 @@
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
         }
         voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-        //meshUpdate()
         cellUpdate()
 
        }
