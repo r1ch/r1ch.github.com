@@ -35,12 +35,12 @@
         
        let filters = defs
         .selectAll("filter")
-        .data([0, .5, 1, 1.5, 2, 2.5])
+        .data([0, 1, 2, 3, 4, 5])
         .enter()
         .append("filter")
         .attr("id", (d) => `blur${d}`)
         .append("feGaussianBlur")
-        .attr("stdDeviation", d => d);
+        .attr("stdDeviation", d => d/3);
        
        let clipPath = defs
        .append("clipPath")
@@ -54,6 +54,8 @@
        .attr("font-size", function(d) { return (data.width / this.getComputedTextLength() * 12) + "px"; })
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
+       .transition(d3.transition().duration(5000))
+       .text("bradi.sh")
 
        let background = svg
        .append('g')
