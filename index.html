@@ -122,7 +122,7 @@
          .append("path")
          .attr("class", "mesh")
          .attr("stroke", "white")
-         .attr("fill", c10[i+1 % 10])
+         .attr("fill", (d, i) => c10[i % 10])
          .attr("stroke-width", 1)
          .attr("d",function(d){return d})
 
