@@ -35,6 +35,7 @@
        .append("clipPath")
        .attr("id","letter-clip")
        .append("text")
+       .attr("id","letter-text")
        .attr("x","50%")
        .attr("y","50%")
        .attr("dominant-baseline","middle")
@@ -44,7 +45,7 @@
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
        
-       let bounds = d3.select("#letter-clip").node().getBBox()
+       let bounds = d3.select("#letter-text").node().getBBox()
        
        let foreground = svg
        .append('g')
