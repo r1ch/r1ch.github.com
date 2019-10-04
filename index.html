@@ -11,7 +11,7 @@
        let data = {
         fullWidth: window.innerWidth,
         fullHeight: 200,
-        N: 40,
+        N: 2,
         margin: {
          left: 0,
          right: 0,
@@ -44,7 +44,7 @@
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
        
-       let bounds = d3.select("#letter-clip").node().getBBox()
+       let {bounds:{width,height}} = d3.select("#letter-clip").node().getBBox()
        
        let foreground = svg
        .append('g')
@@ -55,9 +55,10 @@
 
        let c10 = d3.schemePaired;
 
-       positions = Float64Array.from({
-        length: data.N * 2
-       }, (_, i) => Math.random() * (i & 1 ? data.height : data.width))
+       positions = Float64Array.from(
+         {length: data.N * 2}, 
+         (_, i) => Math.random() * (i & 1 ? bounds.height : bounds.width)
+       )
        velocities = new Float64Array(data.N * 2)
 
        let cellUpdate = () => {
