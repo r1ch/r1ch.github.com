@@ -55,34 +55,6 @@
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
 
-       /*let letterWidth = 0;
-       
-       let clipPath = svg
-        .append("clipPath")
-        .attr("id", "letter-clip")
-               
-       let letters = clipPath
-        .selectAll(".letter")
-        .data(paths)
-        .enter()
-        .append("path")
-        .attr("d",function(d){return d})
-        .attr("class", "letter")
-        .attr("transform", function(d,i) {
-         let translate = `translate(${letterWidth + i*data.kerning},0)`
-         letterWidth += this.getBBox().width
-         return translate
-        })
-       
-       let clipWidth = clipPath.node().getBBox().width
-       let clipHeight = clipPath.node().getBBox().height
-       let clipScale = data.width/clipWidth*data.letterScale*/
-       
-       /*clipPath
-       .attr('transform', `translate(${(data.width-clipWidth)/2/clipScale},${(data.height-clipHeight)/2/clipScale}) scale(${clipScale},${clipScale})`)
-       //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
-       */
-       
        let background = svg
        .append('g')
        .attr("width",data.width)
@@ -129,7 +101,7 @@
          .attr("d", (d) => {
           return "M" + d.join("L") + "Z"
          })
-         //.attr("filter", (d, i) => `url(#blur${i%5})`);
+         .attr("filter", (d, i) => `url(#blur${i%5})`);
 
        }
 
@@ -165,7 +137,7 @@
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
         }
         voronoi = new d3.Delaunay(positions).voronoi([0, 0, data.width, data.height]);
-        //meshUpdate()
+        meshUpdate()
         cellUpdate()
 
        }
