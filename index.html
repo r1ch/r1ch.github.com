@@ -50,7 +50,9 @@
        .attr("y","50%")
        .attr("dominant-baseline","middle")
        .attr("text-anchor","middle")
-       .attr("text","bradish")
+       .text("bradish")
+       .style("font-size", function(d) { return (data.width / this.getComputedTextLength() * 24) + "px"; })
+       .attr("dy", ".35em");
 
        /*let letterWidth = 0;
        
