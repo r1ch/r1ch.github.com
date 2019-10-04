@@ -51,7 +51,7 @@
        .attr("width",bounds.width)
        .attr("height",bounds.height)
        .attr("clip-path","url(#letter-clip)")
-       .attr("transform","translate(${(data.width-bounds.width)/2},${(data.height-bounds.height)/2})")
+       .attr("transform",`translate(${(data.width-bounds.width)/2},${(data.height-bounds.height)/2})`)
 
        let c10 = d3.schemePaired;
 
