@@ -30,8 +30,10 @@
         .attr('height', data.fullHeight)
         .call(responsivefy)
 
-       svg
+       let defs = svg
         .append("defs")
+        
+       let filters = defs
         .selectAll("filter")
         .data([0, 1, 2, 3, 4, 5])
         .enter()
@@ -39,8 +41,18 @@
         .attr("id", (d) => `blur${d}`)
         .append("feGaussianBlur")
         .attr("stdDeviation", d => d);
+       
+       let clipPath = defs
+       .append("clipPath")
+       .attr("id","letter-clip")
+       .append("text")
+       .attr("x","50%")
+       .attr("y","50%")
+       .attr("dominant-baseline","middle")
+       .attr("text-anchor","middle")
+       .attr("text","bradish")
 
-       let letterWidth = 0;
+       /*let letterWidth = 0;
        
        let clipPath = svg
         .append("clipPath")
@@ -61,12 +73,12 @@
        
        let clipWidth = clipPath.node().getBBox().width
        let clipHeight = clipPath.node().getBBox().height
-       let clipScale = data.width/clipWidth*data.letterScale
+       let clipScale = data.width/clipWidth*data.letterScale*/
        
-       clipPath
+       /*clipPath
        .attr('transform', `translate(${(data.width-clipWidth)/2/clipScale},${(data.height-clipHeight)/2/clipScale}) scale(${clipScale},${clipScale})`)
        //.attr('transform', `translate(${(data.width-letterWidth-data.kerning)/2},${(data.height-letterHeight)/2})`)
-
+       */
        
        let background = svg
        .append('g')
