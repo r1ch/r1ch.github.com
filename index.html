@@ -28,8 +28,6 @@
         .attr('height', data.fullHeight)
         //.call(responsivefy)
        
-       let bounds = d3.select("#letter-text").node().getBBox()
-       
        let foreground = svg
        .append('g')
        
@@ -47,6 +45,8 @@
        .attr("font-size", function(d) { return Math.min(data.height,(data.width / this.getComputedTextLength() * 12)) + "px"; })
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
+       
+        let bounds = d3.select("#letter-text").node().getBBox()
        
        foreground
        .attr("width",bounds.width)
