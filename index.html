@@ -6,7 +6,7 @@
     <script src="window/paths.js"></script>
   </head>
   <body bgcolor="#000000">
-     <div id = "d3" style="padding-top:25%"></div>
+     <div id = "d3"></div>
      <script>
        let data = {
         fullWidth: window.innerWidth,
@@ -51,7 +51,8 @@
        .attr("dominant-baseline","middle")
        .attr("text-anchor","middle")
        .text("bradish")
-       .style("font-size", function(d) { return (data.width / this.getComputedTextLength() * 24) + "px"; })
+       .style("font","Helvetica Black")
+       .style("font-size", function(d) { return (data.width / this.getComputedTextLength() * 20) + "px"; })
        .attr("dy", ".35em");
 
        /*let letterWidth = 0;
