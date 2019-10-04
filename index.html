@@ -49,7 +49,7 @@
        .attr("dominant-baseline","middle")
        .attr("text-anchor","middle")
        .text("bradish")
-       .attr("font-size", function(d) { return Math.max(data.height,(data.width / this.getComputedTextLength() * 12)) + "px"; })
+       .attr("font-size", function(d) { return Math.min(data.height,(data.width / this.getComputedTextLength() * 12)) + "px"; })
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
 
