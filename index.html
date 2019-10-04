@@ -35,7 +35,7 @@
         
        let filters = defs
         .selectAll("filter")
-        .data([0, 1, 2, 3, 4, 5])
+        .data([0, .5, 1, 1.5, 2, 2.5])
         .enter()
         .append("filter")
         .attr("id", (d) => `blur${d}`)
@@ -122,7 +122,7 @@
          .append("path")
          .attr("class", "mesh")
          .attr("stroke", "white")
-         .attr("fill", "none")
+         .attr("fill", c10[i+1 % 10])
          .attr("stroke-width", 1)
          .attr("d",function(d){return d})
 
