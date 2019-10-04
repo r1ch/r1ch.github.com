@@ -44,7 +44,7 @@
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
        
-       let {bounds:{width,height}} = d3.select("#letter-clip").node().getBBox()
+       let bounds = d3.select("#letter-clip").node().getBBox()
        
        let foreground = svg
        .append('g')
