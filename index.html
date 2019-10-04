@@ -27,11 +27,14 @@
         .attr('width', data.fullWidth)
         .attr('height', data.fullHeight)
         //.call(responsivefy)
-
-       let defs = svg
-        .append("defs")
        
-       let clipPath = defs
+       let bounds = d3.select("#letter-text").node().getBBox()
+       
+       let foreground = svg
+       .append('g')
+       
+       foreground
+       .append("defs")
        .append("clipPath")
        .attr("id","letter-clip")
        .append("text")
@@ -45,10 +48,7 @@
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
        
-       let bounds = d3.select("#letter-text").node().getBBox()
-       
-       let foreground = svg
-       .append('g')
+       foreground
        .attr("width",bounds.width)
        .attr("height",bounds.height)
        .attr("clip-path","url(#letter-clip)")
