@@ -40,6 +40,7 @@
        .attr("dominant-baseline","middle")
        .attr("text-anchor","middle")
        .text("bradish")
+       .attr("font-size",12)
        .attr("font-size", function(d) { return Math.min(data.height,(data.width / this.getComputedTextLength() * 12)) + "px"; })
        .attr("font-family","sans-serif")
        .attr("font-weight","bold")
@@ -97,9 +98,9 @@
         for (let i = 0; i < positions.length ; ++i) {
          const size = i & 1 ? data.height : data.width;
          positions[i] += velocities[i];
-         if (positions[i] < 0) positions[i] += size;
-         else if (positions[i] > size) positions[i] -= size;
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
+         if (positions[i] + velocities[i] < 0) velocities[i] *= -1;
+         else if (positions[i] + velocities[i] > size) velocities[i] *= -1;
         }
         voronoi = new d3.Delaunay(positions).voronoi([0, 0, bounds.width, bounds.height]);
         cellUpdate()
