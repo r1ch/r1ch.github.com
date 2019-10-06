@@ -84,7 +84,7 @@
          .append("path")
          .attr("class", "cell")
          .attr("stroke", "black")
-         .attr("fill", (d, i) => c10[i % 20])
+         .attr("fill", (d, i) => c10[i % 12])
          .attr("stroke-width", 5)
          .attr("d", (d) => {
           return "M" + d.join("L") + "Z"
