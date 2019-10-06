@@ -99,8 +99,8 @@
          const size = i & 1 ? data.height : data.width;
          positions[i] += velocities[i];
          velocities[i] += 0.2 * (Math.random() - 0.5) - 0.01 * velocities[i];
-         if (positions[i] + velocities[i] < 0) velocities[i] *= -1;
-         else if (positions[i] + velocities[i] > size) velocities[i] *= -1;
+         if (positions[i] + velocities[i] <= 0) velocities[i] *= -1;
+         else if (positions[i] + velocities[i] >= size) velocities[i] *= -1;
         }
         voronoi = new d3.Delaunay(positions).voronoi([0, 0, bounds.width, bounds.height]);
         cellUpdate()
