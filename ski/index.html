@@ -214,9 +214,9 @@ var Tracker = Vue.extend({
   <span v-show="show" class="flip-clock__piece">
     <span class="flip-clock__card flip-card">
       <b class="flip-card__top">{{current | zerofill}}</b>
-      <b class="flip-card__bottom" :value="{{current | zerofill}}"></b>
-      <b class="flip-card__back" :value="{{previous | zerofill}}"></b>
-      <b class="flip-card__back-bottom" :value="{{previous | zerofill}}"></b>
+      <b class="flip-card__bottom" :value="current | zerofill"></b>
+      <b class="flip-card__back" :value="previous | zerofill"></b>
+      <b class="flip-card__back-bottom" :value="previous | zerofill"></b>
     </span>
     <span class="flip-clock__slot">{{property}}</span>
   </span>`,
