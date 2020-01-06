@@ -199,10 +199,9 @@
 		  }
 		}
 	    </style>
-	    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	    <script src="https://cdn.jsdelivr.net/vue/1.0.28/vue.min.js"></script>
 		</head>
     <body>
-	    <div id = 'el'></div>
 	    	<script type = 'text/javascript'>
 Vue.filter('zerofill', function (value) {
   //value = ( value < 0 ? 0 : value );
@@ -214,9 +213,9 @@ var Tracker = Vue.extend({
   <span v-show="show" class="flip-clock__piece">
     <span class="flip-clock__card flip-card">
       <b class="flip-card__top">{{current | zerofill}}</b>
-      <b class="flip-card__bottom" :value="current | zerofill"></b>
-      <b class="flip-card__back" :value="previous | zerofill"></b>
-      <b class="flip-card__back-bottom" :value="previous | zerofill"></b>
+      <b class="flip-card__bottom" data-value="{{current | zerofill}}"></b>
+      <b class="flip-card__back" data-value="{{previous | zerofill}}"></b>
+      <b class="flip-card__back-bottom" data-value="{{previous | zerofill}}"></b>
     </span>
     <span class="flip-clock__slot">{{property}}</span>
   </span>`,
@@ -252,17 +251,25 @@ var Tracker = Vue.extend({
 
     } } });
 
+
+
+
+
+
+var el = document.createElement('div');
+document.body.appendChild(el);
+
 var Countdown = new Vue({
 
   el: el,
 
   template: ` 
-  <div class="flip-clock" data-date="2020-03-08" @click="update">
+  <div class="flip-clock" data-date="2017-02-11" @click="update">
     <tracker 
       v-for="tracker in trackers"
       :property="tracker"
       :time="time"
-      :key="trackers"
+      v-ref:trackers
     ></tracker>
   </div>
   `,
