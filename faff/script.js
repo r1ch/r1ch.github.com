@@ -12,7 +12,7 @@ $scope.update = function(index,answer){
 
 questions = [];
 questions["start"]={
-  title:"What is your name",
+  title:"What is your name?",
   handler:"radio",
   answers:[
     {
@@ -55,7 +55,7 @@ questions["doing"]={
 }
 
 questions["bindings"]={
-  title:"Do you need a wee / to do up your boots / piss about with binding",
+  title:"Do you need a wee / to do up your boots / piss about with your binding?",
   handler:"radio",
   answers:[
     {
@@ -223,12 +223,6 @@ questions["notfaff"]={
   type:"success",
   title:"That's not faff!",
   reason:"Great work."
-}
-questions["james"]={
-  end:true,
-  type:"danger",
-  title:"You're faffing",
-  reason:"You are Lord of all faff"
 }
 questions["youknow"]={
   end:true,
