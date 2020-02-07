@@ -1,0 +1,234 @@
+<html>
+    <head>
+        <title>Oh My Faff.</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    </head>
+    <body>
+        <div id="app">
+            <faff-interview></faff-interview>
+        </div>
+        
+        <script>
+            class Question{
+                constructor(name){
+                    this.answers = [];
+                    this.text = "";
+                    this.name = name
+                    Questions.add(this);
+                }
+            
+                ask(text){
+                    this.text = text
+                    return this
+                }
+            
+                if(answer){
+                    this.answers.push({
+                        text:answer,
+                        next:false,
+                    })
+                    return this
+                }
+            
+                or(answer){
+                    return this.if(answer)
+                }
+            
+                then(next){
+                    for(var i=this.answers.length-1;i>=0;i--){
+                        if(this.answers[i].next) break;
+                        this.answers[i].next = next
+                    }
+                    return this
+                }
+            
+            }
+            
+            class Ending extends Question{
+                constructor(name){
+                    super(name)
+                    delete this.answers
+                    this.answer = ""
+                    return this
+                }
+            
+                answerAndType(answer,type){
+                    this.answer = answer
+                    this.type = type
+                    return this
+                }
+            
+                as(reason){
+                    this.text = reason
+                }
+            
+                good(answer){
+                    return this.answerAndType(answer,"success")
+                }
+            
+                bad(answer){
+                    return this.answerAndType(answer,"danger")
+                }
+            
+                indifferent(answer){
+                    return this.answerAndType(answer,"warning")
+                }
+            
+            }
+            
+            
+            class Questions{
+                static add(question){
+                    this.Q[question.name] = this.Q.push(question)-1
+                }
+                static byName(name){
+                    return this.byIndex(this.Q[name]);
+                }
+                static byIndex(index){
+                    return this.Q[index]
+                }
+            }; Questions.Q = []
+            
+            new Question("start")
+                .ask("What's your name?")
+                .if("James Dracup").then("james")
+                .if("It's not James Dracup").then("doing")
+            
+            new Question("doing")
+                .ask("What are you doing?")
+                .if("Skiing").then("not-faff")
+            
+                .if("Waiting at the bottom of a lift")
+                .or("Waiting at the top of a chairlift")
+                .then("bindings")
+            
+                .if("On a chairlift")
+                .then("planning")
+            
+                .if("Weeing")
+                .or("Fiddling with my boots")
+                .then("could-you")
+            
+                .if("In the chalet")
+                .then("ready-for-next")
+            
+            new Question("bindings")
+                .ask("Do you need a wee / to do up your boots / piss about with your binding?")
+                .if("Yes").then("now")
+                .if("No").then("planning")
+            
+            new Question("now")
+                .ask("Could you do that now?")
+                .if("I could but...").then("non-parallel-faff")
+                .if("No").then("not-faff")
+                .if("Yes").then("and-youre-going-to")
+            
+            new Question("and-youre-going-to")
+                .ask("And you're going to?")
+                .if("Yes").then("faff-avoidance")
+                .if("No").then("faff")
+            
+            new Question("could-you")
+                .ask("Could you have done it earlier?")
+                .if("Yes").then("faff")
+                .if("No").then("essential")
+            
+            new Question("essential")
+                .ask("Is it utterly essential>")
+                .if("Yes").then("are-you-sure")
+                .if("No").then("you-know")
+            
+            new Question("are-you-sure")
+                .ask("Are you sure?")
+                .if("Yes").then("planned")
+                .if("No").then("faff")
+            
+            new Question("planned")
+                .ask("Did you plan this to reduce faff?")
+                .if("No").then("faff")
+                .if("Yes").then("not-faff")
+            
+            new Question("planning")
+                .ask("Are you planning the next run?")
+                .if("Yes").then("not-faff")
+                .if("No").then("not-team")
+            
+            new Question("ready-for-next")
+                .ask("Are you ready for the next activity?")
+                .if("Yes").then("not-faff")
+                .if("No").then("potential")
+            
+            new Ending("james")
+                .bad("You're faffing").as("You are Lord of all faff")
+            
+            new Ending("faff-avoidance")
+                .good("You're avoiding faff").as("This is the true path to enlightenment")
+            
+            new Ending("non-parallel-faff")
+                .bad("You are faffing").as("Faff costs lives")
+            
+            new Ending("not-faff")
+                .good("That's not faff!").as("Great work.")
+            
+            new Ending("you-know")
+                .bad("You're faffing").as("You know what you did")
+            
+            new Ending("not-team")
+                .bad("You're faffing").as("You're just not a team player")
+            
+            new Ending("faff")
+                .bad("You're faffing").as("Classic faff.")
+            
+            new Ending("potential")
+                .indifferent("Erm...").as("Just watch it right?")
+            
+            Vue.component('faff-interview', {
+                data: function(){
+                    return {
+                        interview:[Questions.byIndex(0)],
+                    }
+                },
+                methods : {
+                    choose(index,next){
+                        this.interview = this.interview.slice(0,parseInt(index)+1)
+                        this.interview.push(Questions.byName(next))
+                    }
+                },
+                template : `
+                <div class = "container">
+                    <form>
+                        <div class="form-group row" v-for = "(question, qIndex) in interview">
+                            <div class="alert col-12" :class="'alert-'+question.type" v-if="!question.answers">
+                                <h5>{{question.answer}}</h5>
+                                {{question.text}}
+                            </div>
+                            <label :for="'label_'+qIndex" class="col-4 col-form-label" v-if = "question.answers">{{question.text}}</label> 
+                            <div class="col-8" v-if = "question.answers && question.answers.length<=2">
+                            <div class="custom-control custom-radio" v-for = "(answer, aIndex) in question.answers">
+                                <input @change = "choose(qIndex,answer.next)" :name="'radio_'2
+                                +qIndex" :id="'radio_'+qIndex+'_'+aIndex" type="radio" class="custom-control-input" :value="answer.next"> 
+                                <label :for="'radio_'+qIndex+'_'+aIndex" class="custom-control-label">{{answer.text}}</label>
+                            </div>
+                            </div>
+                            <div class="col-8" v-if = "question.answers && question.answers.length>2">
+                            <select :id="'label_'+qIndex" name="select" class="custom-select" @input="choose(qIndex,$event.target.value)">
+                                <option selected disabled></option>
+                                <option  v-for = "answer in question.answers" :value="answer.next">{{answer.text}}</option>
+                            </select>
+                            </div>
+                        </div> 
+                    </form>
+                </div>
+                `
+            })
+            
+            var app = new Vue({
+            el: '#app',
+            data: {
+            }
+            })
+        </script>
+    </body>
+</html>
+
