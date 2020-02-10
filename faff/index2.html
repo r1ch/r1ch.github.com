@@ -26,6 +26,7 @@
                 if(answer){
                     this.answers.push({
                         text:answer,
+                        score:0,
                         next:false,
                     })
                     return this
@@ -191,6 +192,7 @@
                 },
                 methods : {
                     choose(index,next){
+                        this.interview[index].answered = true
                         this.interview = this.interview.slice(0,parseInt(index)+1)
                         this.interview.push(Questions.byName(next))
                     }
@@ -212,7 +214,7 @@
                             </div>
                             <div class="col-8" v-if = "question.answers && question.answers.length>2">
                             <select :id="'label_'+qIndex" name="select" class="custom-select" @input="choose(qIndex,$event.target.value)">
-                                <option selected disabled></option>
+                                <option selected disabled v-if="!question.answered"></option>
                                 <option  v-for = "answer in question.answers" :value="answer.next">{{answer.text}}</option>
                             </select>
                             </div>
@@ -230,4 +232,3 @@
         </script>
     </body>
 </html>
-
