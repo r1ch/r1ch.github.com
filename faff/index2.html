@@ -137,7 +137,7 @@
                 .if("No").then("essential")
             
             new Question("essential")
-                .ask("Is it utterly essential>")
+                .ask("Is it utterly essential?")
                 .if("Yes").then("are-you-sure")
                 .if("No").then("you-know")
             
@@ -195,7 +195,9 @@
                     choose(index,next){
                         this.interview[index].answered = true
                         this.interview = this.interview.slice(0,parseInt(index)+1)
-                        this.interview.push(Questions.byName(next))
+                        this.$nextTick(function () {
+                            this.interview.push(Questions.byName(next))
+                        }
                     }
                 },
                 template : `
