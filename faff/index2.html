@@ -209,8 +209,8 @@
                                 {{question.text}}
                             </div>
                             <label :for="'label_'+qIndex" class="col-4 col-form-label" v-if = "question.answers">{{question.text}}</label> 
-                            <div class="col-8" v-if = "question.answers && question.answers.length<=2">
-                            <div class="custom-control custom-radio" v-for = "(answer, aIndex) in question.answers" :id="'label_'+qIndex" >
+                            <div class="col-8" v-if = "question.answers && question.answers.length<=2" :id="'label_'+qIndex">
+                            <div class="custom-control custom-radio pt-0" v-for = "(answer, aIndex) in question.answers">
                                 <input @change = "choose(qIndex,answer.next)" :name="'radio_'+qIndex" :id="'radio_'+qIndex+'_'+aIndex" type="radio" class="custom-control-input" :value="answer.next"> 
                                 <label :for="'radio_'+qIndex+'_'+aIndex" class="custom-control-label">{{answer.text}}</label>
                             </div>
