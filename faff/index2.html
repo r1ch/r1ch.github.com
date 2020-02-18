@@ -27,7 +27,6 @@
                 if(answer){
                     this.answers.push({
                         text:answer,
-                        score:0,
                         next:false,
                     })
                     return this
@@ -196,7 +195,9 @@
                         this.interview[index].answered = true
                         this.interview = this.interview.slice(0,parseInt(index)+1)
                         this.$nextTick(function () {
-                            this.interview.push(Questions.byName(next))
+                            let nextQuestion = Questions.byName(next)
+                            nextQuestion.answered = false
+                            this.interview.push(nextQuestion)
                         })
                     }
                 },
