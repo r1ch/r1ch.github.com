@@ -122,8 +122,9 @@
             new Question("now")
                 .ask("Could you do that now?")
                 .if("I could but...").then("non-parallel-faff")
-                .if("No").then("not-faff")
                 .if("Yes").then("and-youre-going-to")
+                .if("No").then("not-faff")
+
             
             new Question("and-youre-going-to")
                 .ask("And you're going to?")
@@ -147,8 +148,8 @@
             
             new Question("planned")
                 .ask("Did you plan this to reduce faff?")
-                .if("No").then("faff")
                 .if("Yes").then("not-faff")
+                .if("No").then("faff")
             
             new Question("planning")
                 .ask("Are you planning the next run?")
