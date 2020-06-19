@@ -10,10 +10,11 @@ const P = require("./poisson");
 export default {
   name: 'App',
   data: function(){
-    return {text:"bradish"}
+    return {
+      text: location.search ? location.search.slice(1) :  "bradish"
+    }
   },
   mounted: async function(){
-    console.log(this)
     //Not Reactive - by design
     const full = {
       width : 1200,
