@@ -111,7 +111,7 @@ export default {
         .attr("class","stem")
         .classed("inside",d=>d.inside)
         .attr("stroke",()=>this.stem(Math.random()))
-        .attr("stroke-width",d=>(Math.random()*2+1+(d.inside?1:0))|0)
+        .attr("stroke-width",d=>(Math.random()*2+1+(d.inside?2:0))|0)
         .attr("d",d=>`M${d.parent[0]},${d.parent[1]}L${d.parent[0]},${d.parent[1]}`)
         .call(enter=>enter
           .transition()
@@ -167,7 +167,7 @@ export default {
           .call(enter=>enter
             .transition()
             .delay(d=>d.add[2]*100+200)
-            .attr("r",1)
+            .attr("r",2)
           )
           .call(enter=>enter
             .transition()
