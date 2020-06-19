@@ -11,7 +11,7 @@ export default {
   name: 'App',
   data: function(){
     return {
-      text: location.search ? location.search.slice(1) :  "bradish"
+      text: location.search ? decodeURI(location.search.slice(1)) :  "bradish"
     }
   },
   mounted: async function(){
