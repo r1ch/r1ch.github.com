@@ -7,13 +7,11 @@
 const d3 = require("d3");
 const P = require("./poisson");
 
-
 export default {
   name: 'App',
-  data: ()=>({
-    text:"404",
-    dull:true
-  }),
+  data: function(){
+    return {text:"bradish"}
+  },
   mounted: async function(){
     console.log(this)
     //Not Reactive - by design
@@ -81,10 +79,10 @@ export default {
     .domain([0,0.5,1])
     .range(["lightgreen", "green", "darkgreen"])
 
-    if(this.dull) this.stem = this.stamen = this.carpal = this.sepal = this.petal = d3
+    /*this.stem = this.stamen = this.carpal = this.sepal = this.petal = d3
     .scaleLinear()
     .domain([0,0.25,0.5,1])
-    .range(["black", "darkgrey", "grey", "lightgrey"])
+    .range(["black", "darkgrey", "grey", "lightgrey"])*/
 
     this.init();
   },
@@ -224,9 +222,4 @@ canvas{
 .flower.inner {
   stroke-dasharray: 1 1;
 }
-
-body{
-  color:
-}
-
 </style>
