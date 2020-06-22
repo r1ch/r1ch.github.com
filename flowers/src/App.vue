@@ -7,15 +7,11 @@
 const d3 = require("d3");
 const P = require("./poisson");
 
+
 export default {
   name: 'App',
-  data: function(){
-    return {
-      text: location.search ? decodeURI(location.search.slice(1)) :  "bradish"
-    }
-  },
+  data: ()=>({}),
   mounted: async function(){
-    //Not Reactive - by design
     const full = {
       width : 1200,
       height : 600
@@ -80,21 +76,29 @@ export default {
     .domain([0,0.5,1])
     .range(["lightgreen", "green", "darkgreen"])
 
-    /*this.stem = this.stamen = this.carpal = this.sepal = this.petal = d3
-    .scaleLinear()
-    .domain([0,0.25,0.5,1])
-    .range(["black", "darkgrey", "grey", "lightgrey"])*/
+    if(document.title == "404"){
+      this.stem=this.stamen=this.carpal=this.sepal=this.petal= d3
+      .scaleLinear()
+      .domain([0,0.25,0.5,1])
+      .range(["black", "darkgrey", "grey", "lightgrey"])
+    }
 
     this.init();
   },
+  computed:{
+    text: function(){
+      if(document.title == "404"){
+        return 404
+      } else {
+        return location.search ? decodeURI(location.search).slice(1) || "bradish" : "bradish";
+      }
+    }
+  },
   methods:{
-    next: () => new Promise(resolve => setImmediate(resolve)),
-    sleep: ms => new Promise(resolve => setTimeout(resolve,ms)),
-    init: async function(){
+    init: function(){
       this.parts = []
       for(const dot of P(this.inner.width,this.inner.height,10,this.context)){
         this.parts.push(dot)
-        await this.next()
       }
       this.parts.sort((a,b)=>a.add[2]-b.add[2])
       this.draw();
@@ -125,7 +129,7 @@ export default {
       this.svg.selectAll(".flower")
       .data(
         this.parts
-        .filter(part=>part.inside)
+        .filter(part=>part.inside||Math.random()<0.01)
         .map(part=>({
           ...part,
           size: (Math.random()*8+2) | 0,
