@@ -1,4 +1,4 @@
-function* poissonDiscSampler(width, height, radius,context) {
+export const PoissonDiscSampler = function*(width, height, radius,context) {
     const k = 15; // maximum number of samples before rejection
     const radius2 = radius * radius;
     const radius2_3 = 3 * radius2;
@@ -64,5 +64,3 @@ function* poissonDiscSampler(width, height, radius,context) {
       return s;
     }
   }
-
-module.exports = poissonDiscSampler
