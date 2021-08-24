@@ -147,18 +147,18 @@
                 .attr("font-family","sans-serif")
                 .attr("font-weight","bold")
 
-            const blur = defs
-                .append("filter")
-                .attr("id", "blur")
-                .append("feGaussianBlur")
-                .attr("stdDeviation",2)
-
             const grayscale = defs
                 .append("filter")
                 .attr("id", "grayscale")
                 .append("feColorMatrix")
                 .attr("type","saturate")
                 .attr("values","0")
+
+            const blur = defs
+                .append("filter")
+                .attr("id", "blur")
+                .append("feGaussianBlur")
+                .attr("stdDeviation","1.5")
             
             const invert = defs
                 .append("filter")
@@ -166,25 +166,56 @@
                 .append("feColorMatrix")
                 .attr("type","matrix")
                 .attr("values","-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0")
-                
+
+            const lighting = defs
+                .append("filter")
+                .attr("id","lighting")
+                .append("feSpecularLighting")
+                .attr("specularExponent","20")
+                .attr("lighting-color","#bbbbbb")
+                .append("fePointLight")
+                .attr("x",50)
+                .attr("y",75)
+                .attr("z",200)
+
+            const turbulence = defs
+                .append("filter")
+                .attr("id", "displacement")
+            
+            turbulence
+                .append("feTurbulence")
+                .attr("type","turbulence")
+                .attr("baseFrequency",0.05)
+                .attr("numOctaves",2)
+                .attr("result","turbulence")
+
+            turbulence
+                .append("feDisplacementMap")
+                .attr("in2","turbulence")
+                .attr("in","SourceGraphic")
+                .attr("scale",50)
+                .attr("xChannelSelector","R")
+                .attr("yChannelSelector","G")
+
             const theTiles = svg
                 .append("g")
                 .attr("id","theTiles")
-            
+
             const bg = svg
                 .append("g")
                 .append("use")
                 .attr("href","#theTiles")
-                .attr("filter","url(#blur)")
+                .attr("filter","url(#invert)")
+                
+
 
             const fg = svg
                 .append("g")
                 .append("use")
                 .attr("href","#theTiles")
                 .attr("clip-path","url(#letter-clip)")
-                .attr("filter","url(#invert)")
-
-
+                .attr("filter","url(#displacement)")
+                
 
             const tileTranslations = theTiles.selectAll(".tileTranslations")
                 .data(tiles,d=>d.index)
@@ -242,17 +273,17 @@
 
                 tileRotations
                     .transition()
-                    .duration(1000)
+                    .duration(2000)
                     .attr("transform",d=>`rotate(${d.rotation})`)
 
                 bases
                     .transition()
-                    .duration(1000)
+                    .duration(2000)
                     .attr("fill",d=>d.colours[5])
 
                 centers
                     .transition()
-                    .duration(1000)
+                    .duration(2000)
                     .attr("r",d=>d.centerCircleRadius)
                     .attr("cx",d=>d.cx)
                     .attr("cy",d=>d.cy)
@@ -261,18 +292,18 @@
                 arcs.forEach((arc,index)=>{
                     arc
                     .transition()
-                    .duration(1000)
+                    .duration(2000)
                     .attr("d",d=>d.arcs[index])
                 })
 
                 corners.forEach((corner,index)=>{
                     corner
                     .transition()
-                    .duration(1000)
+                    .duration(2000)
                     .attr("d",d=>d.corners[index])
                 })
 
-            },1000)
+            },2500)
         </script>
     </body>
 </html>
