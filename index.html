@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v6.min.js"></script>
+    </head>
+    <body>
+        <div id = "svg"></div>
+        <script type = "application/javascript">
+
+            const margin = {top: 0, right: 0, bottom: 0, left: 0};
+            const width = 900 - margin.left - margin.right;
+            
+            const height = 500 - margin.top - margin.bottom;
+
+            const TILE_SIZE = 90
+            const COLOURS = [
+                "#FFF4E0", 
+                "#F8B501",
+                "#06ACB5",
+                "#17191D",
+                "#FC3D3C"
+            ]
+
+            class Tile{
+                constructor(x,y,parent){
+                    this._x = x;
+                    this._y = y;
+                    this._parent = parent ? parent : this;
+                    this._cx = this._cy = TILE_SIZE/2
+                    this._index = this.y*TILE_SIZE + this.x
+                    this.rerotate()
+                    this.recircle()
+                    this.recolour()
+                }
+
+                tickle(){
+                    if(Math.random()>0.95) this.recolour()
+                    if(Math.random()>0.95) this.recircle()
+                    if(Math.random()>0.99) this.rerotate()
+                }
+
+                recircle(){
+                    this._centerCircleRadius = Math.random() > 0.5 ? TILE_SIZE/2*Math.SQRT2*(Math.random() * 0.125 + 0.125) : 0
+                    this._cornerCircleRadius = TILE_SIZE/2
+                    this._corners = Array(4).fill(0).map(_=>Math.random()>0.5?1:0)
+                }
+
+                recolour(){
+                    this._colours = Array(6).fill(0).map(_=>COLOURS[Math.random()*COLOURS.length|0])
+                    this._colours = this._colours.map((colour,index)=>Math.random()>0.3?this.parent.colours[index]:colour)
+                }
+
+                rerotate(){
+                    this._rotation = [0,90,180,270][Math.random()*4|0]
+                }
+
+                get parent(){
+                    return this._parent
+                }
+
+                get x(){
+                    return this._x
+                }
+
+                get y(){
+                    return this._y
+                }
+
+                get cx(){
+                    return this._cx
+                }
+
+                get cy(){
+                    return this._cy
+                }
+
+                get index(){
+                    return this._index
+                }
+
+                get cornerCircleRadius(){
+                    return this._cornerCircleRadius
+                }
+
+                get centerCircleRadius(){
+                    return this._centerCircleRadius
+                }
+
+                get colours(){
+                    return this._colours
+                }
+
+                get rotation(){
+                    return this._rotation
+                }
+
+                get corners(){
+                    return [
+                        (radius=>`M ${radius}           0                   A ${radius} ${radius} 0 0 1 0                   ${radius}           L 0             0               Z`)(this._corners[0] * this.cornerCircleRadius),
+                        (radius=>`M ${TILE_SIZE}        ${radius}           A ${radius} ${radius} 0 0 1 ${TILE_SIZE-radius} 0                   L ${TILE_SIZE}  0               Z`)(this._corners[1] * this.cornerCircleRadius),
+                        (radius=>`M ${TILE_SIZE-radius} ${TILE_SIZE}        A ${radius} ${radius} 0 0 1 ${TILE_SIZE}        ${TILE_SIZE-radius} L ${TILE_SIZE}  ${TILE_SIZE}    Z`)(this._corners[2] * this.cornerCircleRadius),
+                        (radius=>`M 0                   ${TILE_SIZE-radius} A ${radius} ${radius} 0 0 1 ${radius}           ${TILE_SIZE}        L 0             ${TILE_SIZE}    Z`)(this._corners[3] * this.cornerCircleRadius)
+                    ]
+                }
+
+                get arcs(){
+                    return [
+                        (radius=>`M ${radius}           0                   A ${radius} ${radius} 0 0 1 0                   ${radius}          `)(this._corners[0] * this.cornerCircleRadius),
+                        (radius=>`M ${TILE_SIZE}        ${radius}           A ${radius} ${radius} 0 0 1 ${TILE_SIZE-radius} 0                  `)(this._corners[1] * this.cornerCircleRadius),
+                        (radius=>`M ${TILE_SIZE-radius} ${TILE_SIZE}        A ${radius} ${radius} 0 0 1 ${TILE_SIZE}        ${TILE_SIZE-radius}`)(this._corners[2] * this.cornerCircleRadius),
+                        (radius=>`M 0                   ${TILE_SIZE-radius} A ${radius} ${radius} 0 0 1 ${radius}           ${TILE_SIZE}       `)(this._corners[3] * this.cornerCircleRadius)
+                    ]
+                }
+
+            }
+
+            const tiles = []
+            let x=y=0
+            let last = root = new Tile(x,y)
+            for(let y=0;y<height;y=y+TILE_SIZE){
+                let head = new Tile(x,y)
+                for(let x=0;x<width;x=x+TILE_SIZE){
+                    let current = new Tile(x,y,[root,head,last][Math.random()*3|0])
+                    tiles.push(current)
+                    last=current
+                }
+            }
+            
+            const svg = d3.selectAll("#svg")
+                .append("svg")
+                .attr("viewBox", [0, 0, width, height]);
+
+            const defs = svg
+                .append("defs")
+            
+            
+            const clipPath = defs
+                .append("clipPath")
+                .attr("id","letter-clip")
+                .append("text")
+                .attr("x","50%")
+                .attr("y","50%")
+                .attr("dominant-baseline","middle")
+                .attr("text-anchor","middle")
+                .text("bradish")
+                .attr("font-size", function(d) { return (width / this.getComputedTextLength() * 12) + "px"; })
+                .attr("font-family","sans-serif")
+                .attr("font-weight","bold")
+
+            const blur = defs
+                .append("filter")
+                .attr("id", "blur")
+                .append("feGaussianBlur")
+                .attr("stdDeviation",2)
+
+            const grayscale = defs
+                .append("filter")
+                .attr("id", "grayscale")
+                .append("feColorMatrix")
+                .attr("type","saturate")
+                .attr("values","0")
+            
+            const invert = defs
+                .append("filter")
+                .attr("id", "invert")
+                .append("feColorMatrix")
+                .attr("type","matrix")
+                .attr("values","-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0")
+                
+            const theTiles = svg
+                .append("g")
+                .attr("id","theTiles")
+            
+            const bg = svg
+                .append("g")
+                .append("use")
+                .attr("href","#theTiles")
+                .attr("filter","url(#blur)")
+
+            const fg = svg
+                .append("g")
+                .append("use")
+                .attr("href","#theTiles")
+                .attr("clip-path","url(#letter-clip)")
+                .attr("filter","url(#invert)")
+
+
+
+            const tileTranslations = theTiles.selectAll(".tileTranslations")
+                .data(tiles,d=>d.index)
+                .enter()
+                .append("g")
+                .attr("transform",d=>`translate(${d.x},${d.y})`)
+                .attr("class","tileTranslations")
+
+            const tileOffsets = tileTranslations
+                .append("g")
+                .attr("transform",d=>`translate(${TILE_SIZE/2},${TILE_SIZE/2})`)
+
+            const tileRotations = tileOffsets
+                .append("g")
+                .attr("transform",d=>`rotate(${d.rotation})`)
+
+
+            const tileGroups = tileRotations
+                .append("g")
+                .attr("transform",d=>`translate(${TILE_SIZE/-2},${TILE_SIZE/-2})`)
+                .attr("class","tileTranslations")
+
+            const bases = tileGroups
+                .append("rect")
+                .attr("width",TILE_SIZE)
+                .attr("height",TILE_SIZE)
+                .attr("x",0)
+                .attr("y",0)
+                .attr("fill",d=>d.colours[5])
+                .attr("stroke","none")
+
+            const corners = [0,1,2,3].map(corner=>tileGroups
+                .append("path")
+                .attr("d",d=>d.corners[corner])
+                .attr("fill",d=>d.colours[corner])
+                .attr("stroke","none")
+            )
+
+            const arcs = [0,1,2,3].map(arc=>tileGroups
+                .append("path")
+                .attr("d",d=>d.arcs[arc])
+                .attr("fill","none")
+                .attr("stroke","white")
+            )
+
+            const centers = tileGroups
+                .append("circle")
+                .attr("r",d=>d.centerCircleRadius)
+                .attr("cx",d=>d.cx)
+                .attr("cy",d=>d.cy)
+                .attr("fill",d=>d.colours[4])
+
+            setInterval(()=>{
+                tiles.forEach(tile=>tile.tickle())
+
+                tileRotations
+                    .transition()
+                    .duration(1000)
+                    .attr("transform",d=>`rotate(${d.rotation})`)
+
+                bases
+                    .transition()
+                    .duration(1000)
+                    .attr("fill",d=>d.colours[5])
+
+                centers
+                    .transition()
+                    .duration(1000)
+                    .attr("r",d=>d.centerCircleRadius)
+                    .attr("cx",d=>d.cx)
+                    .attr("cy",d=>d.cy)
+                    .attr("fill",d=>d.colours[4])
+
+                arcs.forEach((arc,index)=>{
+                    arc
+                    .transition()
+                    .duration(1000)
+                    .attr("d",d=>d.arcs[index])
+                })
+
+                corners.forEach((corner,index)=>{
+                    corner
+                    .transition()
+                    .duration(1000)
+                    .attr("d",d=>d.corners[index])
+                })
+
+            },1000)
+        </script>
+    </body>
+</html>
