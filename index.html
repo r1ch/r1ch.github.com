@@ -26,6 +26,26 @@
                 "#FC3D3C"
             ]
 
+            const PAINT_LOCATIONS = {
+                TOP_LEFT_CORNER: 0,
+                TOP_RIGHT_CORNER: 1,
+                BOTTOM_RIGHT_CORNER: 2,
+                BOTTOM_LEFT_CORNER: 3,
+                CENTER: 4,
+                BASE:5 ,
+            }
+
+            const N_PAINT_LOCATIONS = Object.keys(PAINT_LOCATIONS).length
+
+            const CORNERS = [
+                PAINT_LOCATIONS.TOP_LEFT_CORNER,
+                PAINT_LOCATIONS.TOP_RIGHT_CORNER,
+                PAINT_LOCATIONS.BOTTOM_RIGHT_CORNER,
+                PAINT_LOCATIONS.BOTTOM_LEFT_CORNER
+            ]
+
+
+
             const CHANCE = {
                 ofNoRecolour : 0.9,
                 ofNoRecircle : 0.9,
@@ -61,7 +81,10 @@
                     this.recolour(true)
                     this._text = findText(this.ix,this.iy)
                     this._clicked = false
-                    if(this.text) this._rotation = 0
+                    if(this.text){
+                        this._rotation = 0
+                        this._colours[PAINT_LOCATIONS.BASE]="black"
+                    }
                 }
 
                 tickle(force=false){
@@ -79,7 +102,7 @@
 
                 recolour(ignoreNeighbours=false){
                     const chosenNeighbour = Math.random()*this.neighbours.length|0
-                    this._colours = Array(6).fill(0).map(
+                    this._colours = Array(N_PAINT_LOCATIONS).fill(0).map(
                         (_,index)=>ignoreNeighbours || Math.random()>CHANCE.ofIgnoringNeighbours ? 
                             COLOURS[Math.random()*COLOURS.length|0] : 
                             tiles[this.neighbours[chosenNeighbour]].colours[index]
@@ -256,17 +279,17 @@
                 .attr("height",TILE_SIZE)
                 .attr("x",0)
                 .attr("y",0)
-                .attr("fill",d=>d.colours[5])
+                .attr("fill",d=>d.colours[PAINT_LOCATIONS.BASE])
                 .attr("stroke","none")
 
-            const corners = [0,1,2,3].map(corner=>tileGroups
+            const corners = CORNERS.map(corner=>tileGroups
                 .append("path")
                 .attr("d",d=>d.corners[corner])
                 .attr("fill",d=>d.colours[corner])
                 .attr("stroke","none")
             )
 
-            const arcs = [0,1,2,3].map(arc=>tileGroups
+            const arcs = CORNERS.map(arc=>tileGroups
                 .append("path")
                 .attr("d",d=>d.arcs[arc])
                 .attr("fill","none")
@@ -278,7 +301,7 @@
                 .attr("r",d=>d.centerCircleRadius)
                 .attr("cx",d=>d.cx)
                 .attr("cy",d=>d.cy)
-                .attr("fill",d=>d.colours[4])
+                .attr("fill",d=>d.colours[PAINT_LOCATIONS.CENTER])
             
             const redraw = tileIndex =>{
                 let all = tileIndex ? false : true
@@ -294,7 +317,7 @@
                 .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .transition()
                     .duration(2000)
-                    .attr("fill",d=>d.colours[5])
+                    .attr("fill",d=>d.colours[PAINT_LOCATIONS.BASE])
 
                 centers
                     .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
@@ -303,7 +326,7 @@
                     .attr("r",d=>d.centerCircleRadius)
                     .attr("cx",d=>d.cx)
                     .attr("cy",d=>d.cy)
-                    .attr("fill",d=>d.colours[4])
+                    .attr("fill",d=>d.colours[PAINT_LOCATIONS.CENTER])
 
                 arcs
                     .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
