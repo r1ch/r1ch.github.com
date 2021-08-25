@@ -37,10 +37,9 @@
                     this.recircle()
                     this.recolour()
                     this._text = findText(this.ix,this.iy)
+                    this._clicked = false
                     if(this.text) this._rotation = 0
                 }
-
-
 
                 tickle(force=false){
                     if(force || Math.random()>0.9) this.recolour()
@@ -61,6 +60,21 @@
 
                 rerotate(){
                     this._rotation = [0,90,180,270][Math.random()*4|0]
+                }
+
+                click(){
+                    if(!this._clicked){
+                        this.tickle(true)
+                        return this._clicked = true
+                    } else return false
+                }
+
+                done(){
+                    this._clicked = false
+                }
+
+                get clicked(){
+                    return this._clicked
                 }
 
                 get text(){
@@ -148,8 +162,7 @@
             }
 
             const clickHandler = function(d,i){
-                tiles[i.index].tickle(true)
-                redraw(i.index)
+                tiles[i.index].click() && redraw(i.index)
             }
             
             const svg = d3
@@ -247,19 +260,20 @@
                 let all = tileIndex ? false : true
 
                 tileRotations
-                    .filter(d=>all||d.index==tileIndex)
+                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("transform",d=>`rotate(${d.rotation})`)
+                    .on("end",d=>d.done())
 
                 bases
-                    .filter(d=>all||d.index==tileIndex)
+                .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("fill",d=>d.colours[5])
 
                 centers
-                    .filter(d=>all||d.index==tileIndex)
+                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("r",d=>d.centerCircleRadius)
@@ -268,7 +282,7 @@
                     .attr("fill",d=>d.colours[4])
 
                 arcs
-                    .filter(d=>all||d.index==tileIndex)
+                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .forEach((arc,index)=>{
                         arc
                         .transition()
@@ -277,7 +291,7 @@
                     })
 
                 corners
-                    .filter(d=>all||d.index==tileIndex)
+                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .forEach((corner,index)=>{
                         corner
                         .transition()
