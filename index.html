@@ -22,28 +22,30 @@
             ]
 
             const TEXT = [["b","r"],[,"a","d","i"],[,,,"s","h"]]
-            const findText = (x,y)=>(TEXT[y/TILE_SIZE] || [])[x/TILE_SIZE] || false
+            const findText = (x,y)=>(TEXT[y] || [])[x] || false
 
             class Tile{
-                constructor(x,y,parent){
-                    this._x = x;
-                    this._y = y;
+                constructor(ix,iy,parent){
+                    this._ix = ix
+                    this._iy = iy
+                    this._x = this.ix*TILE_SIZE;
+                    this._y = this.iy*TILE_SIZE;
                     this._parent = parent ? parent : this;
                     this._cx = this._cy = TILE_SIZE/2
-                    this._index = this.y + this.x/TILE_SIZE
+                    this._index = this.iy * Math.ceil(width/TILE_SIZE) + this.ix
                     this.rerotate()
                     this.recircle()
                     this.recolour()
-                    this._text = findText(x,y)
+                    this._text = findText(this.ix,this.iy)
                     if(this.text) this._rotation = 0
                 }
 
 
 
-                tickle(){
-                    if(Math.random()>0.95) this.recolour()
-                    if(Math.random()>0.95) this.recircle()
-                    if(Math.random()>0.99) this.rerotate()
+                tickle(force=false){
+                    if(force || Math.random()>0.9) this.recolour()
+                    if(force || Math.random()>0.9) this.recircle()
+                    if(force || Math.random()>0.9) this.rerotate()
                 }
 
                 recircle(){
@@ -67,6 +69,14 @@
 
                 get parent(){
                     return this._parent
+                }
+
+                get ix(){
+                    return this._ix
+                }
+
+                get iy(){
+                    return this._iy
                 }
 
                 get x(){
@@ -128,9 +138,9 @@
             const tiles = []
             let x=y=0
             let last = root = new Tile(x,y)
-            for(let y=0;y<height;y=y+TILE_SIZE){
+            for(let y=0;y<height/TILE_SIZE;y++){
                 let head = new Tile(x,y)
-                for(let x=0;x<width;x=x+TILE_SIZE){
+                for(let x=0;x<width/TILE_SIZE;x++){
                     let current = new Tile(x,y,[root,head,last][Math.random()*3|0])
                     tiles.push(current)
                     last=current
@@ -138,10 +148,8 @@
             }
 
             const clickHandler = function(d,i){
-                console.log(this)
-                console.log(d)
-                console.log(i.tickle())
-                i.tickle()
+                tiles[i.index].tickle(true)
+                redraw(i.index)
             }
             
             const svg = d3
@@ -153,9 +161,6 @@
                 .append("defs")
 
             let maxSize = 0
-            let maxHeight = 0
-            let maxWidth = 0
-            let victim
             const clipPaths = defs
                 .selectAll("clipPath")
                 .data(TEXT.join().split(","))
@@ -169,17 +174,11 @@
                 .attr("text-anchor","middle")
                 .text(d=>d)
                 .attr("font-size", function(d) {
-                    victim=this;
-                    console.log(this);
-                    maxSize=Math.max(maxSize,this.getComputedTextLength());
-                    maxWidth=Math.max(maxWidth,this.getBBox().width)
-                    maxHeight=Math.max(maxHeight,this.getBBox().height)
-                    return (TILE_SIZE / this.getComputedTextLength() * 12) + "px"; }
-                )
+                    maxSize=Math.max(maxSize,this.getBBox().width,this.getBBox().height);
+                    return 0;
+                })
                 .attr("font-family","sans-serif")
                 .attr("font-weight","bold")
-            
-                maxSize = Math.max(maxHeight,maxWidth,maxSize)
 
             clipPaths
                 .attr("font-size",`${TILE_SIZE/maxSize*20}px`)
@@ -243,21 +242,24 @@
                 .attr("cx",d=>d.cx)
                 .attr("cy",d=>d.cy)
                 .attr("fill",d=>d.colours[4])
-
-            setInterval(()=>{
-                tiles.forEach(tile=>tile.tickle())
+            
+            const redraw = tileIndex =>{
+                let all = tileIndex ? false : true
 
                 tileRotations
+                    .filter(d=>all||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("transform",d=>`rotate(${d.rotation})`)
 
                 bases
+                    .filter(d=>all||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("fill",d=>d.colours[5])
 
                 centers
+                    .filter(d=>all||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("r",d=>d.centerCircleRadius)
@@ -265,20 +267,28 @@
                     .attr("cy",d=>d.cy)
                     .attr("fill",d=>d.colours[4])
 
-                arcs.forEach((arc,index)=>{
-                    arc
-                    .transition()
-                    .duration(2000)
-                    .attr("d",d=>d.arcs[index])
-                })
+                arcs
+                    .filter(d=>all||d.index==tileIndex)
+                    .forEach((arc,index)=>{
+                        arc
+                        .transition()
+                        .duration(2000)
+                        .attr("d",d=>d.arcs[index])
+                    })
 
-                corners.forEach((corner,index)=>{
-                    corner
-                    .transition()
-                    .duration(2000)
-                    .attr("d",d=>d.corners[index])
-                })
+                corners
+                    .filter(d=>all||d.index==tileIndex)
+                    .forEach((corner,index)=>{
+                        corner
+                        .transition()
+                        .duration(2000)
+                        .attr("d",d=>d.corners[index])
+                    })
+            }
 
+            setInterval(()=>{
+                tiles.forEach(tile=>tile.tickle())
+                redraw()
             },2500)
         </script>
     </body>
