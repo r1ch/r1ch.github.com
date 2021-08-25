@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
+        <title>bradi.sh</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Homepage for bradi.sh">
         <script src="https://d3js.org/d3.v6.min.js"></script>
     </head>
     <body>
@@ -13,6 +16,8 @@
             const height = 880 - margin.top - margin.bottom;
 
             const TILE_SIZE = 80
+            const TILES_PER_ROW = Math.ceil(width/TILE_SIZE)
+            const TILES_PER_COLUMN = Math.ceil(height/TILE_SIZE)
             const COLOURS = [
                 "#FFF4E0", 
                 "#F8B501",
@@ -21,45 +26,69 @@
                 "#FC3D3C"
             ]
 
+            const CHANCE = {
+                ofNoRecolour : 0.9,
+                ofNoRecircle : 0.9,
+                ofNoRerotate : 0.9,
+                ofHavingACenter: 0.5,
+                ofNotHavingOffCorners: 0.75,
+                ofIgnoringNeighbours: 0.5,
+            }
+
             const TEXT = [["b","r"],[,"a","d","i"],[,,,"s","h"]]
             const findText = (x,y)=>(TEXT[y] || [])[x] || false
 
             class Tile{
-                constructor(ix,iy,parent){
+                constructor(ix,iy){
                     this._ix = ix
                     this._iy = iy
                     this._x = this.ix*TILE_SIZE;
                     this._y = this.iy*TILE_SIZE;
-                    this._parent = parent ? parent : this;
+                    this._neighbours = [
+                        //up 
+                        this.ix + TILES_PER_ROW * ((this.iy-1+TILES_PER_COLUMN)%TILES_PER_COLUMN),
+                        //down
+                        this.ix + TILES_PER_ROW * ((this.iy+1+TILES_PER_COLUMN)%TILES_PER_COLUMN),
+                        //left
+                        (this.ix-1+TILES_PER_ROW)%TILES_PER_ROW + TILES_PER_ROW*this.iy,
+                        //right
+                        (this.ix+1+TILES_PER_ROW)%TILES_PER_ROW + TILES_PER_ROW*this.iy
+                    ]
                     this._cx = this._cy = TILE_SIZE/2
-                    this._index = this.iy * Math.ceil(width/TILE_SIZE) + this.ix
+                    this._index = this.iy * TILES_PER_ROW + this.ix
                     this.rerotate()
                     this.recircle()
-                    this.recolour()
+                    this.recolour(true)
                     this._text = findText(this.ix,this.iy)
                     this._clicked = false
                     if(this.text) this._rotation = 0
                 }
 
                 tickle(force=false){
-                    if(force || Math.random()>0.9) this.recolour()
-                    if(force || Math.random()>0.9) this.recircle()
-                    if(force || Math.random()>0.9) this.rerotate()
+                    if(force || Math.random()>CHANCE.ofNoRecolour) this.recolour()
+                    if(force || Math.random()>CHANCE.ofNoRecircle) this.recircle()
+                    if(force || Math.random()>CHANCE.ofNoRerotate) this.rerotate()
                 }
 
                 recircle(){
-                    this._centerCircleRadius = Math.random() > 0.5 ? TILE_SIZE/2*Math.SQRT2*(Math.random() * 0.125 + 0.125) : 0
+                    this._centerCircleRadius = Math.random() > CHANCE.ofHavingACenter ? TILE_SIZE/2*Math.SQRT2*(Math.random() * 0.125 + 0.125) : 0
                     this._cornerCircleRadius = TILE_SIZE/2
-                    this._corners = Array(4).fill(0).map(_=>Math.random()>0.5?1:0)
+                    //this._corners = Array(4).fill(0).map(_=>Math.random()>0.5?1:0)
+                    this._corners = [Math.random()>CHANCE.ofNotHavingOffCorners?1:0,1,Math.random()>CHANCE.ofNotHavingOffCorners?1:0,1]
                 }
 
-                recolour(){
-                    this._colours = Array(6).fill(0).map(_=>COLOURS[Math.random()*COLOURS.length|0])
-                    this._colours = this._colours.map((colour,index)=>Math.random()>0.3?this.parent.colours[index]:colour)
+                recolour(ignoreNeighbours=false){
+                    const chosenNeighbour = Math.random()*this.neighbours.length|0
+                    this._colours = Array(6).fill(0).map(
+                        (_,index)=>ignoreNeighbours || Math.random()>CHANCE.ofIgnoringNeighbours ? 
+                            COLOURS[Math.random()*COLOURS.length|0] : 
+                            tiles[this.neighbours[chosenNeighbour]].colours[index]
+                    )
+
                 }
 
                 rerotate(){
-                    this._rotation = [0,90,180,270][Math.random()*4|0]
+                    this._rotation = [-180,-90,0,90,180][Math.random()*5|0]
                 }
 
                 click(){
@@ -73,16 +102,16 @@
                     this._clicked = false
                 }
 
+                get neighbours(){
+                    return this._neighbours
+                }
+
                 get clicked(){
                     return this._clicked
                 }
 
                 get text(){
                     return this._text
-                }
-
-                get parent(){
-                    return this._parent
                 }
 
                 get ix(){
@@ -150,14 +179,9 @@
             }
 
             const tiles = []
-            let x=y=0
-            let last = root = new Tile(x,y)
             for(let y=0;y<height/TILE_SIZE;y++){
-                let head = new Tile(x,y)
                 for(let x=0;x<width/TILE_SIZE;x++){
-                    let current = new Tile(x,y,[root,head,last][Math.random()*3|0])
-                    tiles.push(current)
-                    last=current
+                    tiles.push(new Tile(x,y))
                 }
             }
 
@@ -297,6 +321,7 @@
                         .transition()
                         .duration(2000)
                         .attr("d",d=>d.corners[index])
+                        .attr("fill",d=>d.colours[index])
                     })
             }
 
