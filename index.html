@@ -63,13 +63,9 @@
                     this._x = this.ix*TILE_SIZE;
                     this._y = this.iy*TILE_SIZE;
                     this._neighbours = [
-                        //up 
                         this.ix + TILES_PER_ROW * ((this.iy-1+TILES_PER_COLUMN)%TILES_PER_COLUMN),
-                        //down
                         this.ix + TILES_PER_ROW * ((this.iy+1+TILES_PER_COLUMN)%TILES_PER_COLUMN),
-                        //left
                         (this.ix-1+TILES_PER_ROW)%TILES_PER_ROW + TILES_PER_ROW*this.iy,
-                        //right
                         (this.ix+1+TILES_PER_ROW)%TILES_PER_ROW + TILES_PER_ROW*this.iy
                     ]
                     this._cx = this._cy = TILE_SIZE/2
@@ -81,7 +77,7 @@
                     this._clicked = false
                     if(this.text){
                         this._rotation = 0
-                        this._colours[PAINT_LOCATIONS.BASE]="black"
+                        this._colours[PAINT_LOCATIONS.BASE]="#17191D"
                     }
                 }
 
