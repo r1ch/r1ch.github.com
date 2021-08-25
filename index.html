@@ -8,11 +8,11 @@
         <script type = "application/javascript">
 
             const margin = {top: 0, right: 0, bottom: 0, left: 0};
-            const width = 900 - margin.left - margin.right;
+            const width = 400 - margin.left - margin.right;
             
-            const height = 500 - margin.top - margin.bottom;
+            const height = 880 - margin.top - margin.bottom;
 
-            const TILE_SIZE = 90
+            const TILE_SIZE = 80
             const COLOURS = [
                 "#FFF4E0", 
                 "#F8B501",
@@ -21,17 +21,24 @@
                 "#FC3D3C"
             ]
 
+            const TEXT = [["b","r"],[,"a","d","i"],[,,,"s","h"]]
+            const findText = (x,y)=>(TEXT[y/TILE_SIZE] || [])[x/TILE_SIZE] || false
+
             class Tile{
                 constructor(x,y,parent){
                     this._x = x;
                     this._y = y;
                     this._parent = parent ? parent : this;
                     this._cx = this._cy = TILE_SIZE/2
-                    this._index = this.y*TILE_SIZE + this.x
+                    this._index = this.y + this.x/TILE_SIZE
                     this.rerotate()
                     this.recircle()
                     this.recolour()
+                    this._text = findText(x,y)
+                    if(this.text) this._rotation = 0
                 }
+
+
 
                 tickle(){
                     if(Math.random()>0.95) this.recolour()
@@ -52,6 +59,10 @@
 
                 rerotate(){
                     this._rotation = [0,90,180,270][Math.random()*4|0]
+                }
+
+                get text(){
+                    return this._text
                 }
 
                 get parent(){
@@ -125,104 +136,66 @@
                     last=current
                 }
             }
+
+            const clickHandler = function(d,i){
+                console.log(this)
+                console.log(d)
+                console.log(i.tickle())
+                i.tickle()
+            }
             
-            const svg = d3.selectAll("#svg")
+            const svg = d3
+                .selectAll("#svg")
                 .append("svg")
                 .attr("viewBox", [0, 0, width, height]);
 
             const defs = svg
                 .append("defs")
-            
-            
-            const clipPath = defs
+
+            let maxSize = 0
+            let maxHeight = 0
+            let maxWidth = 0
+            let victim
+            const clipPaths = defs
+                .selectAll("clipPath")
+                .data(TEXT.join().split(","))
+                .enter()
                 .append("clipPath")
-                .attr("id","letter-clip")
+                .attr("id",d=>`letter-clip-${d}`)
                 .append("text")
-                .attr("x","50%")
-                .attr("y","50%")
-                .attr("dominant-baseline","middle")
+                .attr("x",TILE_SIZE/2)
+                .attr("y",TILE_SIZE/2)
+                .attr("alignment-baseline","central")
                 .attr("text-anchor","middle")
-                .text("bradish")
-                .attr("font-size", function(d) { return (width / this.getComputedTextLength() * 12) + "px"; })
+                .text(d=>d)
+                .attr("font-size", function(d) {
+                    victim=this;
+                    console.log(this);
+                    maxSize=Math.max(maxSize,this.getComputedTextLength());
+                    maxWidth=Math.max(maxWidth,this.getBBox().width)
+                    maxHeight=Math.max(maxHeight,this.getBBox().height)
+                    return (TILE_SIZE / this.getComputedTextLength() * 12) + "px"; }
+                )
                 .attr("font-family","sans-serif")
                 .attr("font-weight","bold")
-
-            const grayscale = defs
-                .append("filter")
-                .attr("id", "grayscale")
-                .append("feColorMatrix")
-                .attr("type","saturate")
-                .attr("values","0")
-
-            const blur = defs
-                .append("filter")
-                .attr("id", "blur")
-                .append("feGaussianBlur")
-                .attr("stdDeviation","1.5")
             
-            const invert = defs
-                .append("filter")
-                .attr("id", "invert")
-                .append("feColorMatrix")
-                .attr("type","matrix")
-                .attr("values","-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0")
+                maxSize = Math.max(maxHeight,maxWidth,maxSize)
 
-            const lighting = defs
-                .append("filter")
-                .attr("id","lighting")
-                .append("feSpecularLighting")
-                .attr("specularExponent","20")
-                .attr("lighting-color","#bbbbbb")
-                .append("fePointLight")
-                .attr("x",50)
-                .attr("y",75)
-                .attr("z",200)
-
-            const turbulence = defs
-                .append("filter")
-                .attr("id", "displacement")
-            
-            turbulence
-                .append("feTurbulence")
-                .attr("type","turbulence")
-                .attr("baseFrequency",0.05)
-                .attr("numOctaves",2)
-                .attr("result","turbulence")
-
-            turbulence
-                .append("feDisplacementMap")
-                .attr("in2","turbulence")
-                .attr("in","SourceGraphic")
-                .attr("scale",50)
-                .attr("xChannelSelector","R")
-                .attr("yChannelSelector","G")
+            clipPaths
+                .attr("font-size",`${TILE_SIZE/maxSize*20}px`)
 
             const theTiles = svg
                 .append("g")
                 .attr("id","theTiles")
 
-            const bg = svg
-                .append("g")
-                .append("use")
-                .attr("href","#theTiles")
-                .attr("filter","url(#invert)")
-                
-
-
-            const fg = svg
-                .append("g")
-                .append("use")
-                .attr("href","#theTiles")
-                .attr("clip-path","url(#letter-clip)")
-                .attr("filter","url(#displacement)")
-                
-
-            const tileTranslations = theTiles.selectAll(".tileTranslations")
+            const tileTranslations = theTiles
+                .selectAll(".tileTranslations")
                 .data(tiles,d=>d.index)
                 .enter()
                 .append("g")
                 .attr("transform",d=>`translate(${d.x},${d.y})`)
                 .attr("class","tileTranslations")
+                .on('click', clickHandler);
 
             const tileOffsets = tileTranslations
                 .append("g")
@@ -232,11 +205,14 @@
                 .append("g")
                 .attr("transform",d=>`rotate(${d.rotation})`)
 
-
             const tileGroups = tileRotations
                 .append("g")
                 .attr("transform",d=>`translate(${TILE_SIZE/-2},${TILE_SIZE/-2})`)
                 .attr("class","tileTranslations")
+
+            const clips = tileGroups
+                .filter(d=>d.text)
+                .attr("clip-path",d=>`url(#letter-clip-${d.text})`)
 
             const bases = tileGroups
                 .append("rect")
