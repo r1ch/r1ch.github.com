@@ -71,7 +71,7 @@
                     this._cx = this._cy = TILE_SIZE/2
                     this._index = this.iy * TILES_PER_ROW + this.ix
                     this.rerotate()
-                    this.recircle()
+                    this.recircle(true)
                     this.recolour(true)
                     this._text = findText(this.ix,this.iy)
                     this._clicked = false
@@ -87,13 +87,13 @@
                     if(force || Math.random()<CHANCE.ofRerotate) this.rerotate()
                 }
 
-                recircle(){
+                recircle(noOffCorners=false){
                     this._centerCircleRadius = Math.random() < CHANCE.ofHavingACenter ? TILE_SIZE/2*Math.SQRT2*(Math.random() * 0.125 + 0.125) : 0
                     this._cornerCircleRadius = TILE_SIZE/2
                     //prefer diagonal pairs, but allow switching
                     this._corners = Math.random() > 0.5 ? [1,0,1,0] : [0,1,0,1]
                     //now flick some on at random
-                    this._corners = this._corners.map(corner=>Math.random()<CHANCE.ofOffCorners ? 1-corner : corner)
+                    if(!noOffCorners) this._corners = this._corners.map(corner=>Math.random()<CHANCE.ofOffCorners ? 1-corner : corner)
                 }
 
                 recolour(ignoreNeighbours=false){
