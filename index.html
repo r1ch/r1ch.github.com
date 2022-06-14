@@ -305,7 +305,7 @@
                     .on("end",d=>d.done())
 
                 bases
-                .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
+                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
                     .transition()
                     .duration(2000)
                     .attr("fill",d=>d.colours[PAINT_LOCATIONS.BASE])
