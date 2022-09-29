@@ -55,7 +55,9 @@
             }
 
             const TEXT = [["b","r"],[,"a","d","i"],[,,"\u00b7","s","h"]]
+            const URLS = [["https://greenchef.bradi.sh"]]
             const findText = (x,y)=>(TEXT[y] || [])[x] || false
+            const findURL = (x,y)=>(URL[y] || [])[x] || false
 
             class Tile{
                 constructor(ix,iy){
@@ -79,6 +81,7 @@
                     this.recircle(true)
                     this.recolour(true)
                     this._text = findText(this.ix,this.iy)
+                    this._url = findURL(this.ix,this.iy)
                     this._clicked = false
                     if(this.text){
                         this._rotation = 0
@@ -143,6 +146,10 @@
 
                 get text(){
                     return this._text
+                }
+
+                get url(){
+                    return this._url
                 }
 
                 get ix(){
@@ -293,6 +300,11 @@
                 .attr("fill",d=>d.colours[PAINT_LOCATIONS.TEXT])
                 .attr("font-size",`${TILE_SIZE/4}px`)
                 .text(d=>d.text)
+
+            const url = tileGroups
+                .filter(d=>d.url)
+                .append("a") 
+                .attr("xlink:href",d=>d.url)
             
             const redraw = tileIndex =>{
                 let all = tileIndex ? false : true
