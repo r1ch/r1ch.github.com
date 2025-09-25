@@ -259,6 +259,8 @@
                 .attr("class","tileTranslations")
 
             const bases = tileGroups
+                .append("a")
+                .attr("href",d=>d.url?d.url:"none")
                 .append("rect")
                 .attr("width",TILE_SIZE)
                 .attr("height",TILE_SIZE)
