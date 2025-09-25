@@ -304,7 +304,7 @@
             const url = tileGroups
                 .filter(d=>d.url)
                 .append("a") 
-                .attr("xlink:href",d=>d.url)
+                .attr("href",d=>d.url)
             
             const redraw = tileIndex =>{
                 let all = tileIndex ? false : true
