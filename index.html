@@ -260,7 +260,7 @@
 
             const bases = tileGroups
                 .append("a")
-                .attr("href",d=>d.url?d.url:"none")
+                .attr("href","https://recipes.bradi.sh")
                 .append("rect")
                 .attr("width",TILE_SIZE)
                 .attr("height",TILE_SIZE)
@@ -303,11 +303,6 @@
                 .attr("font-size",`${TILE_SIZE/4}px`)
                 .text(d=>d.text)
 
-            const url = tileGroups
-                .filter(d=>d.url)
-                .append("a") 
-                .attr("href",d=>d.url)
-            
             const redraw = tileIndex =>{
                 let all = tileIndex ? false : true
 
