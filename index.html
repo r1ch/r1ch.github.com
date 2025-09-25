@@ -241,6 +241,8 @@
                 .data(tiles,d=>d.index)
                 .enter()
                 .append("g")
+                .append("a")
+                .attr("href","https://recipes.bradi.sh")
                 .attr("transform",d=>`translate(${d.x},${d.y})`)
                 .attr("class","tileTranslations")
                 .on('click', clickHandler);
@@ -259,8 +261,6 @@
                 .attr("class","tileTranslations")
 
             const bases = tileGroups
-                .append("a")
-                .attr("href","https://recipes.bradi.sh")
                 .append("rect")
                 .attr("width",TILE_SIZE)
                 .attr("height",TILE_SIZE)
