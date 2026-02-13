@@ -293,10 +293,30 @@
                 .attr("font-family", "sans-serif")
                 .attr("font-weight", "900")
                 .attr("font-size", "20vw") // Responsive font size
-                .style("fill", "white")
+                .style("fill", "none")
+                .style("filter", "blur(5px)")
+                .style("stroke","black")
+                .style("stroke-width","5px")
+                .style("mix-blend-mode", "hard-light")
+                .style("pointer-events", "none") // Let clicks pass through if needed
+                .text("bradi.sh");
+
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", height / 2)
+                .attr("text-anchor", "middle")
+                .attr("dominant-baseline", "central")
+                .attr("font-family", "sans-serif")
+                .attr("font-weight", "900")
+                .attr("font-size", "20vw") // Responsive font size
+                .style("filter", "blur(2px)")
+                .style("fill", "#ffffffff")
                 .style("mix-blend-mode", "difference")
                 .style("pointer-events", "none") // Let clicks pass through if needed
                 .text("bradi.sh");
+            
+
 
             const redraw = () =>{
                 // Smoothly interpolate camera position
@@ -376,6 +396,67 @@
             
             // Start animation loop
             animate();
+
+            setInterval(() => {
+                // Pick a random tile
+                const tile = tiles[Math.floor(Math.random() * tiles.length)];
+
+                // Update rotation state
+                const currentRotation = tile.rotation;
+                const newRotation = currentRotation + 90;
+                tile._rotation = newRotation;
+
+                // Update colour state
+                tile.recolour();
+
+                // Select the specific tile's group
+                // We need to find the DOM element associated with this tile
+                // We can use the data binding to find it
+                const tileGroup = tileTranslations.filter(d => d === tile);
+                
+                if (!tileGroup.empty()) {
+                    // Animate rotation
+                    tileGroup.select("g") // Select the tileOffsets group
+                        .select("g") // Select the tileRotations group
+                        .transition()
+                        .duration(500)
+                        .attr("transform", `rotate(${newRotation})`);
+
+                    // Animate colours
+                    const duration = 500;
+                    
+                    // We need to drill down to the inner group containing the shapes
+                    // Structure: tileTranslations -> tileOffsets -> tileRotations -> inner tileGroups
+                    const innerGroup = tileGroup.select("g").select("g").select("g");
+                    
+                    // Base
+                    innerGroup.select("rect")
+                        .transition()
+                        .duration(duration)
+                        .attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
+
+                    // Corners are the first 4 paths
+                    // Note: selectAll("path") will find paths in the innerGroup
+                    innerGroup.selectAll("path")
+                        .filter((d, i) => i < 4)
+                        .transition()
+                        .duration(duration)
+                        .attr("fill", (d, i) => tile.colours[CORNERS[i]]);
+
+                    // Center
+                    innerGroup.select("circle")
+                        .transition()
+                        .duration(duration)
+                        .attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
+
+                    // Text
+                    innerGroup.select("text")
+                        .transition()
+                        .duration(duration)
+                        .attr("fill", tile.colours[PAINT_LOCATIONS.TEXT]);
+                }
+
+            }, 500);
         </script>
     </body>
 </html>
