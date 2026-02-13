@@ -11,12 +11,17 @@
         <script type = "application/javascript">
 
             const margin = {top: 0, right: 0, bottom: 0, left: 0};
-            const width = 400 - margin.left - margin.right;
-            const height = 880 - margin.top - margin.bottom;
+            const width = window.innerWidth - margin.left - margin.right;
+            const height = window.innerHeight - margin.top - margin.bottom;
 
             const TILE_SIZE = 80
-            const TILES_PER_ROW = Math.ceil(width/TILE_SIZE)
-            const TILES_PER_COLUMN = Math.ceil(height/TILE_SIZE)
+            const TILES_PER_ROW = Math.ceil(width/TILE_SIZE) + 2
+            const TILES_PER_COLUMN = Math.ceil(height/TILE_SIZE) + 2
+            
+            let cameraX = 0;
+            let cameraY = 0;
+            let targetCameraX = 0;
+            let targetCameraY = 0;
 
             const COLOURS = [
                 "#FFF4E0", 
@@ -55,30 +60,48 @@
             }
 
             const TEXT = [["b","r"],[,"a","d","i"],[,,"\u00b7","s","h"]]
-            const findText = (x,y)=>(TEXT[y] || [])[x] || false
-            const findURL = (x,y)=>(URL[y] || [])[x] || false
+            const findText = (x,y)=>{
+                // Calculate wrapped coordinates relative to the TEXT array
+                // We use a large offset to handle negative numbers correctly before modulo
+                // Assuming TEXT should repeat or be placed relative to 0,0
+                // For now, let's just make it repeat every TILES_PER_ROW/COLUMN to keep it simple and consistent
+                // However, TEXT is small. If we want it to just appear once near 0,0 and repeat:
+                // Let's use the grid size as the repetition period.
+                let wrappedX = ((x % TILES_PER_ROW) + TILES_PER_ROW) % TILES_PER_ROW;
+                let wrappedY = ((y % TILES_PER_COLUMN) + TILES_PER_COLUMN) % TILES_PER_COLUMN;
+                return (TEXT[wrappedY] || [])[wrappedX] || false
+            }
+            // URL array is missing, so findURL will fail or return false if URL is global window.URL
+            // Disabling it for now to prevent errors
+            const findURL = (x,y)=> false 
 
             class Tile{
                 constructor(ix,iy){
+                    this._dirty = true;
+                    this.init(ix, iy)
+                }
+
+                init(ix, iy) {
                     this._ix = ix
                     this._iy = iy
-                    this._x = this.ix*TILE_SIZE;
-                    this._y = this.iy*TILE_SIZE;
-                    this._neighbours = [
-                        //up 
-                        this.ix + TILES_PER_ROW * ((this.iy-1+TILES_PER_COLUMN)%TILES_PER_COLUMN),
-                        //down
-                        this.ix + TILES_PER_ROW * ((this.iy+1+TILES_PER_COLUMN)%TILES_PER_COLUMN),
-                        //left
-                        (this.ix-1+TILES_PER_ROW)%TILES_PER_ROW + TILES_PER_ROW*this.iy,
-                        //right
-                        (this.ix+1+TILES_PER_ROW)%TILES_PER_ROW + TILES_PER_ROW*this.iy
-                    ]
+                    // For finding neighbours in the physical grid array, we need to map logical coordinates
+                    // back to the array index 0..N.
+                    // However, neighbours logic in original code was based on fixed grid wrapping.
+                    // For infinite scroll, "neighbours" are logically adjacent tiles.
+                    // We'll simplify and remove neighbour-based coloring logic for now or adapt it.
+                    // The original neighbour logic was:
+                    // this.ix + TILES_PER_ROW * ((this.iy-1+TILES_PER_COLUMN)%TILES_PER_COLUMN)
+                    // This refers to indices in the `tiles` array.
+                    // Since we are recycling, the `tiles` array doesn't map perfectly to logical space anymore.
+                    // We'll just use random colors for now to simplify infinite scrolling transition.
+                    this._neighbours = [] 
+
                     this._cx = this._cy = TILE_SIZE/2
-                    this._index = this.iy * TILES_PER_ROW + this.ix
+                    this._index = (this.iy % TILES_PER_COLUMN + TILES_PER_COLUMN) % TILES_PER_COLUMN * TILES_PER_ROW + (this.ix % TILES_PER_ROW + TILES_PER_ROW) % TILES_PER_ROW
+                    
                     this.rerotate()
                     this.recircle(true)
-                    this.recolour(true)
+                    this.recolour(true) // force true to ignore neighbours logic which is broken in infinite scroll
                     this._text = findText(this.ix,this.iy)
                     this._url = findURL(this.ix,this.iy)
                     this._clicked = false
@@ -86,13 +109,34 @@
                         this._rotation = 0
                         this.fixTextColour()
                     }
+                    this._dirty = true;
                 }
 
                 tickle(force=false){
-                    if(force || Math.random()<CHANCE.ofRecolour) this.recolour()
-                    if(force || Math.random()<CHANCE.ofRecircle) this.recircle()
-                    if(force || Math.random()<CHANCE.ofRerotate) this.rerotate()
-                    this.text && this.fixTextColour()
+                    if(force || Math.random()<CHANCE.ofRecolour) {
+                        this.recolour();
+                        this._dirty = true;
+                    }
+                    if(force || Math.random()<CHANCE.ofRecircle) {
+                        this.recircle();
+                        this._dirty = true;
+                    }
+                    if(force || Math.random()<CHANCE.ofRerotate) {
+                        this.rerotate();
+                        this._dirty = true;
+                    }
+                    if(this.text) {
+                        this.fixTextColour();
+                        this._dirty = true;
+                    }
+                }
+
+                get dirty(){
+                    return this._dirty;
+                }
+
+                markClean(){
+                    this._dirty = false;
                 }
 
                 recircle(noOffCorners=false){
@@ -160,11 +204,11 @@
                 }
 
                 get x(){
-                    return this._x
+                    return this._ix * TILE_SIZE - cameraX
                 }
 
                 get y(){
-                    return this._y
+                    return this._iy * TILE_SIZE - cameraY
                 }
 
                 get cx(){
@@ -216,20 +260,52 @@
             }
 
             const tiles = []
-            for(let y=0;y<height/TILE_SIZE;y++){
-                for(let x=0;x<width/TILE_SIZE;x++){
+            // Create a grid of tiles large enough to cover the screen plus buffer
+            for(let y= -1; y < TILES_PER_COLUMN - 1; y++){
+                for(let x= -1; x < TILES_PER_ROW - 1; x++){
                     tiles.push(new Tile(x,y))
                 }
             }
 
-            const clickHandler = function(d,i){
-                tiles[i.index].click() && redraw(i.index)
+            const clickHandler = function(event, d){
+                 // d is the data attached to the element
+                 if(d.click()) {
+                     updateAppearance(d);
+                 }
             }
             
             const svg = d3
                 .selectAll("#svg")
                 .append("svg")
-                .attr("viewBox", [0, 0, width, height]);
+                .attr("viewBox", [0, 0, width, height])
+                .style("width", "100%")
+                .style("height", "100%")
+                .style("display", "block");
+
+            // Scroll handling
+            window.addEventListener('wheel', e => {
+                e.preventDefault();
+                targetCameraX += e.deltaX;
+                targetCameraY += e.deltaY;
+            }, { passive: false });
+            
+            // Touch handling
+            let touchStartX = 0;
+            let touchStartY = 0;
+            window.addEventListener('touchstart', e => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: false });
+            
+            window.addEventListener('touchmove', e => {
+                e.preventDefault(); // prevent native scroll
+                const dx = e.touches[0].clientX - touchStartX;
+                const dy = e.touches[0].clientY - touchStartY;
+                targetCameraX -= dx;
+                targetCameraY -= dy;
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: false });
 
             const theTiles = svg
                 .append("g")
@@ -302,60 +378,104 @@
                 .attr("font-size",`${TILE_SIZE/4}px`)
                 .text(d=>d.text)
 
-            const redraw = tileIndex =>{
-                let all = tileIndex ? false : true
+            const redraw = () =>{
+                // Smoothly interpolate camera position
+                cameraX += (targetCameraX - cameraX) * 0.1;
+                cameraY += (targetCameraY - cameraY) * 0.1;
 
-                tileRotations
-                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
-                    .transition()
-                    .duration(2000)
-                    .attr("transform",d=>`rotate(${d.rotation})`)
-                    .on("end",d=>d.done())
+                // Check for recycling
+                const bufferX = TILE_SIZE; 
+                const bufferY = TILE_SIZE;
+                
+                // Calculate visible bounds in logical coordinates
+                const minLogicalX = Math.floor((cameraX - bufferX) / TILE_SIZE);
+                const maxLogicalX = Math.floor((cameraX + width + bufferX) / TILE_SIZE);
+                const minLogicalY = Math.floor((cameraY - bufferY) / TILE_SIZE);
+                const maxLogicalY = Math.floor((cameraY + height + bufferY) / TILE_SIZE);
 
-                bases
-                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
-                    .transition()
-                    .duration(2000)
-                    .attr("fill",d=>d.colours[PAINT_LOCATIONS.BASE])
+                let anyDirty = false;
 
-                centers
-                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
-                    .transition()
-                    .duration(2000)
-                    .attr("r",d=>d.centerCircleRadius)
-                    .attr("cx",d=>d.cx)
-                    .attr("cy",d=>d.cy)
-                    .attr("fill",d=>d.colours[PAINT_LOCATIONS.CENTER])
+                tiles.forEach(tile => {
+                    // Check if tile is too far left
+                    if (tile.ix * TILE_SIZE - cameraX < -bufferX * 2) {
+                        tile.init(tile.ix + TILES_PER_ROW, tile.iy);
+                    }
+                    // Check if tile is too far right
+                    else if (tile.ix * TILE_SIZE - cameraX > width + bufferX) {
+                        tile.init(tile.ix - TILES_PER_ROW, tile.iy);
+                    }
+                    
+                    // Check if tile is too far up
+                    if (tile.iy * TILE_SIZE - cameraY < -bufferY * 2) {
+                        tile.init(tile.ix, tile.iy + TILES_PER_COLUMN);
+                    }
+                    // Check if tile is too far down
+                    else if (tile.iy * TILE_SIZE - cameraY > height + bufferY) {
+                        tile.init(tile.ix, tile.iy - TILES_PER_COLUMN);
+                    }
 
-                arcs
-                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
-                    .forEach((arc,index)=>{
-                        arc
-                        .transition()
-                        .duration(2000)
-                        .attr("d",d=>d.arcs[index])
-                    })
+                    if (tile.dirty) anyDirty = true;
+                });
 
-                corners
-                    .filter(d=>(all&&!d.clicked)||d.index==tileIndex)
-                    .forEach((corner,index)=>{
-                        corner
-                        .transition()
-                        .duration(2000)
-                        .attr("d",d=>d.corners[index])
-                        .attr("fill",d=>d.colours[index])
-                    })
+                // Update positions of all tiles (using transform)
+                tileTranslations
+                    .attr("transform", d => `translate(${d.x},${d.y})`);
 
-                text
-                    .transition()
-                    .duration(2000)
-                    .attr("fill",d=>d.colours[PAINT_LOCATIONS.TEXT])
+                if (anyDirty) {
+                    // Update visuals for dirty tiles only
+                    tileRotations
+                        .filter(d => d.dirty)
+                        .attr("transform", d => `rotate(${d.rotation})`);
+                    
+                    bases.filter(d => d.dirty).attr("fill", d => d.colours[PAINT_LOCATIONS.BASE]);
+                    
+                    centers
+                        .filter(d => d.dirty)
+                        .attr("r", d => d.centerCircleRadius)
+                        .attr("cx", d => d.cx)
+                        .attr("cy", d => d.cy)
+                        .attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
+
+                    corners.forEach((cornerGroup, index) => {
+                        cornerGroup
+                            .filter(d => d.dirty)
+                            .attr("d", d => d.corners[index])
+                            .attr("fill", d => d.colours[index]);
+                    });
+
+                    arcs.forEach((arcGroup, index) => {
+                        arcGroup.filter(d => d.dirty).attr("d", d => d.arcs[index]);
+                    });
+
+                    text
+                        .filter(d => d.dirty)
+                        .text(d => d.text)
+                        .attr("fill", d => d.colours[PAINT_LOCATIONS.TEXT]);
+                    
+                    // Mark all dirty tiles as clean
+                    tiles.forEach(tile => {
+                        if(tile.dirty) tile.markClean();
+                    });
+                }
             }
+            
+            const animate = () => {
+                redraw();
+                requestAnimationFrame(animate);
+            };
+            
+            // Start animation loop
+            animate();
 
+            // Keep the random tickle
             setInterval(()=>{
-                tiles.forEach(tile=>tile.tickle())
-                redraw()
-            },2500)
+                tiles.forEach(tile => {
+                    // Only tickle if visible to save perf? Or just tickle all.
+                    // Let's tickle all for now as count is small.
+                    tile.tickle();
+                });
+                // Redraw will pick up changes on next frame
+            }, 2500)
         </script>
     </body>
 </html>
