@@ -5,6 +5,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Homepage for bradi.sh">
         <script src="https://d3js.org/d3.v6.min.js"></script>
+        <style>
+            body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; }
+            #svg { width: 100vw; height: 100vh; }
+        </style>
     </head>
     <body>
         <div id="svg"></div>
@@ -23,11 +27,14 @@
             let targetCameraX = 0;
             let targetCameraY = 0;
 
-            // --- AUTO SCROLL STATE ---
-            let lastUserActivity = 0; // Timestamp of last scroll/touch
-            const SUSPEND_DURATION = 5000; // 5 seconds
-            let brownianX = 0;
-            let brownianY = 0;
+            // --- AUTO SCROLL & BROWNIAN STATE ---
+            let lastUserActivity = 0; 
+            const SUSPEND_DURATION = 5000; 
+            let vx = 0;            // Current velocity X
+            let vy = 0;            // Current velocity Y
+            const maxVelocity = 1.5; // Cap to prevent runaway speed
+            const friction = 0.97;   // Gentle air resistance
+            const impulse = 0.1;     // Strength of random nudges
 
             const COLOURS = ["#FFF4E0", "#F8B501", "#06ACB5", "#17191D", "#FC3D3C"];
             const PAINT_LOCATIONS = {
@@ -95,7 +102,7 @@
                 .attr("viewBox", [0, 0, width, height])
                 .style("width", "100%").style("height", "100%").style("display", "block");
 
-            // --- UPDATED INTERACTION HANDLING ---
+            // Interaction Handlers
             const markActivity = () => { lastUserActivity = Date.now(); };
 
             window.addEventListener('wheel', e => {
@@ -123,6 +130,7 @@
                 touchStartY = e.touches[0].clientY;
             }, { passive: false });
 
+            // Rendering Tiles
             const theTiles = svg.append("g").attr("id", "theTiles");
             const tileTranslations = theTiles.selectAll(".tileTranslations")
                 .data(tiles, d => d.index).enter().append("g").append("a")
@@ -156,19 +164,24 @@
             const redraw = () => {
                 const now = Date.now();
                 
-                // --- BROWNIAN MOTION LOGIC ---
+                // Brownian Motion with Velocity Caps
                 if (now - lastUserActivity > SUSPEND_DURATION) {
-                    // Generate small random walk values
-                    brownianX += (Math.random() - 0.5) * 0.5; 
-                    brownianY += (Math.random() - 0.5) * 0.5;
-                    
-                    // Apply a slight constant drift so it doesn't just vibrate in place
-                    targetCameraX += brownianX + 0.2; 
-                    targetCameraY += brownianY + 0.1;
+                    vx += (Math.random() - 0.5) * impulse;
+                    vy += (Math.random() - 0.5) * impulse;
+
+                    vx *= friction;
+                    vy *= friction;
+
+                    // Cap velocities
+                    vx = Math.max(-maxVelocity, Math.min(maxVelocity, vx));
+                    vy = Math.max(-maxVelocity, Math.min(maxVelocity, vy));
+
+                    targetCameraX += vx;
+                    targetCameraY += vy;
                 } else {
-                    // Reset brownian vectors while user is active so it starts fresh
-                    brownianX = 0;
-                    brownianY = 0;
+                    // Reset momentum during manual scroll
+                    vx = 0;
+                    vy = 0;
                 }
 
                 cameraX += (targetCameraX - cameraX) * 0.1;
@@ -200,7 +213,7 @@
             const animate = () => { redraw(); requestAnimationFrame(animate); };
             animate();
 
-            // Random Tile Pulse
+            // Random Tile Pulse (Rotation/Color changes)
             setInterval(() => {
                 const tile = tiles[Math.floor(Math.random() * tiles.length)];
                 tile._rotation += 90;
