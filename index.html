@@ -7,205 +7,114 @@
         <script src="https://d3js.org/d3.v6.min.js"></script>
     </head>
     <body>
-        <div id = "svg" ></div>
-        <script type = "application/javascript">
+        <div id="svg"></div>
+        <script type="application/javascript">
 
             const margin = {top: 0, right: 0, bottom: 0, left: 0};
             const width = window.innerWidth - margin.left - margin.right;
             const height = window.innerHeight - margin.top - margin.bottom;
 
-            const TILE_SIZE = 80
-            const TILES_PER_ROW = Math.ceil(width/TILE_SIZE) + 2
-            const TILES_PER_COLUMN = Math.ceil(height/TILE_SIZE) + 2
+            const TILE_SIZE = 80;
+            const TILES_PER_ROW = Math.ceil(width / TILE_SIZE) + 2;
+            const TILES_PER_COLUMN = Math.ceil(height / TILE_SIZE) + 2;
             
             let cameraX = 0;
             let cameraY = 0;
             let targetCameraX = 0;
             let targetCameraY = 0;
 
-            const COLOURS = [
-                "#FFF4E0", 
-                "#F8B501",
-                "#06ACB5",
-                "#17191D",
-                "#FC3D3C"
-            ]
+            // --- AUTO SCROLL STATE ---
+            let lastUserActivity = 0; // Timestamp of last scroll/touch
+            const SUSPEND_DURATION = 5000; // 5 seconds
+            let brownianX = 0;
+            let brownianY = 0;
 
+            const COLOURS = ["#FFF4E0", "#F8B501", "#06ACB5", "#17191D", "#FC3D3C"];
             const PAINT_LOCATIONS = {
-                TOP_LEFT_CORNER: 0,
-                TOP_RIGHT_CORNER: 1,
-                BOTTOM_RIGHT_CORNER: 2,
-                BOTTOM_LEFT_CORNER: 3,
-                CENTER: 4,
-                BASE:5,
-                TEXT:6
-            }
+                TOP_LEFT_CORNER: 0, TOP_RIGHT_CORNER: 1, BOTTOM_RIGHT_CORNER: 2,
+                BOTTOM_LEFT_CORNER: 3, CENTER: 4, BASE: 5, TEXT: 6
+            };
+            const N_PAINT_LOCATIONS = Object.keys(PAINT_LOCATIONS).length;
+            const CORNERS = [0, 1, 2, 3];
+            const CHANCE = { ofHavingACenter: 0.75, ofOffCorners: 0.1 };
 
-            const N_PAINT_LOCATIONS = Object.keys(PAINT_LOCATIONS).length
-
-            const CORNERS = [
-                PAINT_LOCATIONS.TOP_LEFT_CORNER,
-                PAINT_LOCATIONS.TOP_RIGHT_CORNER,
-                PAINT_LOCATIONS.BOTTOM_RIGHT_CORNER,
-                PAINT_LOCATIONS.BOTTOM_LEFT_CORNER
-            ]
-
-            const CHANCE = {
-                ofHavingACenter: 0.75,
-                ofOffCorners : 0.1
-            }
-
-            const TEXT = []
-            const findText = (x,y)=>{
-                // Calculate wrapped coordinates relative to the TEXT array
-                // We use a large offset to handle negative numbers correctly before modulo
-                // Assuming TEXT should repeat or be placed relative to 0,0
-                // For now, let's just make it repeat every TILES_PER_ROW/COLUMN to keep it simple and consistent
-                // However, TEXT is small. If we want it to just appear once near 0,0 and repeat:
-                // Let's use the grid size as the repetition period.
-                let wrappedX = ((x % TILES_PER_ROW) + TILES_PER_ROW) % TILES_PER_ROW;
-                let wrappedY = ((y % TILES_PER_COLUMN) + TILES_PER_COLUMN) % TILES_PER_COLUMN;
-                return (TEXT[wrappedY] || [])[wrappedX] || false
-            }
-            class Tile{
-                constructor(ix,iy){
-                    this.init(ix, iy)
-                }
-
+            class Tile {
+                constructor(ix, iy) { this.init(ix, iy); }
                 init(ix, iy) {
-                    this._ix = ix
-                    this._iy = iy
-
-                    this._cx = this._cy = TILE_SIZE/2
-                    this._index = (this.iy % TILES_PER_COLUMN + TILES_PER_COLUMN) % TILES_PER_COLUMN * TILES_PER_ROW + (this.ix % TILES_PER_ROW + TILES_PER_ROW) % TILES_PER_ROW
-                    
-                    this.rerotate()
-                    this.recircle(true)
-                    this.recolour()
+                    this._ix = ix; this._iy = iy;
+                    this._cx = this._cy = TILE_SIZE / 2;
+                    this._index = (this.iy % TILES_PER_COLUMN + TILES_PER_COLUMN) % TILES_PER_COLUMN * TILES_PER_ROW + (this.ix % TILES_PER_ROW + TILES_PER_ROW) % TILES_PER_ROW;
+                    this.rerotate(); this.recircle(true); this.recolour();
                 }
-
-                recircle(noOffCorners=false){
-                    this._centerCircleRadius = Math.random() < CHANCE.ofHavingACenter ? TILE_SIZE/2*Math.SQRT2*(Math.random() * 0.1 + 0.15) : 0
-                    this._cornerCircleRadius = TILE_SIZE/2
-                    //prefer diagonal pairs, but allow switching
-                    this._corners = Math.random() > 0.5 ? [1,0,1,0] : [0,1,0,1]
-                    //now flick some on at random
-                    if(!noOffCorners) this._corners = this._corners.map(corner=>Math.random()<CHANCE.ofOffCorners ? 1-corner : corner)
+                recircle(noOffCorners = false) {
+                    this._centerCircleRadius = Math.random() < CHANCE.ofHavingACenter ? TILE_SIZE / 2 * Math.SQRT2 * (Math.random() * 0.1 + 0.15) : 0;
+                    this._cornerCircleRadius = TILE_SIZE / 2;
+                    this._corners = Math.random() > 0.5 ? [1, 0, 1, 0] : [0, 1, 0, 1];
+                    if (!noOffCorners) this._corners = this._corners.map(corner => Math.random() < CHANCE.ofOffCorners ? 1 - corner : corner);
                 }
-
-                recolour(){
-                    this._colours = Array(N_PAINT_LOCATIONS).fill(0).map(_=>COLOURS[Math.random()*COLOURS.length|0])
-                }
-
-                rerotate(){
-                    this._rotation = [-180,-90,0,90,180][Math.random()*5|0]
-                }
-
-                get text(){
-                    return false
-                }
-
-                get url(){
-                    return this._url
-                }
-
-                get ix(){
-                    return this._ix
-                }
-
-                get iy(){
-                    return this._iy
-                }
-
-                get x(){
-                    return this._ix * TILE_SIZE - cameraX
-                }
-
-                get y(){
-                    return this._iy * TILE_SIZE - cameraY
-                }
-
-                get cx(){
-                    return this._cx
-                }
-
-                get cy(){
-                    return this._cy
-                }
-
-                get index(){
-                    return this._index
-                }
-
-                get cornerCircleRadius(){
-                    return this._cornerCircleRadius
-                }
-
-                get centerCircleRadius(){
-                    return this._centerCircleRadius
-                }
-
-                get colours(){
-                    return this._colours
-                }
-
-                get rotation(){
-                    return this._rotation
-                }
-
-                get corners(){
+                recolour() { this._colours = Array(N_PAINT_LOCATIONS).fill(0).map(_ => COLOURS[Math.random() * COLOURS.length | 0]); }
+                rerotate() { this._rotation = [-180, -90, 0, 90, 180][Math.random() * 5 | 0]; }
+                get text() { return false; }
+                get ix() { return this._ix; }
+                get iy() { return this._iy; }
+                get x() { return this._ix * TILE_SIZE - cameraX; }
+                get y() { return this._iy * TILE_SIZE - cameraY; }
+                get cx() { return this._cx; }
+                get cy() { return this._cy; }
+                get index() { return this._index; }
+                get cornerCircleRadius() { return this._cornerCircleRadius; }
+                get centerCircleRadius() { return this._centerCircleRadius; }
+                get colours() { return this._colours; }
+                get rotation() { return this._rotation; }
+                get corners() {
                     return [
-                        (radius=>`M${radius},0A${radius},${radius},0,0,1,0,${radius}L0,0Z`)(this._corners[0] * this.cornerCircleRadius),
-                        (radius=>`M${TILE_SIZE},${radius}A${radius},${radius},0,0,1,${TILE_SIZE-radius},0L${TILE_SIZE},0Z`)(this._corners[1] * this.cornerCircleRadius),
-                        (radius=>`M${TILE_SIZE-radius},${TILE_SIZE}A${radius},${radius},0,0,1,${TILE_SIZE},${TILE_SIZE-radius}L${TILE_SIZE},${TILE_SIZE}Z`)(this._corners[2] * this.cornerCircleRadius),
-                        (radius=>`M0,${TILE_SIZE-radius}A${radius},${radius},0,0,1,${radius},${TILE_SIZE}L0,${TILE_SIZE}Z`)(this._corners[3] * this.cornerCircleRadius)
-                    ]
+                        (r => `M${r},0A${r},${r},0,0,1,0,${r}L0,0Z`)(this._corners[0] * this.cornerCircleRadius),
+                        (r => `M${TILE_SIZE},${r}A${r},${r},0,0,1,${TILE_SIZE - r},0L${TILE_SIZE},0Z`)(this._corners[1] * this.cornerCircleRadius),
+                        (r => `M${TILE_SIZE - r},${TILE_SIZE}A${r},${r},0,0,1,${TILE_SIZE},${TILE_SIZE - r}L${TILE_SIZE},${TILE_SIZE}Z`)(this._corners[2] * this.cornerCircleRadius),
+                        (r => `M0,${TILE_SIZE - r}A${r},${r},0,0,1,${r},${TILE_SIZE}L0,${TILE_SIZE}Z`)(this._corners[3] * this.cornerCircleRadius)
+                    ];
                 }
-
-                get arcs(){
+                get arcs() {
                     return [
-                        (radius=>`M${radius},0A${radius},${radius},0,0,1,0,${radius}`)(this._corners[0] * this.cornerCircleRadius),
-                        (radius=>`M${TILE_SIZE},${radius}A${radius},${radius},0,0,1,${TILE_SIZE-radius},0`)(this._corners[1] * this.cornerCircleRadius),
-                        (radius=>`M${TILE_SIZE-radius},${TILE_SIZE}A${radius},${radius},0,0,1,${TILE_SIZE},${TILE_SIZE-radius}`)(this._corners[2] * this.cornerCircleRadius),
-                        (radius=>`M0,${TILE_SIZE-radius}A${radius},${radius},0,0,1,${radius},${TILE_SIZE}`)(this._corners[3] * this.cornerCircleRadius)
-                    ]
-                }
-
-            }
-
-            const tiles = []
-            // Create a grid of tiles large enough to cover the screen plus buffer
-            for(let y= -1; y < TILES_PER_COLUMN - 1; y++){
-                for(let x= -1; x < TILES_PER_ROW - 1; x++){
-                    tiles.push(new Tile(x,y))
+                        (r => `M${r},0A${r},${r},0,0,1,0,${r}`)(this._corners[0] * this.cornerCircleRadius),
+                        (r => `M${TILE_SIZE},${r}A${r},${r},0,0,1,${TILE_SIZE - r},0`)(this._corners[1] * this.cornerCircleRadius),
+                        (r => `M${TILE_SIZE - r},${TILE_SIZE}A${r},${r},0,0,1,${TILE_SIZE},${TILE_SIZE - r}`)(this._corners[2] * this.cornerCircleRadius),
+                        (r => `M0,${TILE_SIZE - r}A${r},${r},0,0,1,${r},${TILE_SIZE}`)(this._corners[3] * this.cornerCircleRadius)
+                    ];
                 }
             }
 
-            const svg = d3
-                .selectAll("#svg")
-                .append("svg")
+            const tiles = [];
+            for (let y = -1; y < TILES_PER_COLUMN - 1; y++) {
+                for (let x = -1; x < TILES_PER_ROW - 1; x++) {
+                    tiles.push(new Tile(x, y));
+                }
+            }
+
+            const svg = d3.selectAll("#svg").append("svg")
                 .attr("viewBox", [0, 0, width, height])
-                .style("width", "100%")
-                .style("height", "100%")
-                .style("display", "block");
+                .style("width", "100%").style("height", "100%").style("display", "block");
 
-            // Scroll handling
+            // --- UPDATED INTERACTION HANDLING ---
+            const markActivity = () => { lastUserActivity = Date.now(); };
+
             window.addEventListener('wheel', e => {
                 e.preventDefault();
+                markActivity();
                 targetCameraX += e.deltaX;
                 targetCameraY += e.deltaY;
             }, { passive: false });
-            
-            // Touch handling
-            let touchStartX = 0;
-            let touchStartY = 0;
+
+            let touchStartX = 0, touchStartY = 0;
             window.addEventListener('touchstart', e => {
+                markActivity();
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
             }, { passive: false });
-            
+
             window.addEventListener('touchmove', e => {
-                e.preventDefault(); // prevent native scroll
+                e.preventDefault();
+                markActivity();
                 const dx = e.touches[0].clientX - touchStartX;
                 const dy = e.touches[0].clientY - touchStartY;
                 targetCameraX -= dx;
@@ -214,248 +123,97 @@
                 touchStartY = e.touches[0].clientY;
             }, { passive: false });
 
-            const theTiles = svg
-                .append("g")
-                .attr("id","theTiles")
+            const theTiles = svg.append("g").attr("id", "theTiles");
+            const tileTranslations = theTiles.selectAll(".tileTranslations")
+                .data(tiles, d => d.index).enter().append("g").append("a")
+                .attr("href", "https://recipes.bradi.sh/")
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .attr("class", "tileTranslations");
 
-            const tileTranslations = theTiles
-                .selectAll(".tileTranslations")
-                .data(tiles,d=>d.index)
-                .enter()
-                .append("g")
-                .append("a")
-                .attr("href","https://recipes.bradi.sh/")
-                .attr("transform",d=>`translate(${d.x},${d.y})`)
-                .attr("class","tileTranslations");
+            const tileOffsets = tileTranslations.append("g").attr("transform", `translate(${TILE_SIZE / 2},${TILE_SIZE / 2})`);
+            const tileRotations = tileOffsets.append("g").attr("transform", d => `rotate(${d.rotation})`);
+            const tileGroups = tileRotations.append("g").attr("transform", `translate(${TILE_SIZE / -2},${TILE_SIZE / -2})`).attr("class", "tileTranslations");
 
-            const tileOffsets = tileTranslations
-                .append("g")
-                .attr("transform",d=>`translate(${TILE_SIZE/2},${TILE_SIZE/2})`)
+            const bases = tileGroups.append("rect").attr("width", TILE_SIZE).attr("height", TILE_SIZE).attr("fill", d => d.colours[PAINT_LOCATIONS.BASE]);
+            const corners = CORNERS.map(c => tileGroups.append("path").attr("d", d => d.corners[c]).attr("fill", d => d.colours[c]));
+            const arcs = CORNERS.map(a => tileGroups.append("path").attr("d", d => d.arcs[a]).attr("fill", "none").attr("stroke", "white"));
+            const centers = tileGroups.append("circle").attr("r", d => d.centerCircleRadius).attr("cx", d => d.cx).attr("cy", d => d.cy).attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
 
-            const tileRotations = tileOffsets
-                .append("g")
-                .attr("transform",d=>`rotate(${d.rotation})`)
+            // Big Overlay Text
+            const textLabels = ["bradi.sh", "bradi.sh"];
+            textLabels.forEach((t, i) => {
+                svg.append("text")
+                    .attr("x", width / 2).attr("y", height / 2)
+                    .attr("text-anchor", "middle").attr("dominant-baseline", "central")
+                    .attr("font-family", "sans-serif").attr("font-weight", "900").attr("font-size", "20vw")
+                    .style("pointer-events", "none").text(t)
+                    .style("fill", i === 0 ? "none" : "#fff")
+                    .style("stroke", i === 0 ? "black" : "none")
+                    .style("filter", i === 0 ? "blur(5px)" : "none")
+                    .style("mix-blend-mode", i === 0 ? "hard-light" : "difference");
+            });
 
-            const tileGroups = tileRotations
-                .append("g")
-                .attr("transform",d=>`translate(${TILE_SIZE/-2},${TILE_SIZE/-2})`)
-                .attr("class","tileTranslations")
+            const redraw = () => {
+                const now = Date.now();
+                
+                // --- BROWNIAN MOTION LOGIC ---
+                if (now - lastUserActivity > SUSPEND_DURATION) {
+                    // Generate small random walk values
+                    brownianX += (Math.random() - 0.5) * 0.5; 
+                    brownianY += (Math.random() - 0.5) * 0.5;
+                    
+                    // Apply a slight constant drift so it doesn't just vibrate in place
+                    targetCameraX += brownianX + 0.2; 
+                    targetCameraY += brownianY + 0.1;
+                } else {
+                    // Reset brownian vectors while user is active so it starts fresh
+                    brownianX = 0;
+                    brownianY = 0;
+                }
 
-            const bases = tileGroups
-                .append("rect")
-                .attr("width",TILE_SIZE)
-                .attr("height",TILE_SIZE)
-                .attr("x",0)
-                .attr("y",0)
-                .attr("fill",d=>d.colours[PAINT_LOCATIONS.BASE])
-                .attr("stroke","none")
-
-            const corners = CORNERS.map(corner=>tileGroups
-                .append("path")
-                .attr("d",d=>d.corners[corner])
-                .attr("fill",d=>d.colours[corner])
-                .attr("stroke","none")
-            )
-
-            const arcs = CORNERS.map(arc=>tileGroups
-                .append("path")
-                .attr("d",d=>d.arcs[arc])
-                .attr("fill","none")
-                .attr("stroke","white")
-            )
-
-            const centers = tileGroups
-                .append("circle")
-                .attr("r",d=>d.centerCircleRadius)
-                .attr("cx",d=>d.cx)
-                .attr("cy",d=>d.cy)
-                .attr("fill",d=>d.colours[PAINT_LOCATIONS.CENTER])
-
-            const text = tileGroups
-                .filter(d=>d.text)
-                .append("text")
-                .attr("alignment-baseline","central")
-                .attr("text-anchor","middle")
-                .attr("font-family","sans-serif")
-                .attr("font-weight","bold")
-                .attr("x",TILE_SIZE/2)
-                .attr("y",TILE_SIZE/2)
-                .attr("fill",d=>d.colours[PAINT_LOCATIONS.TEXT])
-                .attr("font-size",`${TILE_SIZE/4}px`)
-                .text(d=>d.text)
-
-            // Add the centered cutout text
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", height / 2)
-                .attr("text-anchor", "middle")
-                .attr("dominant-baseline", "central")
-                .attr("font-family", "sans-serif")
-                .attr("font-weight", "900")
-                .attr("font-size", "20vw") // Responsive font size
-                .style("fill", "none")
-                .style("filter", "blur(5px)")
-                .style("stroke","black")
-                .style("stroke-width","1px")
-                .style("mix-blend-mode", "hard-light")
-                .style("pointer-events", "none") // Let clicks pass through if needed
-                .text("bradi.sh");
-
-
-            svg.append("text")
-                .attr("x", width / 2)
-                .attr("y", height / 2)
-                .attr("text-anchor", "middle")
-                .attr("dominant-baseline", "central")
-                .attr("font-family", "sans-serif")
-                .attr("font-weight", "900")
-                .attr("font-size", "20vw") // Responsive font size
-                //.style("filter", "blur(1px)")
-                .style("fill", "#ffffffff")
-                .style("mix-blend-mode", "difference")
-                .style("pointer-events", "none") // Let clicks pass through if needed
-                .text("bradi.sh");
-            
-
-
-            const redraw = () =>{
-                // Smoothly interpolate camera position
                 cameraX += (targetCameraX - cameraX) * 0.1;
                 cameraY += (targetCameraY - cameraY) * 0.1;
 
-                // Check for recycling
-                const bufferX = TILE_SIZE; 
-                const bufferY = TILE_SIZE;
-                
+                const buffer = TILE_SIZE;
                 let anyDirty = false;
 
                 tiles.forEach(tile => {
                     let dirty = false;
-                    // Check if tile is too far left
-                    if (tile.ix * TILE_SIZE - cameraX < -bufferX * 2) {
-                        tile.init(tile.ix + TILES_PER_ROW, tile.iy);
-                        dirty = true;
-                    }
-                    // Check if tile is too far right
-                    else if (tile.ix * TILE_SIZE - cameraX > width + bufferX) {
-                        tile.init(tile.ix - TILES_PER_ROW, tile.iy);
-                        dirty = true;
-                    }
-                    
-                    // Check if tile is too far up
-                    if (tile.iy * TILE_SIZE - cameraY < -bufferY * 2) {
-                        tile.init(tile.ix, tile.iy + TILES_PER_COLUMN);
-                        dirty = true;
-                    }
-                    // Check if tile is too far down
-                    else if (tile.iy * TILE_SIZE - cameraY > height + bufferY) {
-                        tile.init(tile.ix, tile.iy - TILES_PER_COLUMN);
-                        dirty = true;
-                    }
-
-                    if(dirty) anyDirty = true;
+                    if (tile.ix * TILE_SIZE - cameraX < -buffer * 2) { tile.init(tile.ix + TILES_PER_ROW, tile.iy); dirty = true; }
+                    else if (tile.ix * TILE_SIZE - cameraX > width + buffer) { tile.init(tile.ix - TILES_PER_ROW, tile.iy); dirty = true; }
+                    if (tile.iy * TILE_SIZE - cameraY < -buffer * 2) { tile.init(tile.ix, tile.iy + TILES_PER_COLUMN); dirty = true; }
+                    else if (tile.iy * TILE_SIZE - cameraY > height + buffer) { tile.init(tile.ix, tile.iy - TILES_PER_COLUMN); dirty = true; }
+                    if (dirty) anyDirty = true;
                 });
 
-                // Update positions of all tiles (using transform)
-                tileTranslations
-                    .attr("transform", d => `translate(${d.x},${d.y})`);
+                tileTranslations.attr("transform", d => `translate(${d.x},${d.y})`);
 
                 if (anyDirty) {
-                    // Update visuals for dirty tiles only
-                    tileRotations
-                        .attr("transform", d => `rotate(${d.rotation})`);
-                    
+                    tileRotations.attr("transform", d => `rotate(${d.rotation})`);
                     bases.attr("fill", d => d.colours[PAINT_LOCATIONS.BASE]);
-                    
-                    centers
-                        .attr("r", d => d.centerCircleRadius)
-                        .attr("cx", d => d.cx)
-                        .attr("cy", d => d.cy)
-                        .attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
-
-                    corners.forEach((cornerGroup, index) => {
-                        cornerGroup
-                            .attr("d", d => d.corners[index])
-                            .attr("fill", d => d.colours[index]);
-                    });
-
-                    arcs.forEach((arcGroup, index) => {
-                        arcGroup.attr("d", d => d.arcs[index]);
-                    });
-
-                    text
-                        .text(d => d.text)
-                        .attr("fill", d => d.colours[PAINT_LOCATIONS.TEXT]);
+                    centers.attr("r", d => d.centerCircleRadius).attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
+                    corners.forEach((c, i) => c.attr("d", d => d.corners[i]).attr("fill", d => d.colours[i]));
+                    arcs.forEach((a, i) => a.attr("d", d => d.arcs[i]));
                 }
-            }
-            
-            const animate = () => {
-                redraw();
-                requestAnimationFrame(animate);
             };
-            
-            // Start animation loop
+
+            const animate = () => { redraw(); requestAnimationFrame(animate); };
             animate();
 
+            // Random Tile Pulse
             setInterval(() => {
-                // Pick a random tile
                 const tile = tiles[Math.floor(Math.random() * tiles.length)];
-
-                // Update rotation state
-                const currentRotation = tile.rotation;
-                const newRotation = currentRotation + 90;
-                tile._rotation = newRotation;
-
-                // Update colour state
+                tile._rotation += 90;
                 tile.recolour();
-
-                // Select the specific tile's group
-                // We need to find the DOM element associated with this tile
-                // We can use the data binding to find it
                 const tileGroup = tileTranslations.filter(d => d === tile);
-                
                 if (!tileGroup.empty()) {
-                    // Animate rotation
-                    tileGroup.select("g") // Select the tileOffsets group
-                        .select("g") // Select the tileRotations group
-                        .transition()
-                        .duration(500)
-                        .attr("transform", `rotate(${newRotation})`);
-
-                    // Animate colours
-                    const duration = 500;
-                    
-                    // We need to drill down to the inner group containing the shapes
-                    // Structure: tileTranslations -> tileOffsets -> tileRotations -> inner tileGroups
-                    const innerGroup = tileGroup.select("g").select("g").select("g");
-                    
-                    // Base
-                    innerGroup.select("rect")
-                        .transition()
-                        .duration(duration)
-                        .attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
-
-                    // Corners are the first 4 paths
-                    // Note: selectAll("path") will find paths in the innerGroup
-                    innerGroup.selectAll("path")
-                        .filter((d, i) => i < 4)
-                        .transition()
-                        .duration(duration)
-                        .attr("fill", (d, i) => tile.colours[CORNERS[i]]);
-
-                    // Center
-                    innerGroup.select("circle")
-                        .transition()
-                        .duration(duration)
-                        .attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
-
-                    // Text
-                    innerGroup.select("text")
-                        .transition()
-                        .duration(duration)
-                        .attr("fill", tile.colours[PAINT_LOCATIONS.TEXT]);
+                    const inner = tileGroup.select("g").select("g");
+                    inner.transition().duration(500).attr("transform", `rotate(${tile._rotation})`);
+                    const shapes = inner.select("g");
+                    shapes.select("rect").transition().duration(500).attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
+                    shapes.selectAll("path").filter((d, i) => i < 4).transition().duration(500).attr("fill", (d, i) => tile.colours[i]);
+                    shapes.select("circle").transition().duration(500).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
                 }
-
             }, 500);
         </script>
     </body>
