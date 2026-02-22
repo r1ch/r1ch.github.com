@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>bradi.sh</title>
+        <title>bradi.sh | Regime Shift</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Homepage for bradi.sh">
+        <meta name="description" content="Homepage for bradi.sh - Viral Regime Edition">
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <style>
-            body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; }
+            body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; background: #17191D; }
             #svg { width: 100vw; height: 100vh; }
         </style>
     </head>
@@ -30,13 +30,18 @@
             // --- AUTO SCROLL & BROWNIAN STATE ---
             let lastUserActivity = 0; 
             const SUSPEND_DURATION = 5000; 
-            let vx = 0;            // Current velocity X
-            let vy = 0;            // Current velocity Y
-            const maxVelocity = 1.5; // Cap to prevent runaway speed
-            const friction = 0.97;   // Gentle air resistance
-            const impulse = 0.1;     // Strength of random nudges
+            let vx = 0;            
+            let vy = 0;            
+            const maxVelocity = 1.5; 
+            const friction = 0.97;   
+            const impulse = 0.1;     
 
-            const COLOURS = ["#FFF4E0", "#F8B501", "#06ACB5", "#17191D", "#FC3D3C"];
+            // --- REGIME STATE ---
+            let currentGlobalRegime = 0;
+            const regimePalettes = {
+                0: ["#FFF4E0", "#F8B501", "#06ACB5", "#17191D", "#FC3D3C"]
+            };
+
             const PAINT_LOCATIONS = {
                 TOP_LEFT_CORNER: 0, TOP_RIGHT_CORNER: 1, BOTTOM_RIGHT_CORNER: 2,
                 BOTTOM_LEFT_CORNER: 3, CENTER: 4, BASE: 5, TEXT: 6
@@ -45,23 +50,126 @@
             const CORNERS = [0, 1, 2, 3];
             const CHANCE = { ofHavingACenter: 0.75, ofOffCorners: 0.1 };
 
+            // Helper to generate new palettes
+            const generatePalette = () => {
+                const rotation = (Math.random() * 360 | 0)
+                const rotateHue = (hex, degree) => {
+                    // 1. Convert hex to RGB
+                    let r = parseInt(hex.slice(1, 3), 16) / 255;
+                    let g = parseInt(hex.slice(3, 5), 16) / 255;
+                    let b = parseInt(hex.slice(5, 7), 16) / 255;
+
+                    // 2. Find HSL values
+                    let max = Math.max(r, g, b), min = Math.min(r, g, b);
+                    let h, s, l = (max + min) / 2;
+
+                    if (max === min) {
+                        h = s = 0; // achromatic
+                    } else {
+                        let d = max - min;
+                        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                        switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        case b: h = (r - g) / d + 4; break;
+                        }
+                        h /= 6;
+                    }
+
+                    // 3. Rotate Hue
+                    h = (h * 360 + degree) % 360;
+                    if (h < 0) h += 360; // Handle negative rotations
+                    h /= 360;
+
+                    // 4. Convert HSL back to RGB
+                    const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1/6) return p + (q - p) * 6 * t;
+                        if (t < 1/2) return q;
+                        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    };
+
+                    let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    let p = 2 * l - q;
+                    
+                    r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+                    g = Math.round(hue2rgb(p, q, h) * 255);
+                    b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+
+                    // 5. Back to Hex
+                    const toHex = val => val.toString(16).padStart(2, '0');
+                    return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+                };
+                return regimePalettes[0].map(c=>rotateHue(c,rotation))
+             };
+
             class Tile {
-                constructor(ix, iy) { this.init(ix, iy); }
+                constructor(ix, iy) { 
+                    this._regime = 0;
+                    this._rotation = 0; // Initialize rotation explicitly
+                    this.init(ix, iy); 
+                }
+
+                // Helper to get the D3 selection for this specific tile's group
+                get selection() {
+                    return d3.select(`.t-${this.index}`);
+                }
+
                 init(ix, iy) {
-                    this._ix = ix; this._iy = iy;
+                    this._ix = ix; 
+                    this._iy = iy;
                     this._cx = this._cy = TILE_SIZE / 2;
                     this._index = (this.iy % TILES_PER_COLUMN + TILES_PER_COLUMN) % TILES_PER_COLUMN * TILES_PER_ROW + (this.ix % TILES_PER_ROW + TILES_PER_ROW) % TILES_PER_ROW;
-                    this.rerotate(); this.recircle(true); this.recolour();
+                    
+                    // Initial state without transitions
+                    this._rotation = [-180, -90, 0, 90, 180][Math.random() * 5 | 0];
+                    this.recircle(true, false); 
+                    this.recolour(this._regime, false);
                 }
-                recircle(noOffCorners = false) {
+
+                recircle(noOffCorners = false, animate = true) {
                     this._centerCircleRadius = Math.random() < CHANCE.ofHavingACenter ? TILE_SIZE / 2 * Math.SQRT2 * (Math.random() * 0.1 + 0.15) : 0;
                     this._cornerCircleRadius = TILE_SIZE / 2;
                     this._corners = Math.random() > 0.5 ? [1, 0, 1, 0] : [0, 1, 0, 1];
                     if (!noOffCorners) this._corners = this._corners.map(corner => Math.random() < CHANCE.ofOffCorners ? 1 - corner : corner);
+
+                    if (animate) {
+                        const s = this.selection;
+                        s.select("circle").transition().duration(800).attr("r", this._centerCircleRadius);
+                        s.selectAll("path").filter((d, i) => i < 4)
+                            .transition().duration(800)
+                            .attr("d", (d, i) => this.corners[i]);
+                    }
                 }
-                recolour() { this._colours = Array(N_PAINT_LOCATIONS).fill(0).map(_ => COLOURS[Math.random() * COLOURS.length | 0]); }
-                rerotate() { this._rotation = [-180, -90, 0, 90, 180][Math.random() * 5 | 0]; }
-                get text() { return false; }
+
+                recolour(regime = 0, animate = true) { 
+                    this._regime = regime;
+                    const palette = regimePalettes[regime] || regimePalettes[0];
+                    this._colours = Array(N_PAINT_LOCATIONS).fill(0).map(_ => palette[Math.random() * palette.length | 0]); 
+
+                    if (animate) {
+                        const s = this.selection;
+                        const dur = 800;
+                        s.select("rect").transition().duration(dur).attr("fill", this._colours[PAINT_LOCATIONS.BASE]);
+                        s.select("circle").transition().duration(dur).attr("fill", this._colours[PAINT_LOCATIONS.CENTER]);
+                        s.selectAll("path").filter((d, i) => i < 4)
+                            .transition().duration(dur)
+                            .attr("fill", (d, i) => this._colours[i]);
+                    }
+                }
+
+                rerotate(animate = true) { 
+                    this._rotation = [-180, -90, 0, 90, 180][Math.random() * 5 | 0] 
+                    if (animate) {
+                        // Target the nested rotation group specifically
+                        this.selection.select(".tileRotation")  
+                            .transition()
+                            .duration(500)
+                            .attr("transform", `rotate(${this._rotation})`);
+                    }
+                }
                 get ix() { return this._ix; }
                 get iy() { return this._iy; }
                 get x() { return this._ix * TILE_SIZE - cameraX; }
@@ -106,49 +214,41 @@
             const markActivity = () => { lastUserActivity = Date.now(); };
 
             window.addEventListener('wheel', e => {
-                e.preventDefault();
-                markActivity();
-                targetCameraX += e.deltaX;
-                targetCameraY += e.deltaY;
+                e.preventDefault(); markActivity();
+                targetCameraX += e.deltaX; targetCameraY += e.deltaY;
             }, { passive: false });
 
             let touchStartX = 0, touchStartY = 0;
             window.addEventListener('touchstart', e => {
-                markActivity();
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-            }, { passive: false });
+                markActivity(); touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+            });
 
             window.addEventListener('touchmove', e => {
-                e.preventDefault();
-                markActivity();
+                e.preventDefault(); markActivity();
                 const dx = e.touches[0].clientX - touchStartX;
                 const dy = e.touches[0].clientY - touchStartY;
-                targetCameraX -= dx;
-                targetCameraY -= dy;
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
+                targetCameraX -= dx; targetCameraY -= dy;
+                touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
             }, { passive: false });
 
             // Rendering Tiles
             const theTiles = svg.append("g").attr("id", "theTiles");
             const tileTranslations = theTiles.selectAll(".tileTranslations")
-                .data(tiles, d => d.index).enter().append("g").append("a")
-                .attr("href", "https://recipes.bradi.sh/")
+                .data(tiles, d => d.index).enter().append("g")
                 .attr("transform", d => `translate(${d.x},${d.y})`)
-                .attr("class", "tileTranslations");
+                .attr("class", d => `tileTranslations t-${d.index}`);
 
-            const tileOffsets = tileTranslations.append("g").attr("transform", `translate(${TILE_SIZE / 2},${TILE_SIZE / 2})`);
-            const tileRotations = tileOffsets.append("g").attr("transform", d => `rotate(${d.rotation})`);
-            const tileGroups = tileRotations.append("g").attr("transform", `translate(${TILE_SIZE / -2},${TILE_SIZE / -2})`).attr("class", "tileTranslations");
+            const tileOffsets = tileTranslations.append("g").attr("transform", `translate(${TILE_SIZE / 2},${TILE_SIZE / 2})`).attr("class","tileTranslation");
+            const tileRotations = tileOffsets.append("g").attr("transform", d => `rotate(${d.rotation})`).attr("class","tileRotation");
+            const tileGroups = tileRotations.append("g").attr("transform", `translate(${TILE_SIZE / -2},${TILE_SIZE / -2})`).attr("class","tileGroup");;
 
             const bases = tileGroups.append("rect").attr("width", TILE_SIZE).attr("height", TILE_SIZE).attr("fill", d => d.colours[PAINT_LOCATIONS.BASE]);
             const corners = CORNERS.map(c => tileGroups.append("path").attr("d", d => d.corners[c]).attr("fill", d => d.colours[c]));
-            const arcs = CORNERS.map(a => tileGroups.append("path").attr("d", d => d.arcs[a]).attr("fill", "none").attr("stroke", "white"));
+            const arcs = CORNERS.map(a => tileGroups.append("path").attr("d", d => d.arcs[a]).attr("fill", "none").attr("stroke", "rgba(255,255,255,0.3)"));
             const centers = tileGroups.append("circle").attr("r", d => d.centerCircleRadius).attr("cx", d => d.cx).attr("cy", d => d.cy).attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
 
             // Big Overlay Text
-            const textLabels = ["bradi.sh", "bradi.sh"];
+            const textLabels = ["rosie", "rosie"];
             textLabels.forEach((t, i) => {
                 svg.append("text")
                     .attr("x", width / 2).attr("y", height / 2)
@@ -161,73 +261,96 @@
                     .style("mix-blend-mode", i === 0 ? "hard-light" : "difference");
             });
 
+            const updateVisuals = (tile) => {
+                const group = d3.select(`.t-${tile.index}`);
+                group.select("rect").transition().duration(800).attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
+                group.select("circle").transition().duration(800).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
+                group.selectAll("path").filter((d, i) => i < 4).transition().duration(800).attr("fill", (d, i) => tile.colours[i]);
+            };
+
             const redraw = () => {
                 const now = Date.now();
-                
-                // Brownian Motion with Velocity Caps
                 if (now - lastUserActivity > SUSPEND_DURATION) {
                     vx += (Math.random() - 0.5) * impulse;
                     vy += (Math.random() - 0.5) * impulse;
-
-                    vx *= friction;
-                    vy *= friction;
-
-                    // Cap velocities
+                    vx *= friction; vy *= friction;
                     vx = Math.max(-maxVelocity, Math.min(maxVelocity, vx));
                     vy = Math.max(-maxVelocity, Math.min(maxVelocity, vy));
-
-                    targetCameraX += vx;
-                    targetCameraY += vy;
+                    targetCameraX += vx; targetCameraY += vy;
                 } else {
-                    // Reset momentum during manual scroll
-                    vx = 0;
-                    vy = 0;
+                    vx = 0; vy = 0;
                 }
 
                 cameraX += (targetCameraX - cameraX) * 0.1;
                 cameraY += (targetCameraY - cameraY) * 0.1;
 
                 const buffer = TILE_SIZE;
-                let anyDirty = false;
-
                 tiles.forEach(tile => {
                     let dirty = false;
                     if (tile.ix * TILE_SIZE - cameraX < -buffer * 2) { tile.init(tile.ix + TILES_PER_ROW, tile.iy); dirty = true; }
                     else if (tile.ix * TILE_SIZE - cameraX > width + buffer) { tile.init(tile.ix - TILES_PER_ROW, tile.iy); dirty = true; }
                     if (tile.iy * TILE_SIZE - cameraY < -buffer * 2) { tile.init(tile.ix, tile.iy + TILES_PER_COLUMN); dirty = true; }
                     else if (tile.iy * TILE_SIZE - cameraY > height + buffer) { tile.init(tile.ix, tile.iy - TILES_PER_COLUMN); dirty = true; }
-                    if (dirty) anyDirty = true;
+                    
+                    if (dirty) {
+                        const g = d3.select(`.t-${tile.index}`);
+                        g.attr("transform", `translate(${tile.x},${tile.y})`);
+                        g.select("rect").attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
+                        g.select("circle").attr("r", tile.centerCircleRadius).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
+                        g.selectAll("path").filter((d, i) => i < 4).attr("d", (d, i) => tile.corners[i]).attr("fill", (d, i) => tile.colours[i]);
+                    }
                 });
 
                 tileTranslations.attr("transform", d => `translate(${d.x},${d.y})`);
-
-                if (anyDirty) {
-                    tileRotations.attr("transform", d => `rotate(${d.rotation})`);
-                    bases.attr("fill", d => d.colours[PAINT_LOCATIONS.BASE]);
-                    centers.attr("r", d => d.centerCircleRadius).attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
-                    corners.forEach((c, i) => c.attr("d", d => d.corners[i]).attr("fill", d => d.colours[i]));
-                    arcs.forEach((a, i) => a.attr("d", d => d.arcs[i]));
-                }
             };
 
             const animate = () => { redraw(); requestAnimationFrame(animate); };
             animate();
 
-            // Random Tile Pulse (Rotation/Color changes)
+            // --- FEATURE 1 & 2: REGIME SPONTANEITY (10s) ---
+            setInterval(() => {
+                currentGlobalRegime++;
+                regimePalettes[currentGlobalRegime] = generatePalette();
+                
+                // Pick a visible-ish tile to be "Patient Zero"
+                const visibleTiles = tiles.filter(t => t.x > 0 && t.x < width && t.y > 0 && t.y < height);
+                const target = visibleTiles.length > 0 ? visibleTiles[Math.floor(Math.random()*visibleTiles.length)] : tiles[0];
+                
+                target.recolour(currentGlobalRegime);
+                updateVisuals(target);
+            }, 10000);
+
+            // --- FEATURE 4: NEIGHBOR CHECK (1s) ---
+            setInterval(() => {
+                const updates = [];
+                tiles.forEach(tile => {
+                    // Find cardinal neighbors
+                    const neighbors = tiles.filter(t => 
+                        (Math.abs(t.ix - tile.ix) === 1 && t.iy === tile.iy) ||
+                        (Math.abs(t.iy - tile.iy) === 1 && t.ix === tile.ix)
+                    );
+
+                    const highestNeighborRegime = Math.max(...neighbors.map(n => n._regime));
+                    
+                    if (highestNeighborRegime > tile._regime && Math.random() > 0.5) {
+                        updates.push({tile, regime: highestNeighborRegime});
+                    }
+                });
+
+                // Apply updates after check to prevent synchronous chain reactions in one tick
+                updates.forEach(u => {
+                    u.tile.recolour(u.regime);
+                    u.tile.rerotate();
+                    updateVisuals(u.tile);
+                });
+            }, 500);
+
+            // Random Tile Pulse (Rotation only now to separate from regime change)
             setInterval(() => {
                 const tile = tiles[Math.floor(Math.random() * tiles.length)];
-                tile._rotation += 90;
-                tile.recolour();
-                const tileGroup = tileTranslations.filter(d => d === tile);
-                if (!tileGroup.empty()) {
-                    const inner = tileGroup.select("g").select("g");
-                    inner.transition().duration(500).attr("transform", `rotate(${tile._rotation})`);
-                    const shapes = inner.select("g");
-                    shapes.select("rect").transition().duration(500).attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
-                    shapes.selectAll("path").filter((d, i) => i < 4).transition().duration(500).attr("fill", (d, i) => tile.colours[i]);
-                    shapes.select("circle").transition().duration(500).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
-                }
+                tile.rerotate()
             }, 500);
+
         </script>
     </body>
 </html>
