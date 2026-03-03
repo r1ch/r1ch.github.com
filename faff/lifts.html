@@ -1,0 +1,91 @@
+<html>
+    <head>
+        <title>Oh My Faff.</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+        <style>
+            #background-graph {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                z-index: -1;
+                pointer-events: none; /* Let clicks pass through to the form */
+                opacity: 0.3; /* Subtle background */
+            }
+            .node {
+                fill: #ccc;
+                /*stroke: #fff;*/
+                stroke-width: 1.5px;
+                transition: all 0.5s ease;
+            }
+            .link {
+                stroke: #999;
+                stroke-opacity: 0.6;
+                stroke-width: 2px;
+                fill: none;
+                transition: all 0.5s ease;
+            }
+            .node circle.active {
+                fill: #0d6efd; /* Bootstrap primary blue */
+                r: 10;
+            }
+            .node circle.success {
+                fill: #198754;
+                stroke: #157347;
+            }
+            .node circle.danger {
+                fill: #dc3545;
+                stroke: #bb2d3b;
+            }
+            .node circle.warning {
+                fill: #ffc107;
+                stroke: #ffca2c;
+            }
+            .link.active {
+                stroke: #000;
+                stroke-width: 4px;
+                stroke-opacity: 1;
+            }
+            /* Piste Map Theming */
+            .link.run-blue { stroke: #0d6efd; stroke-width: 6px; stroke-opacity: 0.6; }
+            .link.run-red { stroke: #dc3545; stroke-width: 6px; stroke-opacity: 0.6; }
+            .link.run-black { stroke: #212529; stroke-width: 6px; stroke-opacity: 0.6; }
+            
+            .link.lift-chair { stroke: #6c757d; stroke-width: 2px; stroke-dasharray: 4,4; }
+            .link.lift-gondola { stroke: #6c757d; stroke-width: 2px; stroke-dasharray: 6,4; }
+            .link.lift-drag { stroke: #6c757d; stroke-width: 2px; }
+            
+            /* Active states override */
+            .link.run-blue.active { stroke: #0d6efd; stroke-width: 8px; stroke-opacity: 1; }
+            .link.run-red.active { stroke: #dc3545; stroke-width: 8px; stroke-opacity: 1; }
+            .link.run-black.active { stroke: #212529; stroke-width: 8px; stroke-opacity: 1; }
+            .link.lift-chair.active { stroke: #000; stroke-width: 3px; opacity: 1; }
+            .link.lift-gondola.active { stroke: #000; stroke-width: 3px; opacity: 1; }
+            .link.lift-drag.active { stroke: #000; stroke-width: 3px; opacity: 1; }
+
+            /* Decorate the "cable car" circles */
+            .chair-marker { fill: #6c757d; stroke: none; }
+            .gondola-marker { fill: #6c757d; stroke: none; user-select: none; pointer-events: none; }
+            
+            .text {
+                stroke: none;
+                fill: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app" class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <faff-interview></faff-interview>
+                </div>
+            </div>
+        </div>
+        <script src="questions.js"></script>
+        <script src="app.js"></script>
+    </body>
+</html>
