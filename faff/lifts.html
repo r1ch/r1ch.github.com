@@ -83,6 +83,56 @@
                 padding: 20px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             }
+
+            /* History / Progress Tracker */
+            .history-container {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 20px;
+                justify-content: center;
+                width: 100%;
+            }
+            .history-item {
+                background-color: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(3px);
+                border-radius: 12px;
+                padding: 6px 12px;
+                font-size: 0.9rem;
+                cursor: pointer;
+                border: 1px solid rgba(0,0,0,0.1);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                transition: transform 0.1s, background-color 0.2s;
+                text-align: center;
+            }
+            .history-item:hover {
+                background-color: rgba(255, 255, 255, 1);
+                transform: translateY(-2px);
+            }
+            .history-label {
+                display: block;
+                font-size: 0.7em;
+                opacity: 0.7;
+                max-width: 150px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            /* Main Layout Adjustments */
+            .main-layout {
+                /* Allow clicks to pass through empty space to the map? 
+                   Maybe not strictly necessary as map is background, 
+                   but good if we want to drag the map. */
+                pointer-events: none;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .history-container, .question-container {
+                pointer-events: auto;
+            }
         </style>
     </head>
     <body>
