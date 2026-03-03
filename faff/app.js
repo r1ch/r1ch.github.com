@@ -92,127 +92,403 @@ app.component('graph-background', {
 
             return node;
         },
-        drawLandscape(svg, width, height, links) {
+        drawLandscape(svg, width, height, links, root) {
             const g = svg.append("g").attr("class", "landscape");
-            const contourCount = 12; // More contours for better map look
-            const colors = ["#f8f9fa", "#e9ecef", "#dee2e6", "#ced4da"]; 
-
-            const maxRadius = Math.max(width, height) * 1.5;
             const noise = new SimplexNoise();
             
-            // --- 1. Collision Mask (Avoid drawing on runs) ---
-            const canvas = document.createElement('canvas');
-            const renderSize = maxRadius * 2;
-            canvas.width = renderSize;
-            canvas.height = renderSize;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            
-            // Setup coordinates to match SVG centered view
-            ctx.translate(renderSize/2, renderSize/2);
-            ctx.lineWidth = 60; // Wide buffer to keep trees away from runs
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = '#000'; 
+            // Configuration for the terrain
+            const renderSize = Math.max(width, height) * 4; // Significantly larger to handle panning
+            // Centered coordinates require offsetting by renderSize/2
+            const resolution = 300; // Grid resolution for heightmap (higher = smoother but slower)
+            const cellSize = renderSize / resolution;
 
+            // --- Collision Mask Setup (moved up for use in terrain generation) ---
+            // Setup collision mask for links to determine snow vs rock areas
+            const collisionCanvas = document.createElement('canvas');
+            // Use same coordinate system as map: renderSize
+            // We'll use a slightly higher resolution for collision to be accurate
+            const colRes = resolution * 2; 
+            const colScale = colRes / renderSize;
+            
+            collisionCanvas.width = colRes;
+            collisionCanvas.height = colRes;
+            const colCtx = collisionCanvas.getContext('2d', { willReadFrequently: true });
+            
+            // Transform context: Center (0,0) is at (colRes/2, colRes/2)
+            colCtx.translate(colRes/2, colRes/2);
+            // Scale so that 1 unit in SVG world = colScale units in canvas
+            colCtx.scale(colScale, colScale);
+            
+            // Draw links
+            colCtx.lineCap = 'round';
+            colCtx.lineJoin = 'round';
+            colCtx.strokeStyle = '#000'; 
+            
             if (links) {
                 const linkGen = d3.linkRadial()
                     .angle(d => d.x)
                     .radius(d => d.y)
-                    .context(ctx);
-                
+                    .context(colCtx);
                 links.forEach(d => {
-                    ctx.beginPath();
+                    // Set width based on type
+                    if (d.styleType === 'run') {
+                         colCtx.lineWidth = 120;
+                    } else {
+                         colCtx.lineWidth = 50; // Narrower "ski area" for lifts
+                    }
+                    colCtx.beginPath();
                     linkGen(d);
-                    ctx.stroke();
+                    colCtx.stroke();
                 });
             }
             
-            // Extract pixel data for collision check
-            const imgData = ctx.getImageData(0, 0, renderSize, renderSize).data;
-            const checkCollision = (x, y) => {
-                 const cx = Math.floor(x + renderSize/2);
-                 const cy = Math.floor(y + renderSize/2);
-                 if (cx < 0 || cx >= renderSize || cy < 0 || cy >= renderSize) return true;
-                 const idx = (cy * renderSize + cx) * 4 + 3; // Alpha channel
-                 return imgData[idx] > 10;
+            // Get data for pixel checking
+            // We need to transform back to pixel coordinates
+            const colData = colCtx.getImageData(0, 0, colRes, colRes).data;
+            
+            const checkLinkCollision = (x, y) => {
+                 // Convert world (x,y) to canvas pixel coordinates
+                 // Center is at (0,0) world -> (colRes/2, colRes/2) canvas
+                 const cx = Math.floor(x * colScale + colRes/2);
+                 const cy = Math.floor(y * colScale + colRes/2);
+                 
+                 if (cx < 0 || cx >= colRes || cy < 0 || cy >= colRes) return false;
+                 
+                 const idx = (cy * colRes + cx) * 4 + 3;
+                 return colData[idx] > 10; // Alpha check
             };
+            
+            // Get all nodes for IDW (Inverse Distance Weighting)
+            const nodes = root.descendants().map(d => {
+                // Convert radial (angle, radius) to cartesian (x, y)
+                // Note: d.x is angle in radians, d.y is radius
+                // SVG coordinates are centered at (0,0) due to viewBox
+                // But for IDW we need consistent coordinates
+                const angle = d.x - Math.PI / 2;
+                return {
+                    x: d.y * Math.cos(angle),
+                    y: d.y * Math.sin(angle),
+                    z: d.elevation || 0
+                };
+            });
 
-            // --- 2. Coherent Contours ---
-            // Draw from largest (outside) to smallest (inside)
-            for (let i = contourCount; i >= 0; i--) {
-                const rBase = (maxRadius / contourCount) * (i + 1);
+            // Calculate min/max elevation for normalization
+            let minZ = Infinity, maxZ = -Infinity;
+            nodes.forEach(n => {
+                if (n.z < minZ) minZ = n.z;
+                if (n.z > maxZ) maxZ = n.z;
+            });
+            // Expand range slightly to avoid edge cases
+            const zRange = Math.max(0.1, maxZ - minZ);
+            
+            // Function to calculate height at (x, y)
+            const calculateHeight = (x, y) => {
+                let numerator = 0;
+                let denominator = 0;
+                const p = 2; // Power parameter for IDW
                 
-                const points = [];
-                const steps = 200;
-                for (let j = 0; j < steps; j++) {
-                    const angle = (j / steps) * 2 * Math.PI;
-                    // Use noise that is coherent radially (matches angle) and creates ridges
-                    // Scaling angle by small amount makes low freq changes
-                    const n = noise.noise2D(Math.cos(angle), Math.sin(angle) + i * 0.1);
-                    // Add high frequency noise
-                    const nHigh = noise.noise2D(Math.cos(angle * 10), Math.sin(angle * 10) + i * 0.1);
+                // Optimization: Only consider closest N nodes? 
+                // For small tree size (<50 nodes), all nodes is fine.
+                
+                let minDist = Infinity;
+                
+                for (let i = 0; i < nodes.length; i++) {
+                    const node = nodes[i];
+                    const distSq = (x - node.x) ** 2 + (y - node.y) ** 2;
+                    const dist = Math.sqrt(distSq);
                     
-                    const r = rBase + (n * 0.8 + nHigh * 0.2) * (maxRadius / contourCount);
-                    points.push([Math.cos(angle) * r, Math.sin(angle) * r]);
+                    if (dist < 0.1) return node.z; // Exact match
+                    
+                    if (dist < minDist) minDist = dist;
+
+                    const weight = 1 / (distSq + 1000); // Add constant to avoid singularity and smooth
+                    numerator += weight * node.z;
+                    denominator += weight;
                 }
                 
-                const lineGenerator = d3.line().curve(d3.curveBasisClosed);
+                let h = numerator / denominator;
                 
-                g.append("path")
-                    .attr("d", lineGenerator(points))
-                    .attr("fill", colors[i % colors.length])
-                    .attr("stroke", "#adb5bd")
-                    .attr("stroke-width", 0.5)
-                    .style("opacity", 0.6);
+                // Add procedural noise for terrain roughness
+                // Scale coordinate to noise space
+                const nx = x * 0.005;
+                const ny = y * 0.005;
+                const n = noise.noise2D(nx, ny);
+                
+                return h + n * 0.5; // Blend noise
+            };
+
+            // Use D3 Contours if available, otherwise just use color bands
+            // Since we can't guarantee d3-contour is loaded, we'll try to detect it
+            // or implement a simple quantized rendering via canvas.
+            
+            const values = new Float32Array(resolution * resolution);
+            
+            // Generate Heightmap Data First
+            for (let j = 0; j < resolution; j++) {
+                for (let i = 0; i < resolution; i++) {
+                     const wx = (i - resolution/2) * cellSize;
+                     const wy = (j - resolution/2) * cellSize;
+                     values[j * resolution + i] = calculateHeight(wx, wy);
+                }
             }
 
-            // --- 3. Vegetation & Features ---
-            const treeGroup = g.append("g").attr("class", "trees");
-            const rockGroup = g.append("g").attr("class", "rocks");
+            // Prepare rendering layers
+            // Layer 1: Rocks (Background, will be blurred)
+            const rockCanvas = document.createElement('canvas');
+            rockCanvas.width = resolution;
+            rockCanvas.height = resolution;
+            const rockCtx = rockCanvas.getContext('2d');
+            const rockData = rockCtx.createImageData(resolution, resolution);
+
+            // Layer 2: Snow (Foreground, will be sharp)
+            const snowCanvas = document.createElement('canvas');
+            snowCanvas.width = resolution;
+            snowCanvas.height = resolution;
+            const snowCtx = snowCanvas.getContext('2d');
+            const snowData = snowCtx.createImageData(resolution, resolution);
             
-            // Sample points
-            const samples = 6000;
-            for(let k=0; k<samples; k++) {
-                // Uniform-ish distribution
-                const angle = Math.random() * 2 * Math.PI;
-                // Bias slightly towards outer ring for density, but keep center populated
-                const r = Math.sqrt(Math.random()) * maxRadius; 
+            // Light direction (Sun from top-left)
+            const lx = -1, ly = -1, lz = 1.5;
+            const lLen = Math.sqrt(lx*lx + ly*ly + lz*lz);
+            const nlx = lx/lLen, nly = ly/lLen, nlz = lz/lLen;
+
+            // Z-scale for shading exaggeration
+            const zScale = 4.0;
+
+            for (let j = 0; j < resolution; j++) {
+                for (let i = 0; i < resolution; i++) {
+                    const wx = (i - resolution/2) * cellSize;
+                    const wy = (j - resolution/2) * cellSize;
+                    const idx = (j * resolution + i) * 4;
+                    const h = values[j * resolution + i];
+
+                    // Determine Terrain Type
+                    const isSkiArea = checkLinkCollision(wx, wy);
+                    
+                    // Calculate Normal for shading
+                    const i0 = Math.max(0, i-1), i1 = Math.min(resolution-1, i+1);
+                    const j0 = Math.max(0, j-1), j1 = Math.min(resolution-1, j+1);
+                    
+                    const dzdx = (values[j*resolution + i1] - values[j*resolution + i0]) / ((i1-i0) * cellSize);
+                    const dzdy = (values[j1*resolution + i] - values[j0*resolution + i]) / ((j1-j0) * cellSize);
+                    
+                    // Normal vector (-dzdx, -dzdy, 1)
+                    const nx = -dzdx * zScale;
+                    const ny = -dzdy * zScale;
+                    const nz = 1;
+                    const nLen = Math.sqrt(nx*nx + ny*ny + nz*nz);
+                    
+                    // Dot product for diffuse lighting
+                    const diffuse = (nx*nlx + ny*nly + nz*nlz) / nLen;
+                    const intensity = Math.max(0, Math.min(1, diffuse));
+
+                    // Normalize h for coloring
+                    let normH = (h - minZ) / zRange;
+                    normH = Math.max(0, Math.min(1, normH));
+                    
+                    // Quantize for contour effect
+                    const levels = 12;
+                    const quantized = Math.floor(normH * levels) / levels;
+
+                    if (isSkiArea) {
+                        // SNOW: Use shading
+                        // Create gradient from Shadow -> Highlight
+                        // Shadow (Intensity 0.2): Icy Blue
+                        // Light (Intensity 1.0): White
+                        
+                        const light = Math.pow(intensity, 0.7); // Adjust curve
+                        
+                        let r = 200 + light * 55;
+                        let g = 230 + light * 25;
+                        let b = 255;
+                        
+                        // Add subtle banding overlay for "contour" effect
+                        const band = quantized * 10;
+                        r += band; g += band; b += band;
+
+                        // Clamp
+                        r = Math.min(255, r); g = Math.min(255, g); b = Math.min(255, b);
+                        
+                        snowData.data[idx] = r;
+                        snowData.data[idx+1] = g;
+                        snowData.data[idx+2] = b;
+                        snowData.data[idx+3] = 255;
+                        
+                        // Transparent on rock canvas
+                        rockData.data[idx+3] = 0;
+                    } else {
+                        // ROCK
+                        // High frequency noise for texture
+                        let base = 240;
+                        const textureScale = 0.5;
+                        const textureVal = noise.noise2D(wx * textureScale, wy * textureScale);
+                        
+                        base = base - (1-quantized) * 40;
+                        
+                        let r, g, b;
+
+                        if (textureVal > 0.4) {
+                            r = 80; g = 70; b = 60;
+                        } else if (textureVal < -0.4) {
+                             r = 255; g = 255; b = 255;
+                        } else {
+                            r = base; g = base * 0.98; b = base * 0.95;
+                        }
+                        
+                        rockData.data[idx] = r;
+                        rockData.data[idx+1] = g;
+                        rockData.data[idx+2] = b;
+                        rockData.data[idx+3] = 255;
+                        
+                        // Transparent on snow canvas
+                        snowData.data[idx+3] = 0;
+                    }
+                }
+            }
+            
+            rockCtx.putImageData(rockData, 0, 0);
+            snowCtx.putImageData(snowData, 0, 0);
+            
+            // Draw into SVG as images
+            const imageSize = resolution * cellSize;
+            
+            // 1. Rock Layer (Blurred)
+            g.append("image")
+                .attr("href", rockCanvas.toDataURL())
+                .attr("x", -imageSize/2)
+                .attr("y", -imageSize/2)
+                .attr("width", imageSize)
+                .attr("height", imageSize)
+                .attr("opacity", 0.9)
+                .style("filter", "blur(3px)");
                 
-                const x = Math.cos(angle) * r;
-                const y = Math.sin(angle) * r;
+            // 2. Snow Layer (Sharp, to preserve shading detail)
+            g.append("image")
+                .attr("href", snowCanvas.toDataURL())
+                .attr("x", -imageSize/2)
+                .attr("y", -imageSize/2)
+                .attr("width", imageSize)
+                .attr("height", imageSize)
+                .attr("opacity", 1.0);
+                
+            // Use d3.contours if available for nicer lines
+            if (d3.contours) {
+                const contours = d3.contours()
+                    .size([resolution, resolution])
+                    .thresholds(12) // 12 contour lines
+                    (values);
+                
+                // Project contours back to SVG coordinates
+                // d3.geoPath works with GeoJSON. We need a projection that scales 
+                // grid coordinates (0..resolution) to world coordinates.
+                const projection = d3.geoIdentity()
+                    .scale(cellSize)
+                    .translate([-imageSize/2, -imageSize/2]);
+                
+                const path = d3.geoPath(projection);
+                
+                g.append("g")
+                    .attr("class", "contours")
+                    .selectAll("path")
+                    .data(contours)
+                    .enter().append("path")
+                        .attr("d", path)
+                        .attr("fill", "none")
+                        .attr("stroke", "#62e0fa") // Darker stroke for contrast on snow
+                        .attr("stroke-width", 5)
+                        .attr("stroke-opacity", 1)
+                        .attr("filter","blur(8px)");
+            }
 
-                // Check collision with runs
-                if (checkCollision(x, y)) continue;
-
-                // Biome Noise
-                const nx = x / 400;
-                const ny = y / 400;
-                const biome = noise.noise2D(nx, ny);
-                const detail = noise.noise2D(nx * 4, ny * 4); 
-
-                // Tree Clumps
-                if (biome > 0.15 && detail > -0.2) {
-                     const scale = 0.5 + Math.random() * 0.8;
-                     treeGroup.append("path")
-                        .attr("d", `M0,0 l-5,15 l10,0 z`) 
-                        .attr("transform", `translate(${x},${y}) scale(${scale})`)
-                        .attr("fill", "#198754")
-                        .attr("opacity", 0.6);
-                } 
-                // Rocky Bluffs
-                else if (biome < -0.4 && detail < 0) {
-                     const scale = 0.8 + Math.random() * 1.2;
-                     rockGroup.append("path")
-                        .attr("d", `M0,0 l-6,8 l3,4 l6,-2 l4,-6 z`) 
-                        .attr("transform", `translate(${x},${y}) scale(${scale}) rotate(${Math.random()*360})`)
-                        .attr("fill", "#6c757d")
-                        .attr("opacity", 0.7);
+            // --- Vegetation (Trees) ---
+            const treeGroup = svg.append("g").attr("class", "trees");
+            
+            const samples = 8000;
+            const maxR = Math.min(width, height); // Area to scatter trees
+            
+            for(let k=0; k<samples; k++) {
+                const r = Math.sqrt(Math.random()) * maxR * 1.5;
+                const theta = Math.random() * 2 * Math.PI;
+                const x = r * Math.cos(theta);
+                const y = r * Math.sin(theta);
+                
+                // Get elevation
+                const h = calculateHeight(x, y);
+                // Check if suitable for trees (low to mid elevation)
+                // Normalize h
+                const normH = (h - minZ) / zRange;
+                
+                // Trees grow below 0.6 elevation
+                if (normH < 0.8) {
+                    if (checkLinkCollision(x, y)) continue;
+                    
+                    // Add some noise to tree placement density
+                    const n = noise.noise2D(x*0.01, y*0.01);
+                    if (n > 0) {
+                        const scale = 0.8 + Math.random() * 0.5;
+                         treeGroup.append("path")
+                            .attr("d", `M0,0 l-5,15 l10,0 z`) 
+                            .attr("transform", `translate(${x},${y}) scale(${scale})`)
+                            .attr("fill", "#19692c") // Darker green
+                            .attr("opacity", 1.0);
+                    }
                 }
             }
         },
         initGraph() {
             const width = window.innerWidth;
             const height = window.innerHeight;
+
+            // For meandering paths
+            const pathNoise = new SimplexNoise();
+            const tempPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            const radialGenerator = d3.linkRadial()
+                .angle(d => d.x)
+                .radius(d => d.y);
+
+            const generateMeanderingPath = (d) => {
+                // Generate the base radial path to get the correct curve shape
+                const pathString = radialGenerator(d);
+                tempPath.setAttribute("d", pathString);
+                
+                const totalLen = tempPath.getTotalLength();
+                if (totalLen === 0) return pathString;
+
+                const points = [];
+                const segments = Math.max(10, Math.floor(totalLen / 10)); // Sample every 10px approx
+
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const pt = tempPath.getPointAtLength(t * totalLen);
+                    
+                    // Add noise to intermediate points
+                    let dx = 0, dy = 0;
+                    if (i > 0 && i < segments) {
+                        // Use link ID hash for stability
+                        // We need a numeric seed. link-123 -> 123
+                        // If ID is string based, hash it.
+                        let seed = 0;
+                        if (d.id) {
+                            for(let c=0; c<d.id.length; c++) seed = ((seed << 5) - seed) + d.id.charCodeAt(c);
+                        }
+                        seed = Math.abs(seed);
+                        
+                        // Noise based on position along path (t) and link seed
+                        // Scale t for frequency
+                        const noiseX = pathNoise.noise2D(t * 5, seed * 0.1);
+                        const noiseY = pathNoise.noise2D(t * 5 + 100, seed * 0.1);
+                        
+                        const amplitude = 3; // 3px wobble
+                        dx = noiseX * amplitude;
+                        dy = noiseY * amplitude;
+                    }
+                    
+                    points.push([pt.x + dx, pt.y + dy]);
+                }
+                
+                return d3.line().curve(d3.curveBasis)(points);
+            };
+
             const treeData = this.buildTreeData('start');
             const root = d3.hierarchy(treeData);
 
@@ -268,6 +544,30 @@ app.component('graph-background', {
                 }
             });
 
+            // Calculate Elevation for procedural map
+            // Assign elevation to each node based on traversal
+            // Start node = 0
+            // Lift = Uphill (+1)
+            // Run = Downhill (-1)
+            // But since D3 hierarchy expands all paths, we can just walk down from root
+            root.each(d => {
+                if (!d.parent) {
+                    d.elevation = 0;
+                } else {
+                    // Find the link connecting parent to this node
+                    const link = links.find(l => l.source === d.parent && l.target === d);
+                    if (link) {
+                        if (link.styleType === 'run') {
+                            d.elevation = d.parent.elevation - 1.5; // Runs go down faster
+                        } else {
+                            d.elevation = d.parent.elevation + 0.8; // Lifts go up
+                        }
+                    } else {
+                         d.elevation = d.parent.elevation; // Fallback
+                    }
+                }
+            });
+
             const svg = d3.select("#background-graph")
                 .html("")
                 .append("svg")
@@ -281,7 +581,7 @@ app.component('graph-background', {
             this.g = g;
 
             // Draw Landscape Background
-            this.drawLandscape(g, width, height, links);
+            this.drawLandscape(g, width, height, links, root);
 
             const linkGroup = g.append("g").attr("class", "links");
 
@@ -292,9 +592,7 @@ app.component('graph-background', {
                 .attr("class", d => `link run ${d.runColor}`)
                 .attr("id", d => d.id)
                 .attr("fill", "none")
-                .attr("d", d3.linkRadial()
-                    .angle(d => d.x)
-                    .radius(d => d.y));
+                .attr("d", d => generateMeanderingPath(d));
 
             // 2. DRAG LIFTS (Straight lines)
             const drags = linkGroup.selectAll(".lift-drag")
@@ -323,7 +621,7 @@ app.component('graph-background', {
                 .attr("class", "link lift-chair")
                 .attr("id", d => d.id) // ID used for labels later
                 .attr("fill", "none")
-                .attr("d", d3.linkRadial().angle(d => d.x).radius(d => d.y));
+                .attr("d", d => generateMeanderingPath(d));
             
             // The chairs
             chairGroup.each(function(d) {
@@ -361,7 +659,7 @@ app.component('graph-background', {
                 .attr("class", "link lift-gondola")
                 .attr("id", d => d.id)
                 .attr("fill", "none")
-                .attr("d", d3.linkRadial().angle(d => d.x).radius(d => d.y));
+                .attr("d", d => generateMeanderingPath(d));
             
             // The gondolas
             gondolaGroup.each(function(d) {
@@ -408,6 +706,9 @@ app.component('graph-background', {
                 .attr("r", 5)
                 .attr("class", d => d.data.type ? d.data.type : "");
 
+            // Bring trees to the foreground
+            g.select(".trees").raise();
+
             this.addDebugLabels(g, links, node);
 
             this.svg = svg;
@@ -427,12 +728,10 @@ app.component('graph-background', {
 
             linkLabels.append("textPath")
                 .attr("href", d => `#${d.id}`)
-                .attr("startOffset", "25%")
+                .attr("startOffset", "50%")
                 .style("text-anchor", "middle")
                 .text(d => d.target.data.edgeLabel || "")
-                //.style("fill", "#666")
                 .style("font-size", "10px")
-                //.style("text-shadow", "0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff")
                 .style("pointer-events", "none");
 
             node.append("title")
@@ -585,7 +884,7 @@ app.component('faff-interview', {
     },
     template: `
         <graph-background :current-path="interview" :choices="choices"></graph-background>
-        <div class="container">
+        <div class="container question-container">
             <form>
                 <div class="mb-3" v-for="(question, qIndex) in interview">
                     <div class="alert" :class="'alert-'+question.type" v-if="!question.answers">
