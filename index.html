@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        <meta charset="utf-8">
         <title>bradi.sh | Regime Shift</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="description" content="Homepage for bradi.sh - Viral Regime Edition">
         <script src="https://d3js.org/d3.v6.min.js"></script>
         <style>
             body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; background: #17191D; }
-            #svg { width: 100vw; height: 100vh; }
+            #svg { width: 100vw; height: 100vh; touch-action: none; cursor: grab; }
         </style>
     </head>
     <body>
@@ -15,12 +16,10 @@
         <script type="application/javascript">
 
             const margin = {top: 0, right: 0, bottom: 0, left: 0};
-            const width = window.innerWidth - margin.left - margin.right;
-            const height = window.innerHeight - margin.top - margin.bottom;
+            let width = window.innerWidth - margin.left - margin.right;     // updated on resize
+            let height = window.innerHeight - margin.top - margin.bottom;
 
             const TILE_SIZE = 80;
-            const TILES_PER_ROW = Math.ceil(width / TILE_SIZE) + 2;
-            const TILES_PER_COLUMN = Math.ceil(height / TILE_SIZE) + 2;
             
             let cameraX = 0;
             let cameraY = 0;
@@ -106,22 +105,23 @@
              };
 
             class Tile {
-                constructor(ix, iy) { 
-                    this._regime = 0;
+                constructor(ix, iy, regime = 0) { 
+                    this._regime = regime;
                     this._rotation = 0; // Initialize rotation explicitly
+                    this._sel = null;   // D3 selection of this tile's own <g>, set by mountTile
                     this.init(ix, iy); 
                 }
 
-                // Helper to get the D3 selection for this specific tile's group
+                // The D3 selection for this specific tile's group
                 get selection() {
-                    return d3.select(`.t-${this.index}`);
+                    return this._sel;
                 }
 
                 init(ix, iy) {
                     this._ix = ix; 
                     this._iy = iy;
                     this._cx = this._cy = TILE_SIZE / 2;
-                    this._index = (this.iy % TILES_PER_COLUMN + TILES_PER_COLUMN) % TILES_PER_COLUMN * TILES_PER_ROW + (this.ix % TILES_PER_ROW + TILES_PER_ROW) % TILES_PER_ROW;
+                    this._index = tileKey(ix, iy);
                     
                     // Initial state without transitions
                     this._rotation = [-180, -90, 0, 90, 180][Math.random() * 5 | 0];
@@ -199,53 +199,117 @@
                 }
             }
 
-            const tiles = [];
-            for (let y = -1; y < TILES_PER_COLUMN - 1; y++) {
-                for (let x = -1; x < TILES_PER_ROW - 1; x++) {
-                    tiles.push(new Tile(x, y));
-                }
-            }
+            // --- TILE FIELD ---
+            // Tiles sit at fixed world positions inside one group; scrolling moves only that group.
+            // Tiles are made as they come within one tile of the screen and removed once they leave it,
+            // so the field follows the window size as well as the camera.
+            const tiles = new Map();                       // "ix,iy" -> Tile
+            function tileKey(ix, iy) { return ix + "," + iy; }
+            const NEIGHBOURS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+            let lastRegime = 0;                            // regime of the tile most recently removed
 
-            const svg = d3.selectAll("#svg").append("svg")
+            const svg = d3.select("#svg").append("svg")
                 .attr("viewBox", [0, 0, width, height])
                 .style("width", "100%").style("height", "100%").style("display", "block");
 
-            // Interaction Handlers
+            const theTiles = svg.append("g").attr("id", "theTiles");
+
+            const mountTile = (tile) => {
+                const g = theTiles.append("g")
+                    .attr("class", "tileTranslations")
+                    .attr("transform", `translate(${tile.ix * TILE_SIZE},${tile.iy * TILE_SIZE})`);
+                const group = g
+                    .append("g").attr("transform", `translate(${TILE_SIZE / 2},${TILE_SIZE / 2})`).attr("class", "tileTranslation")
+                    .append("g").attr("transform", `rotate(${tile.rotation})`).attr("class", "tileRotation")
+                    .append("g").attr("transform", `translate(${TILE_SIZE / -2},${TILE_SIZE / -2})`).attr("class", "tileGroup");
+                group.append("rect").attr("width", TILE_SIZE).attr("height", TILE_SIZE).attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
+                CORNERS.forEach(c => group.append("path").attr("d", tile.corners[c]).attr("fill", tile.colours[c]));
+                CORNERS.forEach(a => group.append("path").attr("d", tile.arcs[a]).attr("fill", "none").attr("stroke", "rgba(255,255,255,0.3)"));
+                group.append("circle").attr("r", tile.centerCircleRadius).attr("cx", tile.cx).attr("cy", tile.cy).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
+                tile._sel = g;
+            };
+
+            // A new tile joins the regime around it, so a regime carries on past the edge of the screen.
+            const regimeAround = (ix, iy) => {
+                let regime = null;
+                for (const [dx, dy] of NEIGHBOURS) {
+                    const n = tiles.get(tileKey(ix + dx, iy + dy));
+                    if (n && (regime === null || n._regime > regime)) regime = n._regime;
+                }
+                return regime === null ? lastRegime : regime;
+            };
+
+            let range = null;                              // tile indices currently covered
+            const layout = () => {
+                const x0 = Math.floor(cameraX / TILE_SIZE) - 1, x1 = Math.floor((cameraX + width) / TILE_SIZE) + 1;
+                const y0 = Math.floor(cameraY / TILE_SIZE) - 1, y1 = Math.floor((cameraY + height) / TILE_SIZE) + 1;
+                if (range && range.x0 === x0 && range.x1 === x1 && range.y0 === y0 && range.y1 === y1) return;
+                range = { x0, x1, y0, y1 };
+                for (const [key, tile] of tiles) {
+                    if (tile.ix < x0 || tile.ix > x1 || tile.iy < y0 || tile.iy > y1) {
+                        lastRegime = tile._regime;
+                        tile.selection.remove();
+                        tiles.delete(key);
+                    }
+                }
+                for (let iy = y0; iy <= y1; iy++) {
+                    for (let ix = x0; ix <= x1; ix++) {
+                        if (tiles.has(tileKey(ix, iy))) continue;
+                        const tile = new Tile(ix, iy, regimeAround(ix, iy));
+                        tiles.set(tile.index, tile);
+                        mountTile(tile);
+                    }
+                }
+            };
+
+            // --- INTERACTION ---
             const markActivity = () => { lastUserActivity = Date.now(); };
 
             window.addEventListener('wheel', e => {
                 e.preventDefault(); markActivity();
-                targetCameraX += e.deltaX; targetCameraY += e.deltaY;
+                const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? height : 1;   // lines / pages -> px
+                targetCameraX += e.deltaX * unit; targetCameraY += e.deltaY * unit;
             }, { passive: false });
 
-            let touchStartX = 0, touchStartY = 0;
-            window.addEventListener('touchstart', e => {
-                markActivity(); touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+            // Drag with mouse, finger or pen; letting go while moving carries on as a flick.
+            const surface = document.getElementById("svg");
+            let drag = null;
+            let flingX = 0, flingY = 0;                    // px per ms
+            surface.addEventListener('pointerdown', e => {
+                if (drag) return;
+                markActivity();
+                surface.setPointerCapture(e.pointerId);
+                surface.style.cursor = "grabbing";
+                drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
+                flingX = flingY = 0;
             });
-
-            window.addEventListener('touchmove', e => {
-                e.preventDefault(); markActivity();
-                const dx = e.touches[0].clientX - touchStartX;
-                const dy = e.touches[0].clientY - touchStartY;
+            surface.addEventListener('pointermove', e => {
+                if (!drag || e.pointerId !== drag.id) return;
+                markActivity();
+                const now = performance.now(), dt = Math.max(1, now - drag.t);
+                const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
                 targetCameraX -= dx; targetCameraY -= dy;
-                touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
-            }, { passive: false });
+                flingX = 0.7 * flingX + 0.3 * (-dx / dt); flingY = 0.7 * flingY + 0.3 * (-dy / dt);
+                drag.x = e.clientX; drag.y = e.clientY; drag.t = now;
+            });
+            const endDrag = e => {
+                if (!drag || e.pointerId !== drag.id) return;
+                if (e.type === 'pointercancel' || performance.now() - drag.t > 80) flingX = flingY = 0;   // held still before letting go
+                drag = null;
+                surface.style.cursor = "grab";
+            };
+            surface.addEventListener('pointerup', endDrag);
+            surface.addEventListener('pointercancel', endDrag);
 
-            // Rendering Tiles
-            const theTiles = svg.append("g").attr("id", "theTiles");
-            const tileTranslations = theTiles.selectAll(".tileTranslations")
-                .data(tiles, d => d.index).enter().append("g")
-                .attr("transform", d => `translate(${d.x},${d.y})`)
-                .attr("class", d => `tileTranslations t-${d.index}`);
-
-            const tileOffsets = tileTranslations.append("g").attr("transform", `translate(${TILE_SIZE / 2},${TILE_SIZE / 2})`).attr("class","tileTranslation");
-            const tileRotations = tileOffsets.append("g").attr("transform", d => `rotate(${d.rotation})`).attr("class","tileRotation");
-            const tileGroups = tileRotations.append("g").attr("transform", `translate(${TILE_SIZE / -2},${TILE_SIZE / -2})`).attr("class","tileGroup");;
-
-            const bases = tileGroups.append("rect").attr("width", TILE_SIZE).attr("height", TILE_SIZE).attr("fill", d => d.colours[PAINT_LOCATIONS.BASE]);
-            const corners = CORNERS.map(c => tileGroups.append("path").attr("d", d => d.corners[c]).attr("fill", d => d.colours[c]));
-            const arcs = CORNERS.map(a => tileGroups.append("path").attr("d", d => d.arcs[a]).attr("fill", "none").attr("stroke", "rgba(255,255,255,0.3)"));
-            const centers = tileGroups.append("circle").attr("r", d => d.centerCircleRadius).attr("cx", d => d.cx).attr("cy", d => d.cy).attr("fill", d => d.colours[PAINT_LOCATIONS.CENTER]);
+            window.addEventListener('keydown', e => {
+                const step = TILE_SIZE * (e.shiftKey ? 6 : 2);
+                const move = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step],
+                               PageUp: [0, -height * 0.85], PageDown: [0, height * 0.85] }[e.key];
+                if (!move) return;
+                e.preventDefault(); markActivity();
+                flingX = flingY = 0;
+                targetCameraX += move[0]; targetCameraY += move[1];
+            });
 
             // Big Overlay Text
             const textLabels = ["bradi.sh", "bradi.sh"];
@@ -261,15 +325,30 @@
                     .style("mix-blend-mode", i === 0 ? "hard-light" : "difference");
             });
 
+            window.addEventListener('resize', () => {
+                width = window.innerWidth - margin.left - margin.right;
+                height = window.innerHeight - margin.top - margin.bottom;
+                svg.attr("viewBox", [0, 0, width, height]);
+                svg.selectAll("text").attr("x", width / 2).attr("y", height / 2);
+                range = null;                              // re-cover the new window on the next frame
+            });
+
             const updateVisuals = (tile) => {
-                const group = d3.select(`.t-${tile.index}`);
+                const group = tile.selection;
                 group.select("rect").transition().duration(800).attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
                 group.select("circle").transition().duration(800).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
                 group.selectAll("path").filter((d, i) => i < 4).transition().duration(800).attr("fill", (d, i) => tile.colours[i]);
             };
 
+            let drawnX = null, drawnY = null;
             const redraw = () => {
                 const now = Date.now();
+                if (!drag && (flingX || flingY)) {
+                    markActivity();
+                    targetCameraX += flingX * 16; targetCameraY += flingY * 16;
+                    flingX *= 0.95; flingY *= 0.95;
+                    if (Math.hypot(flingX, flingY) < 0.01) flingX = flingY = 0;
+                }
                 if (now - lastUserActivity > SUSPEND_DURATION) {
                     vx += (Math.random() - 0.5) * impulse;
                     vy += (Math.random() - 0.5) * impulse;
@@ -284,24 +363,12 @@
                 cameraX += (targetCameraX - cameraX) * 0.1;
                 cameraY += (targetCameraY - cameraY) * 0.1;
 
-                const buffer = TILE_SIZE;
-                tiles.forEach(tile => {
-                    let dirty = false;
-                    if (tile.ix * TILE_SIZE - cameraX < -buffer * 2) { tile.init(tile.ix + TILES_PER_ROW, tile.iy); dirty = true; }
-                    else if (tile.ix * TILE_SIZE - cameraX > width + buffer) { tile.init(tile.ix - TILES_PER_ROW, tile.iy); dirty = true; }
-                    if (tile.iy * TILE_SIZE - cameraY < -buffer * 2) { tile.init(tile.ix, tile.iy + TILES_PER_COLUMN); dirty = true; }
-                    else if (tile.iy * TILE_SIZE - cameraY > height + buffer) { tile.init(tile.ix, tile.iy - TILES_PER_COLUMN); dirty = true; }
-                    
-                    if (dirty) {
-                        const g = d3.select(`.t-${tile.index}`);
-                        g.attr("transform", `translate(${tile.x},${tile.y})`);
-                        g.select("rect").attr("fill", tile.colours[PAINT_LOCATIONS.BASE]);
-                        g.select("circle").attr("r", tile.centerCircleRadius).attr("fill", tile.colours[PAINT_LOCATIONS.CENTER]);
-                        g.selectAll("path").filter((d, i) => i < 4).attr("d", (d, i) => tile.corners[i]).attr("fill", (d, i) => tile.colours[i]);
-                    }
-                });
-
-                tileTranslations.attr("transform", d => `translate(${d.x},${d.y})`);
+                layout();
+                // one write moves every tile; skipped while the camera is at rest
+                if (drawnX === null || Math.abs(cameraX - drawnX) > 0.01 || Math.abs(cameraY - drawnY) > 0.01) {
+                    theTiles.attr("transform", `translate(${-cameraX},${-cameraY})`);
+                    drawnX = cameraX; drawnY = cameraY;
+                }
             };
 
             const animate = () => { redraw(); requestAnimationFrame(animate); };
@@ -313,29 +380,28 @@
                 regimePalettes[currentGlobalRegime] = generatePalette();
                 
                 // Pick a visible-ish tile to be "Patient Zero"
-                const visibleTiles = tiles.filter(t => t.x > 0 && t.x < width && t.y > 0 && t.y < height);
-                const target = visibleTiles.length > 0 ? visibleTiles[Math.floor(Math.random()*visibleTiles.length)] : tiles[0];
+                const all = [...tiles.values()];
+                const visibleTiles = all.filter(t => t.x > 0 && t.x < width && t.y > 0 && t.y < height);
+                const target = visibleTiles.length > 0 ? visibleTiles[Math.floor(Math.random()*visibleTiles.length)] : all[0];
                 
                 target.recolour(currentGlobalRegime);
                 updateVisuals(target);
             }, 10000);
 
-            // --- FEATURE 4: NEIGHBOR CHECK (1s) ---
+            // --- FEATURE 4: NEIGHBOR CHECK (0.5s) ---
             setInterval(() => {
                 const updates = [];
-                tiles.forEach(tile => {
+                for (const tile of tiles.values()) {
                     // Find cardinal neighbors
-                    const neighbors = tiles.filter(t => 
-                        (Math.abs(t.ix - tile.ix) === 1 && t.iy === tile.iy) ||
-                        (Math.abs(t.iy - tile.iy) === 1 && t.ix === tile.ix)
-                    );
-
-                    const highestNeighborRegime = Math.max(...neighbors.map(n => n._regime));
-                    
+                    let highestNeighborRegime = -Infinity;
+                    for (const [dx, dy] of NEIGHBOURS) {
+                        const n = tiles.get(tileKey(tile.ix + dx, tile.iy + dy));
+                        if (n && n._regime > highestNeighborRegime) highestNeighborRegime = n._regime;
+                    }
                     if (highestNeighborRegime > tile._regime && Math.random() > 0.5) {
                         updates.push({tile, regime: highestNeighborRegime});
                     }
-                });
+                }
 
                 // Apply updates after check to prevent synchronous chain reactions in one tick
                 updates.forEach(u => {
@@ -347,7 +413,8 @@
 
             // Random Tile Pulse (Rotation only now to separate from regime change)
             setInterval(() => {
-                const tile = tiles[Math.floor(Math.random() * tiles.length)];
+                const all = [...tiles.values()];
+                const tile = all[Math.floor(Math.random() * all.length)];
                 tile.rerotate()
             }, 500);
 
