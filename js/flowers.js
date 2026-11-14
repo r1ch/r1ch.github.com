@@ -27,34 +27,46 @@
   const SNAP = 64;              // only re-plan growth when the view has moved this far
   const STEP_HOME = 100;        // ms per generation inside the home frame (as the original)
   const STEP_AWAY = 35;         // ms per generation elsewhere, so growth keeps up with scrolling
-  const STRAY = 0.01;           // chance that a sample off the text flowers anyway
+  const STRAY = 0.012;          // chance that a sample off the text flowers anyway
   const STEM_MS = 200, BLOOM_MS = 1000;
 
   // ---- colour -------------------------------------------------------------------------------------------
-  const NAMED = {
-    salmon: [250, 128, 114], lemonchiffon: [255, 250, 205], gold: [255, 215, 0], red: [255, 0, 0],
-    yellow: [255, 255, 0], rosybrown: [188, 143, 143], saddlebrown: [139, 69, 19], white: [255, 255, 255],
-    darkgrey: [169, 169, 169], lightgreen: [144, 238, 144], green: [0, 128, 0], darkgreen: [0, 100, 0],
-    black: [0, 0, 0], grey: [128, 128, 128], lightgrey: [211, 211, 211],
-  };
-  const scale = (domain, names) => {
-    const cols = names.map(n => NAMED[n]);
-    return t => {
-      let i = 1;
-      while (i < domain.length - 1 && t > domain[i]) i++;
-      const u = (t - domain[i - 1]) / (domain[i] - domain[i - 1]), a = cols[i - 1], b = cols[i];
-      return `rgb(${a[0] + (b[0] - a[0]) * u | 0},${a[1] + (b[1] - a[1]) * u | 0},${a[2] + (b[2] - a[2]) * u | 0})`;
+  // A night garden: deep green-black ground so colour glows. The "dull" 404 version stays grey on white.
+  const BG = dull ? "#fff" : "#0c1411";
+  document.documentElement.style.background = BG;
+  const R = (a, b) => a + Math.random() * (b - a);
+  const hsl = (h, s, l, a) => `hsla(${h | 0},${s | 0}%,${l | 0}%,${a === undefined ? 1 : a})`;
+  const grey = (l, a) => `hsla(0,0%,${l | 0}%,${a === undefined ? 1 : a})`;
+  // flower families: [weight, hue range, saturation range, lightness range]
+  const FAMILIES = [
+    [30, [4, 18], [80, 95], [62, 74]],        // salmon / coral
+    [22, [40, 52], [90, 100], [58, 66]],      // gold
+    [14, [325, 350], [65, 85], [64, 76]],     // pink
+    [12, [262, 290], [55, 75], [68, 78]],     // violet
+    [8, [200, 222], [65, 85], [66, 76]],      // blue
+    [8, [28, 38], [90, 100], [58, 64]],       // orange
+    [6, [50, 60], [60, 100], [88, 94]],       // cream
+  ];
+  const WSUM = FAMILIES.reduce((n, f) => n + f[0], 0);
+  function palette() {
+    if (dull) { const l = R(15, 70); return { outer: grey(l), inner: grey(l + 12), deep: grey(l - 10), halo: grey(l, 0), centre: grey(l - 8), seed: grey(l + 25) }; }
+    let w = Math.random() * WSUM, f = FAMILIES[0];
+    for (const x of FAMILIES) { if ((w -= x[0]) < 0) { f = x; break; } }
+    const h = R(f[1][0], f[1][1]), sat = R(f[2][0], f[2][1]), l = R(f[3][0], f[3][1]);
+    return {
+      outer: hsl(h, sat, l), inner: hsl(h + R(-14, 14), sat, Math.min(96, l + R(8, 16))), deep: hsl(h - 8, sat, l - 22),
+      halo: hsl(h, sat, l, 0.07),
+      centre: Math.random() < 0.7 ? hsl(R(22, 42), R(70, 95), R(22, 38)) : hsl(R(44, 54), 95, R(48, 56)),
+      seed: hsl(R(42, 58), 90, R(72, 88)),
     };
-  };
-  const grey = scale([0, 0.25, 0.5, 1], ["black", "darkgrey", "grey", "lightgrey"]);
-  const petal = dull ? grey : scale([0, 0.5, 1], ["salmon", "lemonchiffon", "gold"]);
-  const sepal = dull ? grey : scale([0, 1], ["red", "yellow"]);
-  const carpal = dull ? grey : scale([0, 1], ["rosybrown", "saddlebrown"]);
-  const stamen = dull ? grey : scale([0, 1], ["white", "darkgrey"]);
-  const stem = dull ? grey : scale([0, 0.5, 1], ["lightgreen", "green", "darkgreen"]);
-  // stems are drawn in batches: a few fixed shades x a few widths, one path each
+  }
+  // stems: a few fixed shades x a few widths, one path each (muted greens that sit well on the dark ground)
   const SHADES = 16, WIDTHS = 4;
-  const stemShades = Array.from({ length: SHADES }, (_, i) => stem(i / (SHADES - 1)));
+  const stemShades = Array.from({ length: SHADES }, (_, i) => {
+    const t = i / (SHADES - 1);
+    return dull ? grey(10 + t * 60) : hsl(92 + t * 50, 38 + t * 14, 20 + (1 - Math.abs(t - 0.4) * 1.4) * 14);
+  });
+  const leafShades = dull ? [grey(55), grey(70)] : [hsl(112, 42, 34), hsl(96, 46, 42), hsl(135, 36, 30)];
 
   // ---- canvas + camera ----------------------------------------------------------------------------------
   const canvas = document.createElement("canvas");
@@ -72,7 +84,7 @@
     vw = window.innerWidth; vh = window.innerHeight;
     dpr = Math.min(window.devicePixelRatio || 1, 3);
     zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, vw / HOME.w));
-    canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+    canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr); vignette = null;
     dirty = true;
   }
   const view = (pad) => ({
@@ -126,6 +138,24 @@
     return true;
   }
 
+  function makeFlower(t0) {
+    const u = Math.random(), size = 2 + 9.5 * Math.pow(u, 1.5);          // mostly small, the odd big one
+    const pal = palette(), n = 4 + (Math.random() * 6 | 0);              // 4-9 petals
+    const rot = R(0, 6.283), shape = R(0.32, 0.6);                        // fat or slim
+    const ring = (count, scale, off, fill) => {
+      const petals = [];
+      for (let i = 0; i < count; i++) {
+        petals.push({ a: rot + off + (i + R(-0.22, 0.22)) * 6.283 / count, len: scale * R(0.72, 1.18), w: shape * R(0.75, 1.3), bow: R(-0.12, 0.12) });
+      }
+      return { petals, fill };
+    };
+    const layers = [ring(n, 1, 0, pal.outer)];
+    if (size > 3.5 || Math.random() < 0.5) layers.push(ring(Math.max(3, n - (Math.random() * 3 | 0)), R(0.55, 0.72), R(0.3, 0.6) * 6.283 / n, pal.inner));
+    const seeds = [];
+    for (let i = 0, k = 3 + (Math.random() * 6 | 0); i < k; i++) { const a = R(0, 6.283), r = Math.sqrt(Math.random()); seeds.push([Math.cos(a) * r, Math.sin(a) * r]); }
+    return { size, t1: t0 + 500 + Math.random() * 900, pal, layers, seeds, spin: R(-0.9, 0.9) };
+  }
+
   function plant(x, y, parent, now) {
     const gi = Math.floor(x / CELL), gj = Math.floor(y / CELL), cx = Math.floor(gi / N), cy = Math.floor(gj / N);
     let ch = chunks.get(key(cx, cy));
@@ -134,14 +164,18 @@
     const t0 = parent ? Math.max(parent.t0 + (inHome(x, y) ? STEP_HOME : STEP_AWAY), now) : now;
     const p = {
       x, y, px: parent ? parent.x : x, py: parent ? parent.y : y, t0, queued: true,
+      bend: R(-0.3, 0.3), leaf: null,
       bucket: (Math.random() * SHADES | 0) * WIDTHS + ((Math.random() * 2 | 0) + (text ? 2 : 0)),   // width 1-2, or 3-4 on the text
       flower: null,
     };
-    if (text || Math.random() < STRAY) {
-      p.flower = {
-        size: (Math.random() * 8 + 2) | 0, t1: t0 + 500 + Math.random() * 900,
-        petal: petal(Math.random()), sepal: sepal(Math.random()), stamen: stamen(Math.random()), carpal: carpal(Math.random()),
-      };
+    if (parent) {                                            // stems curve: a control point pushed off the straight line
+      const dx = x - parent.x, dy = y - parent.y;
+      p.cx = (x + p.px) / 2 - dy * p.bend; p.cy = (y + p.py) / 2 + dx * p.bend;
+    } else { p.cx = x; p.cy = y; }
+    if (text || Math.random() < STRAY) p.flower = makeFlower(t0);
+    else if (parent && Math.random() < 0.22) {              // some stems carry a leaf, halfway along
+      const dx = x - p.px, dy = y - p.py, side = Math.random() < 0.5 ? 1 : -1;
+      p.leaf = { x: (p.px + 2 * p.cx + x) / 4, y: (p.py + 2 * p.cy + y) / 4, a: Math.atan2(dy, dx) + side * R(0.5, 1.2), len: R(3, 6.5), col: Math.random() * leafShades.length | 0 };
     }
     ch.grid[(gj - cy * N) * N + (gi - cx * N)] = p;
     ch.pts.push(p);
@@ -218,15 +252,30 @@
   const buckets = Array.from({ length: SHADES * WIDTHS }, () => []);
   const blooms = [];
 
+  const leaves = [[], [], []];
+  let vignette = null;
+
+  function petalPath(f, cx, cy, layer, o, rot) {
+    for (const q of layer.petals) {
+      const a = q.a + rot, L = f.size * 1.75 * q.len * o, W = L * q.w;
+      const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx, bow = q.bow * L;
+      const tx = cx + dx * L + nx * bow, ty = cy + dy * L + ny * bow;
+      ctx.moveTo(cx, cy);
+      ctx.bezierCurveTo(cx + dx * L * 0.2 + nx * W * 1.1, cy + dy * L * 0.2 + ny * W * 1.1, cx + dx * L * 0.9 + nx * W * 0.75, cy + dy * L * 0.9 + ny * W * 0.75, tx, ty);
+      ctx.bezierCurveTo(cx + dx * L * 0.9 - nx * W * 0.75, cy + dy * L * 0.9 - ny * W * 0.75, cx + dx * L * 0.2 - nx * W * 1.1, cy + dy * L * 0.2 - ny * W * 1.1, cx, cy);
+    }
+  }
+
   function draw(now) {
     let moving = false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const s = zoom * dpr;
     ctx.setTransform(s, 0, 0, s, canvas.width / 2 - cam.x * s, canvas.height / 2 - cam.y * s);
 
     for (const b of buckets) b.length = 0;
+    for (const l of leaves) l.length = 0;
     blooms.length = 0;
     const v = view(40);
     for (let cy = Math.floor(v.y0 / CHUNK); cy <= Math.floor(v.y1 / CHUNK); cy++) {
@@ -238,11 +287,13 @@
           if (age <= 0) { moving = true; continue; }
           if (age < STEM_MS) {
             moving = true;
-            const u = ease(age / STEM_MS);
-            buckets[p.bucket].push(p.px, p.py, p.px + (p.x - p.px) * u, p.py + (p.y - p.py) * u);
+            const u = ease(age / STEM_MS);              // quadratic curve cut off at u: end point B(u), control lerp(p0, c, u)
+            const ex = (1 - u) * (1 - u) * p.px + 2 * u * (1 - u) * p.cx + u * u * p.x, ey = (1 - u) * (1 - u) * p.py + 2 * u * (1 - u) * p.cy + u * u * p.y;
+            buckets[p.bucket].push(p.px, p.py, p.px + (p.cx - p.px) * u, p.py + (p.cy - p.py) * u, ex, ey);
           } else {
-            buckets[p.bucket].push(p.px, p.py, p.x, p.y);
+            buckets[p.bucket].push(p.px, p.py, p.cx, p.cy, p.x, p.y);
             if (p.flower) blooms.push(p);
+            else if (p.leaf) leaves[p.leaf.col].push(p.leaf);
           }
         }
       }
@@ -254,27 +305,57 @@
       const b = buckets[i];
       if (!b.length) continue;
       ctx.beginPath();
-      for (let j = 0; j < b.length; j += 4) { ctx.moveTo(b[j], b[j + 1]); ctx.lineTo(b[j + 2], b[j + 3]); }
+      for (let j = 0; j < b.length; j += 6) { ctx.moveTo(b[j], b[j + 1]); ctx.quadraticCurveTo(b[j + 2], b[j + 3], b[j + 4], b[j + 5]); }
       ctx.strokeStyle = stemShades[i / WIDTHS | 0];
       ctx.lineWidth = i % WIDTHS + 1;
       ctx.stroke();
     }
 
-    ctx.lineCap = "butt";
+    for (let i = 0; i < leaves.length; i++) {            // leaves: little pointed lenses, one fill per shade
+      if (!leaves[i].length) continue;
+      ctx.beginPath();
+      for (const l of leaves[i]) {
+        const dx = Math.cos(l.a), dy = Math.sin(l.a), tx = l.x + dx * l.len, ty = l.y + dy * l.len, w = l.len * 0.42;
+        ctx.moveTo(l.x, l.y);
+        ctx.quadraticCurveTo(l.x + dx * l.len * 0.5 - dy * w, l.y + dy * l.len * 0.5 + dx * w, tx, ty);
+        ctx.quadraticCurveTo(l.x + dx * l.len * 0.5 + dy * w, l.y + dy * l.len * 0.5 - dx * w, l.x, l.y);
+      }
+      ctx.fillStyle = leafShades[i];
+      ctx.fill();
+    }
+
     for (const p of blooms) {
-      const f = p.flower, open = ease((now - f.t1) / BLOOM_MS), bud = ease((now - p.t0 - STEM_MS) / 250);
-      if (open < 1) moving = true;
-      if (open > 0) {          // petals: a thick dashed ring around a filled disc
-        ctx.beginPath(); ctx.arc(p.x, p.y, f.size * open, 0, 2 * Math.PI);
-        ctx.fillStyle = f.sepal; ctx.fill();
-        ctx.setLineDash([2, 0.5]); ctx.lineWidth = f.size * 1.5 * open; ctx.strokeStyle = f.petal; ctx.stroke();
+      const f = p.flower, raw = Math.max(0, Math.min(1, (now - f.t1) / BLOOM_MS)), o = ease(raw) * (1 + 0.1 * Math.sin(Math.PI * raw));
+      const bud = ease((now - p.t0 - STEM_MS) / 250);
+      if (raw < 1) moving = true;
+      if (o > 0.02) {
+        const rot = (1 - o) * f.spin;                      // petals unfurl with a little twist
+        if (f.size > 5 && !dull) {                         // a faint halo round the big ones
+          ctx.fillStyle = f.pal.halo; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 2.9 * o, 0, 6.283); ctx.fill();
+        }
+        for (const layer of f.layers) {
+          ctx.beginPath(); petalPath(f, p.x, p.y, layer, o, rot);
+          ctx.fillStyle = layer.fill; ctx.fill();
+        }
+        ctx.fillStyle = f.pal.deep; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 0.5 * o, 0, 6.283); ctx.fill();
+        ctx.fillStyle = f.pal.centre; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, f.size * 0.36) * o, 0, 6.283); ctx.fill();
+        if (f.size > 3.5) {
+          ctx.fillStyle = f.pal.seed; ctx.beginPath();
+          const sr = f.size * 0.3 * o;
+          for (const q of f.seeds) { const sx = p.x + q[0] * sr, sy = p.y + q[1] * sr; ctx.moveTo(sx + 0.55, sy); ctx.arc(sx, sy, 0.55, 0, 6.283); }
+          ctx.fill();
+        }
+      } else if (bud > 0) {                                // a bud first
+        ctx.fillStyle = f.pal.outer; ctx.beginPath(); ctx.arc(p.x, p.y, 1.8 * bud, 0, 6.283); ctx.fill();
       }
-      const r = 2 * bud + (f.size / 2 - 2) * open;   // a bud first, then the centre grows with the flower
-      if (r > 0) {
-        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
-        ctx.fillStyle = f.carpal; ctx.fill();
-        ctx.setLineDash([1, 1]); ctx.lineWidth = 1; ctx.strokeStyle = f.stamen; ctx.stroke();
+    }
+
+    if (!dull) {                                           // soft vignette so the edges fall away
+      if (!vignette) {
+        vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.35, canvas.width / 2, canvas.height / 2, Math.hypot(canvas.width, canvas.height) * 0.6);
+        vignette.addColorStop(0, "rgba(0,0,0,0)"); vignette.addColorStop(1, "rgba(0,0,0,0.55)");
       }
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = vignette; ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     return moving;
   }
