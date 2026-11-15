@@ -7,7 +7,7 @@
  * on growing into the newly uncovered strip. Nothing already planted is touched, so flowers that stay in view
  * stay exactly as they are. Chunks more than a screen away are forgotten.
  *
- * Zoom: pinch, ctrl/cmd + wheel, the + and - keys (0 resets) or the two buttons; it zooms about the pointer.
+ * Zoom: pinch, ctrl/cmd + wheel, or the + and - keys (0 resets); it zooms about the pointer.
  *
  * Optional config before loading:  window.FLOWERS = { text: "404", dull: true, zoom: 2, x: 0, y: 0 }
  * Default text is the query string (bradi.sh/flowers?hello) or "bradish".
@@ -58,7 +58,7 @@
     const h = R(f[1][0], f[1][1]), sat = R(f[2][0], f[2][1]), l = R(f[3][0], f[3][1]);
     return {
       outer: hsl(h, sat, l), inner: hsl(h + R(-14, 14), sat, Math.min(96, l + R(8, 16))), deep: hsl(h - 8, sat, l - 22),
-      edge: hsl(h - 10, sat, l - 20, 0.5), halo: hsl(h, sat, l, 0.07),
+      edge: hsl(h - 10, sat, l - 20, 0.5), halo: [hsl(h, sat, l, 0.2), hsl(h, sat, l, 0.07), hsl(h, sat, l, 0)],
       centre: Math.random() < 0.7 ? hsl(R(22, 42), R(70, 95), R(22, 38)) : hsl(R(44, 54), 95, R(48, 56)),
       seed: hsl(R(42, 58), 90, R(72, 88)),
     };
@@ -386,15 +386,24 @@
       ctx.lineWidth = 0.16; ctx.stroke();
     }
 
+    if (!dull) {                                           // first a soft glow under the big ones, so it never veils a neighbour's petals
+      for (const p of blooms) {
+        const f = p.flower;
+        if (f.size <= 5) continue;
+        const o = ease((now - f.t1) / BLOOM_MS), r = f.size * 3.4 * o;
+        if (o <= 0.02) continue;
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+        g.addColorStop(0, f.pal.halo[0]); g.addColorStop(0.45, f.pal.halo[1]); g.addColorStop(1, f.pal.halo[2]);
+        ctx.fillStyle = g; ctx.fillRect(p.x - r, p.y - r, 2 * r, 2 * r);
+      }
+    }
+
     for (const p of blooms) {
       const f = p.flower, raw = Math.max(0, Math.min(1, (now - f.t1) / BLOOM_MS)), o = ease(raw) * (1 + 0.1 * Math.sin(Math.PI * raw));
       const bud = ease((now - p.t0 - STEM_MS) / 250);
       if (raw < 1) moving = true;
       if (o > 0.02) {
         const rot = (1 - o) * f.spin;                      // petals unfurl with a little twist
-        if (f.size > 5 && !dull) {                         // a faint halo round the big ones
-          ctx.fillStyle = f.pal.halo; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 2.9 * o, 0, 6.283); ctx.fill();
-        }
         for (const layer of f.layers) {
           ctx.beginPath(); petalPath(f, p.x, p.y, layer, o, rot);
           ctx.fillStyle = layer.fill; ctx.fill();
@@ -508,19 +517,6 @@
   });
 
   window.addEventListener("resize", resize);
-
-  // two small buttons, for mice without a pinch
-  const bar = document.createElement("div");
-  bar.style.cssText = "position:fixed;right:14px;bottom:14px;display:flex;flex-direction:column;gap:8px;z-index:2";
-  for (const [label, f, name] of [["+", 1.5, "Zoom in"], ["\u2212", 1 / 1.5, "Zoom out"]]) {
-    const b = document.createElement("button");
-    b.textContent = label; b.title = name; b.setAttribute("aria-label", name);
-    b.style.cssText = "width:38px;height:38px;border-radius:50%;padding:0;font:22px/1 system-ui,sans-serif;cursor:pointer;touch-action:manipulation;"
-      + (dull ? "border:1px solid rgba(0,0,0,.2);background:rgba(255,255,255,.7);color:rgba(0,0,0,.55)" : "border:1px solid rgba(255,255,255,.16);background:rgba(12,20,17,.55);color:rgba(255,255,255,.7)");
-    b.addEventListener("click", () => { zoomBy(f); b.blur(); });
-    bar.appendChild(b);
-  }
-  document.body.appendChild(bar);
 
   // ---- main loop ----------------------------------------------------------------------------------------
   let last = performance.now();
