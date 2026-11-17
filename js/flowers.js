@@ -82,6 +82,9 @@
   const canvas = document.createElement("canvas");
   canvas.style.cssText = "position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab";
   (document.getElementById("app") || document.body).appendChild(canvas);
+  // soft vignette so the edges fall away: a fixed overlay, so the canvas never repaints it
+  const shade = dull ? null : document.createElement("div");
+  if (shade) { shade.style.cssText = "position:fixed;inset:0;pointer-events:none"; canvas.after(shade); }
   const ctx = canvas.getContext("2d");
 
   let vw = 0, vh = 0, dpr = 1, zoom = 1;       // viewport (css px), device pixel ratio, css px per world unit
@@ -95,10 +98,11 @@
 
   function resize() {
     vw = window.innerWidth; vh = window.innerHeight;
-    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    dpr = Math.min(window.devicePixelRatio || 1, 2);   // 3x screens: 2x is plenty for a soft scene, at under half the pixels
     base = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, vw / HOME.w));
     zoom = zt = clampZoom(base * uz); uz = zoom / base;
-    canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr); vignette = null;
+    canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+    if (shade) shade.style.background = `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) ${Math.min(vw, vh) * 0.35}px, rgba(0,0,0,0.55) ${Math.hypot(vw, vh) * 0.6}px)`;
     dirty = true;
   }
   const clampZoom = z => Math.max(ZOOM_OUT, Math.min(ZOOM_IN, z));
@@ -319,9 +323,45 @@
   const buckets = new Array(SHADES);
   const blooms = [];
 
-  const leaves = [[], [], []];
   const LEAF_MS = 500;
-  let vignette = null;
+  const growing = [];                           // [leaf, chunk] for leaves still unfolding this frame
+
+  // A leaf: a pointed blade with a slight curl, added to `blade`; its midrib to `rib`; side veins to `side`.
+  // The spine is a cubic from the base to the tip; the two edges are the same curve pushed out sideways.
+  function leafInto(l, g, blade, rib, side) {
+    const L = l.len * g, w = L * l.w, b = L * l.bow, dx = Math.cos(l.a), dy = Math.sin(l.a), nx = -dy, ny = dx;
+    const ax = l.x + dx * L * 0.3 + nx * b * 0.2, ay = l.y + dy * L * 0.3 + ny * b * 0.2;
+    const bx = l.x + dx * L * 0.75 + nx * b * 0.7, by = l.y + dy * L * 0.75 + ny * b * 0.7;
+    const tx = l.x + dx * L + nx * b, ty = l.y + dy * L + ny * b;
+    blade.moveTo(l.x, l.y);
+    blade.bezierCurveTo(ax + nx * w * 1.3, ay + ny * w * 1.3, bx + nx * w * 0.7, by + ny * w * 0.7, tx, ty);
+    blade.bezierCurveTo(bx - nx * w * 0.7, by - ny * w * 0.7, ax - nx * w * 1.3, ay - ny * w * 1.3, l.x, l.y);
+    rib.moveTo(l.x, l.y); rib.bezierCurveTo(ax, ay, bx, by, tx, ty);
+    const geo = [l.x, l.y, ax, ay, bx, by, tx, ty], wx = nx * w, wy = ny * w;
+    for (let t = 0.2; t < 0.8; t += 0.15) {               // four pairs, each sweeping forward to just short of the edge
+      const u = t + 0.17, m = 1 - t, v = 1 - u;
+      const sx = m * m * m * geo[0] + 3 * m * m * t * geo[2] + 3 * m * t * t * geo[4] + t * t * t * geo[6];
+      const sy = m * m * m * geo[1] + 3 * m * m * t * geo[3] + 3 * m * t * t * geo[5] + t * t * t * geo[7];
+      const ex = v * v * v * geo[0] + 3 * v * v * u * geo[2] + 3 * v * u * u * geo[4] + u * u * u * geo[6];
+      const ey = v * v * v * geo[1] + 3 * v * v * u * geo[3] + 3 * v * u * u * geo[5] + u * u * u * geo[7];
+      const h = 0.8 * (3 * v * v * u * 1.3 + 3 * v * u * u * 0.7);      // edge offset at u, as a fraction of w
+      const qx = (sx + ex) / 2, qy = (sy + ey) / 2;
+      side.moveTo(sx, sy); side.quadraticCurveTo(qx + wx * h * 0.75, qy + wy * h * 0.75, ex + wx * h, ey + wy * h);
+      side.moveTo(sx, sy); side.quadraticCurveTo(qx - wx * h * 0.75, qy - wy * h * 0.75, ex - wx * h, ey - wy * h);
+    }
+    return geo;
+  }
+
+  // A soft glow for a big flower, drawn once into a small image and scaled (a gradient per frame is costly).
+  function glow(f) {
+    if (f.glow) return f.glow;
+    const c = document.createElement("canvas"), g = c.getContext("2d"), n = 64;
+    c.width = c.height = n;
+    const gr = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+    gr.addColorStop(0, f.pal.halo[0]); gr.addColorStop(0.45, f.pal.halo[1]); gr.addColorStop(1, f.pal.halo[2]);
+    g.fillStyle = gr; g.fillRect(0, 0, n, n);
+    return f.glow = c;
+  }
 
   function petalPath(f, cx, cy, layer, o, rot) {
     for (const q of layer.petals) {
@@ -417,7 +457,7 @@
 
     buckets.fill(null);
     const shown = [];
-    for (const l of leaves) l.length = 0;
+    growing.length = 0;
     blooms.length = 0;
     const v = view(40);
     for (let cy = Math.floor(v.y0 / CHUNK); cy <= Math.floor(v.y1 / CHUNK); cy++) {
@@ -429,7 +469,10 @@
         for (const p of ch.pts) {
           if (p.kept) {                                      // finished and already in the chunk's paths
             if (p.flower) blooms.push(p);
-            if (p.leaves) for (const l of p.leaves) leaves[l.col].push(l);
+            if (p.leaves) for (const l of p.leaves) {
+              if (!l.kept) growing.push(l, ch);
+              else if (l.ink && s >= INK_ZOOM) inked.push(l.geo);
+            }
             continue;
           }
           const age = now - p.t0;
@@ -440,7 +483,7 @@
           if (u >= 1) {
             p.kept = true;
             if (p.flower) blooms.push(p);
-            if (p.leaves) for (const l of p.leaves) leaves[l.col].push(l);
+            if (p.leaves) for (const l of p.leaves) growing.push(l, ch);
           }
         }
       }
@@ -453,52 +496,32 @@
       if (buckets[i]) ctx.fill(buckets[i]);
     }
 
-    // Leaves: a pointed blade with a slight curl, one fill per shade; then the veins (a midrib, and side veins
-    // once there are enough pixels to show them).
+    // Leaves, one fill per shade, then the veins: a midrib, and side veins once there are enough pixels to
+    // show them. A fully grown leaf goes into its chunk's paths once; unfolding ones are drawn fresh.
     const midrib = s >= 0.9, sideVeins = s >= 1.7;
-    for (let i = 0; i < leaves.length; i++) {
-      if (!leaves[i].length) continue;
-      const geo = [];
-      ctx.beginPath();
-      for (const l of leaves[i]) {
-        const g = ease((now - l.t0) / LEAF_MS);
-        if (g < 1) moving = true;
-        if (g <= 0.02) continue;
-        const L = l.len * g, w = L * l.w, b = L * l.bow, dx = Math.cos(l.a), dy = Math.sin(l.a), nx = -dy, ny = dx;
-        // the spine is a cubic from the base to the tip; the two edges are the same curve pushed out sideways
-        const ax = l.x + dx * L * 0.3 + nx * b * 0.2, ay = l.y + dy * L * 0.3 + ny * b * 0.2;
-        const bx = l.x + dx * L * 0.75 + nx * b * 0.7, by = l.y + dy * L * 0.75 + ny * b * 0.7;
-        const tx = l.x + dx * L + nx * b, ty = l.y + dy * L + ny * b;
-        ctx.moveTo(l.x, l.y);
-        ctx.bezierCurveTo(ax + nx * w * 1.3, ay + ny * w * 1.3, bx + nx * w * 0.7, by + ny * w * 0.7, tx, ty);
-        ctx.bezierCurveTo(bx - nx * w * 0.7, by - ny * w * 0.7, ax - nx * w * 1.3, ay - ny * w * 1.3, l.x, l.y);
-        if (l.ink && s >= INK_ZOOM) inked.push([l.x, l.y, ax, ay, bx, by, tx, ty, veinShades[i]]);
-        if (midrib) geo.push(l.x, l.y, ax, ay, bx, by, tx, ty, nx * w, ny * w);
-      }
+    const fresh = [0, 1, 2].map(() => [new Path2D(), new Path2D(), new Path2D()]);
+    for (let j = 0; j < growing.length; j += 2) {
+      const l = growing[j], ch = growing[j + 1], g = ease((now - l.t0) / LEAF_MS);
+      if (g < 1) moving = true;
+      if (g <= 0.02) continue;
+      if (g < 1) { const f = fresh[l.col]; leafInto(l, g, f[0], f[1], f[2]); continue; }
+      const c = ch.leaves || (ch.leaves = [0, 1, 2].map(() => [new Path2D(), new Path2D(), new Path2D()]));
+      l.geo = leafInto(l, 1, c[l.col][0], c[l.col][1], c[l.col][2]);
+      l.kept = true;
+      if (l.ink && s >= INK_ZOOM) inked.push(l.geo);
+    }
+    for (let i = 0; i < leafShades.length; i++) {
+      const sets = [fresh[i]];
+      for (const ch of shown) if (ch.leaves) sets.push(ch.leaves[i]);
       ctx.fillStyle = leafShades[i];
-      ctx.fill();
-      if (!geo.length) continue;
+      for (const t of sets) ctx.fill(t[0]);
+      if (!midrib) continue;
       ctx.strokeStyle = veinShades[i];
-      ctx.beginPath();
-      for (let j = 0; j < geo.length; j += 10) { ctx.moveTo(geo[j], geo[j + 1]); ctx.bezierCurveTo(geo[j + 2], geo[j + 3], geo[j + 4], geo[j + 5], geo[j + 6], geo[j + 7]); }
-      ctx.lineWidth = 0.32; ctx.stroke();      // (a signed leaf keeps its midrib too: the letters sit on it)
+      ctx.lineWidth = 0.32;
+      for (const t of sets) ctx.stroke(t[1]);              // (a signed leaf keeps its midrib too: the letters sit on it)
       if (!sideVeins) continue;
-      ctx.beginPath();
-      for (let j = 0; j < geo.length; j += 10) {
-        const wx = geo[j + 8], wy = geo[j + 9];
-        for (let t = 0.2; t < 0.8; t += 0.15) {            // four pairs, each sweeping forward to just short of the edge
-          const u = t + 0.17, m = 1 - t, v = 1 - u;
-          const sx = m * m * m * geo[j] + 3 * m * m * t * geo[j + 2] + 3 * m * t * t * geo[j + 4] + t * t * t * geo[j + 6];
-          const sy = m * m * m * geo[j + 1] + 3 * m * m * t * geo[j + 3] + 3 * m * t * t * geo[j + 5] + t * t * t * geo[j + 7];
-          const ex = v * v * v * geo[j] + 3 * v * v * u * geo[j + 2] + 3 * v * u * u * geo[j + 4] + u * u * u * geo[j + 6];
-          const ey = v * v * v * geo[j + 1] + 3 * v * v * u * geo[j + 3] + 3 * v * u * u * geo[j + 5] + u * u * u * geo[j + 7];
-          const h = 0.8 * (3 * v * v * u * 1.3 + 3 * v * u * u * 0.7);      // edge offset at u, as a fraction of w
-          const qx = (sx + ex) / 2, qy = (sy + ey) / 2;
-          ctx.moveTo(sx, sy); ctx.quadraticCurveTo(qx + wx * h * 0.75, qy + wy * h * 0.75, ex + wx * h, ey + wy * h);
-          ctx.moveTo(sx, sy); ctx.quadraticCurveTo(qx - wx * h * 0.75, qy - wy * h * 0.75, ex - wx * h, ey - wy * h);
-        }
-      }
-      ctx.lineWidth = 0.16; ctx.stroke();
+      ctx.lineWidth = 0.16;
+      for (const t of sets) ctx.stroke(t[2]);
     }
 
     for (const g of inked) inkMidrib(g, s);
@@ -510,9 +533,7 @@
         if (f.size <= 5) continue;
         const o = ease((now - f.t1) / BLOOM_MS), r = f.size * 3.4 * o;
         if (o <= 0.02) continue;
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
-        g.addColorStop(0, f.pal.halo[0]); g.addColorStop(0.45, f.pal.halo[1]); g.addColorStop(1, f.pal.halo[2]);
-        ctx.fillStyle = g; ctx.fillRect(p.x - r, p.y - r, 2 * r, 2 * r);
+        ctx.drawImage(glow(f), p.x - r, p.y - r, 2 * r, 2 * r);
       }
     }
 
@@ -520,7 +541,9 @@
       const f = p.flower, raw = Math.max(0, Math.min(1, (now - f.t1) / BLOOM_MS)), o = ease(raw) * (1 + 0.1 * Math.sin(Math.PI * raw));
       const bud = ease((now - p.t0 - STEM_MS) / 250);
       if (raw < 1) moving = true;
-      if (o > 0.02) {
+      if (o > 0.02 && f.size * 1.75 * o * s < 2.5) {        // too small to see petals: a dot of its colour
+        ctx.fillStyle = f.pal.outer; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 1.2 * o, 0, 6.283); ctx.fill();
+      } else if (o > 0.02) {
         const rot = (1 - o) * f.spin;                      // petals unfurl with a little twist
         for (const layer of f.layers) {
           ctx.beginPath(); petalPath(f, p.x, p.y, layer, o, rot);
@@ -529,7 +552,7 @@
         }
         ctx.fillStyle = f.pal.deep; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 0.5 * o, 0, 6.283); ctx.fill();
         ctx.fillStyle = f.pal.centre; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, f.size * 0.36) * o, 0, 6.283); ctx.fill();
-        if (f.size > 3.5) {
+        if (f.size > 3.5 && Math.max(0.35, f.size * 0.055) * s >= 0.4) {     // seeds, once they would be visible
           ctx.fillStyle = f.pal.seed; ctx.beginPath();
           const sr = f.size * 0.3 * o, sd = Math.max(0.35, f.size * 0.055);
           for (const q of f.seeds) { const sx = p.x + q[0] * sr, sy = p.y + q[1] * sr; ctx.moveTo(sx + sd, sy); ctx.arc(sx, sy, sd, 0, 6.283); }
@@ -538,13 +561,6 @@
       } else if (bud > 0) drawBud(p, bud);                      // a bud first
     }
 
-    if (!dull) {                                           // soft vignette so the edges fall away
-      if (!vignette) {
-        vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.35, canvas.width / 2, canvas.height / 2, Math.hypot(canvas.width, canvas.height) * 0.6);
-        vignette.addColorStop(0, "rgba(0,0,0,0)"); vignette.addColorStop(1, "rgba(0,0,0,0.55)");
-      }
-      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = vignette; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
     return moving;
   }
 
