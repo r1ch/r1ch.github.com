@@ -314,7 +314,9 @@
 
   // ---- drawing ------------------------------------------------------------------------------------------
   const ease = t => t <= 0 ? 0 : t >= 1 ? 1 : ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;   // cubic in-out
-  const buckets = new Array(SHADES);            // one path per stem shade, rebuilt every frame
+  // Stem outlines are costly to build, so a finished stem is added once to its chunk's path for its shade
+  // (ch.stems) and kept; only stems still growing go into these per-frame paths.
+  const buckets = new Array(SHADES);
   const blooms = [];
 
   const leaves = [[], [], []];
@@ -335,8 +337,8 @@
   // One piece of a stem, B(a)..B(b) of its quadratic, as a filled outline (half the width either side of the
   // curve) plus a disc at its end, so pieces and stems meet with round, seamless joints.
   const side = new Float64Array(2 * (STEPS + 1) * 2);
-  function stemPiece(p, a, b) {
-    const m = (a + b) / 2, path = buckets[Math.round(p.sh0 + (p.sh - p.sh0) * m)];
+  function stemPiece(p, a, b, paths) {
+    const m = (a + b) / 2, sh = Math.round(p.sh0 + (p.sh - p.sh0) * m), path = paths[sh] || (paths[sh] = new Path2D());
     let n = 0, ex = 0, ey = 0, er = 0;
     for (let i = 0; i <= STEPS; i++) {
       const t = a + (b - a) * i / STEPS;
@@ -351,8 +353,9 @@
     for (let i = 4; i < n; i += 4) path.lineTo(side[i], side[i + 1]);
     for (let i = n - 2; i >= 0; i -= 4) path.lineTo(side[i], side[i + 1]);
     path.closePath();
-    path.moveTo(ex + er, ey); path.arc(ex, ey, er, 0, 2 * Math.PI, true);           // same winding as the outline,
-    if (a === 0) { path.moveTo(p.px + p.w0 / 2, p.py); path.arc(p.px, p.py, p.w0 / 2, 0, 2 * Math.PI, true); }   // so overlaps never cancel
+    // a disc only where the stem ends (round tip, and the joint its children grow from); the pieces abut.
+    // Same winding as the outline, so overlaps never cancel.
+    if (b === 1) { path.moveTo(ex + er, ey); path.arc(ex, ey, er, 0, 2 * Math.PI, true); }
   }
 
   // "bradi.sh" in tiny letters along a leaf's midrib (a cubic), centred, reading left to right whichever way
@@ -412,7 +415,8 @@
     const s = zoom * dpr;
     ctx.setTransform(s, 0, 0, s, canvas.width / 2 - cam.x * s, canvas.height / 2 - cam.y * s);
 
-    for (let i = 0; i < SHADES; i++) buckets[i] = new Path2D();
+    buckets.fill(null);
+    const shown = [];
     for (const l of leaves) l.length = 0;
     blooms.length = 0;
     const v = view(40);
@@ -420,13 +424,21 @@
       for (let cx = Math.floor(v.x0 / CHUNK); cx <= Math.floor(v.x1 / CHUNK); cx++) {
         const ch = chunks.get(key(cx, cy));
         if (!ch) continue;
+        if (!ch.stems) ch.stems = new Array(SHADES).fill(null);
+        shown.push(ch);
         for (const p of ch.pts) {
+          if (p.kept) {                                      // finished and already in the chunk's paths
+            if (p.flower) blooms.push(p);
+            if (p.leaves) for (const l of p.leaves) leaves[l.col].push(l);
+            continue;
+          }
           const age = now - p.t0;
           if (age <= 0) { moving = true; continue; }
           const u = Math.min(1, age / p.dur);                    // a growing stem is the curve cut off at u (steady, no easing)
           if (u < 1) moving = true;
-          for (let k = 0; k < PIECES; k++) stemPiece(p, u * k / PIECES, u * (k + 1) / PIECES);
+          for (let k = 0; k < PIECES; k++) stemPiece(p, u * k / PIECES, u * (k + 1) / PIECES, u < 1 ? buckets : ch.stems);
           if (u >= 1) {
+            p.kept = true;
             if (p.flower) blooms.push(p);
             if (p.leaves) for (const l of p.leaves) leaves[l.col].push(l);
           }
@@ -435,7 +447,11 @@
     }
 
     ctx.setLineDash([]);
-    for (let i = 0; i < SHADES; i++) { ctx.fillStyle = stemShades[i]; ctx.fill(buckets[i], "nonzero"); }
+    for (let i = 0; i < SHADES; i++) {
+      ctx.fillStyle = stemShades[i];
+      for (const ch of shown) if (ch.stems[i]) ctx.fill(ch.stems[i]);
+      if (buckets[i]) ctx.fill(buckets[i]);
+    }
 
     // Leaves: a pointed blade with a slight curl, one fill per shade; then the veins (a midrib, and side veins
     // once there are enough pixels to show them).
