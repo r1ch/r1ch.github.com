@@ -63,8 +63,14 @@
       seed: hsl(R(42, 58), 90, R(72, 88)),
     };
   }
-  // stems: a few fixed shades x a few widths, one path each (muted greens that sit well on the dark ground)
-  const SHADES = 16, WIDTHS = 4;
+  // stems: a few fixed shades x a few widths, one path each (muted greens that sit well on the dark ground).
+  // Shade and width drift from stem to stem along a plant. Each stem is a filled outline whose width runs
+  // smoothly from its parent's to its own, drawn in a few pieces whose shades grade the same way, so there
+  // is no step where two stems meet.
+  const SHADES = 16;
+  const PIECES = 3, STEPS = 4;                  // pieces per stem (one shade each), outline points per piece
+  const FORK = 0.35;                            // radians a side shoot may leave its parent's end direction by (a first shoot: 0)
+  const CONE = 0.55;                            // first tries for a new shoot are within this many radians either side of straight on
   const stemShades = Array.from({ length: SHADES }, (_, i) => {
     const t = i / (SHADES - 1);
     return dull ? grey(10 + t * 60) : hsl(92 + t * 50, 38 + t * 14, 20 + (1 - Math.abs(t - 0.4) * 1.4) * 14);
@@ -176,30 +182,61 @@
     return { size, t1: t0 + 500 + Math.random() * 900, pal, layers, seeds, tip, spin: R(-0.9, 0.9) };
   }
 
+  // point and (unnormalised) direction at t along a stem's cubic
+  function stemAt(p, t) {
+    const k = 1 - t, a = k * k * k, b = 3 * k * k * t, c = 3 * k * t * t, d = t * t * t;
+    const e = k * k, f = 2 * k * t, g = t * t;
+    return [a * p.px + b * p.c1x + c * p.c2x + d * p.x, a * p.py + b * p.c1y + c * p.c2y + d * p.y,
+      e * (p.c1x - p.px) + f * (p.c2x - p.c1x) + g * (p.x - p.c2x), e * (p.c1y - p.py) + f * (p.c2y - p.c1y) + g * (p.y - p.c2y)];
+  }
+
   function plant(x, y, parent, now) {
     const gi = Math.floor(x / CELL), gj = Math.floor(y / CELL), cx = Math.floor(gi / N), cy = Math.floor(gj / N);
     let ch = chunks.get(key(cx, cy));
     if (!ch) chunks.set(key(cx, cy), ch = { cx, cy, grid: new Array(N * N), pts: [] });
     const text = onText(x, y);
-    const t0 = parent ? Math.max(parent.t0 + (inHome(x, y) ? STEP_HOME : STEP_AWAY), now) : now;
+    // each stem takes one generation step to grow and the next starts as it finishes, so a growing tip
+    // runs on along the plant without pausing or jumping ahead
+    const dur = inHome(x, y) ? STEP_HOME : STEP_AWAY;
+    const t0 = parent ? Math.max(parent.t0 + parent.dur, now) : now;
     const p = {
-      x, y, px: parent ? parent.x : x, py: parent ? parent.y : y, t0, queued: true,
+      x, y, px: parent ? parent.x : x, py: parent ? parent.y : y, t0, dur, queued: true,
       bend: R(-0.3, 0.3), leaves: null,
-      bucket: (Math.random() * SHADES | 0) * WIDTHS + ((Math.random() * 2 | 0) + (text ? 2 : 0)),   // width 1-2, or 3-4 on the text
       flower: null,
     };
-    if (parent) {                                            // stems curve: a control point pushed off the straight line
-      const dx = x - parent.x, dy = y - parent.y;
-      p.cx = (x + p.px) / 2 - dy * p.bend; p.cy = (y + p.py) / 2 + dx * p.bend;
-    } else { p.cx = x; p.cy = y; }
-    if (text || Math.random() < STRAY) p.flower = makeFlower(t0);
+    // shade and width: a small drift from the parent; width heads for 1-2 off the text and 3-4 on it
+    const wTarget = (text ? 3 : 1) + Math.random();
+    p.sh = parent ? Math.max(0, Math.min(SHADES - 1, parent.sh + R(-1.3, 1.3))) : R(0, SHADES - 1);
+    p.w = parent ? parent.w + Math.max(-0.5, Math.min(0.5, wTarget - parent.w)) : wTarget;
+    p.sh0 = parent ? parent.sh : p.sh; p.w0 = parent ? parent.w : p.w;
+    // Stems are cubics. Each starts in its parent's end direction (a side shoot a little off it), so the
+    // heading runs on smoothly from stem to stem; it then bends round to arrive heading somewhat past the
+    // straight line, so a shoot placed off to one side curls there like a tendril instead of kinking.
+    p.kids = 0;
+    if (parent) {
+      const dx = x - parent.x, dy = y - parent.y, d = Math.hypot(dx, dy), ca = Math.atan2(dy, dx);
+      const ta = parent.ta === undefined ? ca + p.bend * 2.5 : parent.ta;                 // from a seed: a random curve
+      let off = ca - ta; off = Math.atan2(Math.sin(off), Math.cos(off));
+      const fork = parent.kids++ ? Math.max(-FORK, Math.min(FORK, off)) : 0;             // the first shoot carries straight on
+      const sa = ta + fork, rest = off - fork;                                            // start heading; turn still to make
+      const ea = ca + rest * 0.6;                                                         // end heading
+      const l1 = d * (0.36 + 0.3 * Math.abs(rest) / Math.PI), l2 = d * 0.34;              // longer start handle for a sharp turn
+      p.c1x = p.px + Math.cos(sa) * l1; p.c1y = p.py + Math.sin(sa) * l1;
+      p.c2x = x - Math.cos(ea) * l2; p.c2y = y - Math.sin(ea) * l2;
+      p.ta = ea;
+    } else { p.c1x = p.c2x = x; p.c1y = p.c2y = y; }
+    if (text || Math.random() < STRAY) {
+      p.flower = makeFlower(t0);
+      p.flower.budA = (parent ? p.ta : R(0, 6.283)) + R(-0.9, 0.9);   // buds nod roughly the way the stem grew
+    }
     if (parent && Math.random() < (p.flower ? 0.3 : 0.5)) {   // many stems carry a leaf, some a pair
       const side = Math.random() < 0.5 ? 1 : -1, pair = Math.random() < 0.4, col = Math.random() * leafShades.length | 0;
-      const leaf = (t, sd) => {                              // t: how far along the stem it sprouts
-        const k = 1 - t, tx = 2 * k * (p.cx - p.px) + 2 * t * (x - p.cx), ty = 2 * k * (p.cy - p.py) + 2 * t * (y - p.cy);
+      const leaf = (t, sd, ink = Math.random() < (cfg.ink || 0.01)) => {  // t: how far along the stem it sprouts; ink: 1 in 100 is signed
+        const [lx, ly, tx, ty] = stemAt(p, t);
         return {
-          x: k * k * p.px + 2 * k * t * p.cx + t * t * x, y: k * k * p.py + 2 * k * t * p.cy + t * t * y,
-          a: Math.atan2(ty, tx) + sd * R(0.55, 1.1), len: R(4.5, 8.5), w: R(0.3, 0.44), bow: -sd * R(0.02, 0.2), col, t0: t0 + STEM_MS + R(0, 300),
+          x: lx, y: ly,
+          a: Math.atan2(ty, tx) + sd * R(0.55, 1.1), len: ink ? R(8, 9.5) : R(4.5, 8.5), w: R(0.3, 0.44), bow: -sd * R(0.02, 0.2), col, t0: t0 + STEM_MS + R(0, 300),
+          ink,
         };
       };
       p.leaves = pair ? [leaf(R(0.3, 0.45), side), leaf(R(0.5, 0.65), -side)] : [leaf(R(0.35, 0.6), side)];
@@ -216,7 +253,8 @@
       const i = Math.random() * queue.length | 0, parent = queue[i];
       let placed = false;
       for (let j = 0; j < TRIES; j++) {
-        const a = 2 * Math.PI * Math.random(), r = Math.sqrt(Math.random() * 3 * R2 + R2);
+        const spread = j < TRIES / 2 ? CONE : Math.PI;           // straight-ish first, then anywhere (so the space still fills)
+        const a = (parent.ta === undefined ? 0 : parent.ta) + (parent.ta === undefined ? Math.PI : spread) * (2 * Math.random() - 1), r = Math.sqrt(Math.random() * 3 * R2 + R2);
         const x = parent.x + r * Math.cos(a), y = parent.y + r * Math.sin(a);
         if (x >= b.x0 && x < b.x1 && y >= b.y0 && y < b.y1 && far(x, y)) { plant(x, y, parent, now); placed = true; break; }
       }
@@ -276,7 +314,7 @@
 
   // ---- drawing ------------------------------------------------------------------------------------------
   const ease = t => t <= 0 ? 0 : t >= 1 ? 1 : ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;   // cubic in-out
-  const buckets = Array.from({ length: SHADES * WIDTHS }, () => []);
+  const buckets = new Array(SHADES);            // one path per stem shade, rebuilt every frame
   const blooms = [];
 
   const leaves = [[], [], []];
@@ -294,6 +332,78 @@
     }
   }
 
+  // One piece of a stem, B(a)..B(b) of its quadratic, as a filled outline (half the width either side of the
+  // curve) plus a disc at its end, so pieces and stems meet with round, seamless joints.
+  const side = new Float64Array(2 * (STEPS + 1) * 2);
+  function stemPiece(p, a, b) {
+    const m = (a + b) / 2, path = buckets[Math.round(p.sh0 + (p.sh - p.sh0) * m)];
+    let n = 0, ex = 0, ey = 0, er = 0;
+    for (let i = 0; i <= STEPS; i++) {
+      const t = a + (b - a) * i / STEPS;
+      const q = stemAt(p, t), x = q[0], y = q[1];
+      let dx = q[2], dy = q[3];
+      const dl = Math.hypot(dx, dy) || 1, r = (p.w0 + (p.w - p.w0) * t) / 2;
+      dx /= dl; dy /= dl;
+      side[n++] = x - dy * r; side[n++] = y + dx * r; side[n++] = x + dy * r; side[n++] = y - dx * r;
+      ex = x; ey = y; er = r;
+    }
+    path.moveTo(side[0], side[1]);
+    for (let i = 4; i < n; i += 4) path.lineTo(side[i], side[i + 1]);
+    for (let i = n - 2; i >= 0; i -= 4) path.lineTo(side[i], side[i + 1]);
+    path.closePath();
+    path.moveTo(ex + er, ey); path.arc(ex, ey, er, 0, 2 * Math.PI, true);           // same winding as the outline,
+    if (a === 0) { path.moveTo(p.px + p.w0 / 2, p.py); path.arc(p.px, p.py, p.w0 / 2, 0, 2 * Math.PI, true); }   // so overlaps never cancel
+  }
+
+  // "bradi.sh" in tiny letters along a leaf's midrib (a cubic), centred, reading left to right whichever way
+  // the leaf points. Letters are drawn at 10px and scaled down: canvas fonts misbehave below ~1px.
+  const INK = "bradi.sh", INK_SIZE = 0.72, INK_ZOOM = 3;
+  const inked = [];
+  function inkMidrib(g, s) {
+    const N = 40, xs = [], ys = [], len = [0];
+    for (let i = 0; i <= N; i++) {
+      const t = i / N, m = 1 - t;
+      xs.push(m * m * m * g[0] + 3 * m * m * t * g[2] + 3 * m * t * t * g[4] + t * t * t * g[6]);
+      ys.push(m * m * m * g[1] + 3 * m * m * t * g[3] + 3 * m * t * t * g[5] + t * t * t * g[7]);
+      if (i) len.push(len[i - 1] + Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]));
+    }
+    const flip = xs[N] < xs[0];                               // pointing left: write from the tip back
+    const at = d => {                                          // point + direction at arc length d from the start
+      if (flip) d = len[N] - d;
+      let i = 1; while (i < N && len[i] < d) i++;
+      const f = (d - len[i - 1]) / (len[i] - len[i - 1] || 1), x = xs[i - 1] + (xs[i] - xs[i - 1]) * f, y = ys[i - 1] + (ys[i] - ys[i - 1]) * f;
+      return [x, y, Math.atan2(ys[i] - ys[i - 1], xs[i] - xs[i - 1]) + (flip ? Math.PI : 0)];
+    };
+    ctx.save();
+    ctx.font = "600 10px Georgia, serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const k = INK_SIZE / 10, widths = [...INK].map(c => ctx.measureText(c).width * k), total = widths.reduce((a, b) => a + b, 0);
+    let d = (len[N] - total) / 2;
+    ctx.fillStyle = dull ? grey(92) : "hsla(80, 70%, 86%, 0.95)";
+    const c = ctx.getTransform();
+    for (let j = 0; j < INK.length; j++) {
+      const [x, y, a] = at(d + widths[j] / 2);
+      ctx.setTransform(c); ctx.translate(x, y); ctx.rotate(a); ctx.scale(k, k);
+      ctx.fillText(INK[j], 0, -0.4 / k);                        // just above the rib, as if written on it
+      d += widths[j];
+    }
+    ctx.restore();
+  }
+
+  // A bud: a teardrop, round at the stem end and pointed the way it nods, with a little dark tip.
+  function drawBud(p, g) {
+    const f = p.flower, r = 1.5 * g, dx = Math.cos(f.budA), dy = Math.sin(f.budA), nx = -dy, ny = dx;
+    const cx = p.x + dx * r * 0.5, cy = p.y + dy * r * 0.5, tx = cx + dx * r * 2.3, ty = cy + dy * r * 2.3;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.bezierCurveTo(cx + dx * r * 1.3 + nx * r * 0.55, cy + dy * r * 1.3 + ny * r * 0.55, cx + dx * r * 0.6 + nx * r * 1.05, cy + dy * r * 0.6 + ny * r * 1.05, cx + nx * r, cy + ny * r);
+    ctx.arc(cx, cy, r, f.budA + Math.PI / 2, f.budA - Math.PI / 2);
+    ctx.bezierCurveTo(cx + dx * r * 0.6 - nx * r * 1.05, cy + dy * r * 0.6 - ny * r * 1.05, cx + dx * r * 1.3 - nx * r * 0.55, cy + dy * r * 1.3 - ny * r * 0.55, tx, ty);
+    ctx.fillStyle = f.pal.outer; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(tx, ty);                        // a darker streak towards the tip, where the petals twist shut
+    ctx.quadraticCurveTo(cx + dx * r * 1.2 + nx * r * 0.15, cy + dy * r * 1.2 + ny * r * 0.15, cx + dx * r * 0.2, cy + dy * r * 0.2);
+    ctx.strokeStyle = f.pal.deep; ctx.lineWidth = 0.18 * r; ctx.lineCap = "round"; ctx.stroke();
+  }
+
   function draw(now) {
     let moving = false;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -302,7 +412,7 @@
     const s = zoom * dpr;
     ctx.setTransform(s, 0, 0, s, canvas.width / 2 - cam.x * s, canvas.height / 2 - cam.y * s);
 
-    for (const b of buckets) b.length = 0;
+    for (let i = 0; i < SHADES; i++) buckets[i] = new Path2D();
     for (const l of leaves) l.length = 0;
     blooms.length = 0;
     const v = view(40);
@@ -313,13 +423,10 @@
         for (const p of ch.pts) {
           const age = now - p.t0;
           if (age <= 0) { moving = true; continue; }
-          if (age < STEM_MS) {
-            moving = true;
-            const u = ease(age / STEM_MS);              // quadratic curve cut off at u: end point B(u), control lerp(p0, c, u)
-            const ex = (1 - u) * (1 - u) * p.px + 2 * u * (1 - u) * p.cx + u * u * p.x, ey = (1 - u) * (1 - u) * p.py + 2 * u * (1 - u) * p.cy + u * u * p.y;
-            buckets[p.bucket].push(p.px, p.py, p.px + (p.cx - p.px) * u, p.py + (p.cy - p.py) * u, ex, ey);
-          } else {
-            buckets[p.bucket].push(p.px, p.py, p.cx, p.cy, p.x, p.y);
+          const u = Math.min(1, age / p.dur);                    // a growing stem is the curve cut off at u (steady, no easing)
+          if (u < 1) moving = true;
+          for (let k = 0; k < PIECES; k++) stemPiece(p, u * k / PIECES, u * (k + 1) / PIECES);
+          if (u >= 1) {
             if (p.flower) blooms.push(p);
             if (p.leaves) for (const l of p.leaves) leaves[l.col].push(l);
           }
@@ -327,17 +434,8 @@
       }
     }
 
-    ctx.lineCap = "round";
     ctx.setLineDash([]);
-    for (let i = 0; i < buckets.length; i++) {
-      const b = buckets[i];
-      if (!b.length) continue;
-      ctx.beginPath();
-      for (let j = 0; j < b.length; j += 6) { ctx.moveTo(b[j], b[j + 1]); ctx.quadraticCurveTo(b[j + 2], b[j + 3], b[j + 4], b[j + 5]); }
-      ctx.strokeStyle = stemShades[i / WIDTHS | 0];
-      ctx.lineWidth = i % WIDTHS + 1;
-      ctx.stroke();
-    }
+    for (let i = 0; i < SHADES; i++) { ctx.fillStyle = stemShades[i]; ctx.fill(buckets[i], "nonzero"); }
 
     // Leaves: a pointed blade with a slight curl, one fill per shade; then the veins (a midrib, and side veins
     // once there are enough pixels to show them).
@@ -358,6 +456,7 @@
         ctx.moveTo(l.x, l.y);
         ctx.bezierCurveTo(ax + nx * w * 1.3, ay + ny * w * 1.3, bx + nx * w * 0.7, by + ny * w * 0.7, tx, ty);
         ctx.bezierCurveTo(bx - nx * w * 0.7, by - ny * w * 0.7, ax - nx * w * 1.3, ay - ny * w * 1.3, l.x, l.y);
+        if (l.ink && s >= INK_ZOOM) inked.push([l.x, l.y, ax, ay, bx, by, tx, ty, veinShades[i]]);
         if (midrib) geo.push(l.x, l.y, ax, ay, bx, by, tx, ty, nx * w, ny * w);
       }
       ctx.fillStyle = leafShades[i];
@@ -366,7 +465,7 @@
       ctx.strokeStyle = veinShades[i];
       ctx.beginPath();
       for (let j = 0; j < geo.length; j += 10) { ctx.moveTo(geo[j], geo[j + 1]); ctx.bezierCurveTo(geo[j + 2], geo[j + 3], geo[j + 4], geo[j + 5], geo[j + 6], geo[j + 7]); }
-      ctx.lineWidth = 0.32; ctx.stroke();
+      ctx.lineWidth = 0.32; ctx.stroke();      // (a signed leaf keeps its midrib too: the letters sit on it)
       if (!sideVeins) continue;
       ctx.beginPath();
       for (let j = 0; j < geo.length; j += 10) {
@@ -385,6 +484,9 @@
       }
       ctx.lineWidth = 0.16; ctx.stroke();
     }
+
+    for (const g of inked) inkMidrib(g, s);
+    inked.length = 0;
 
     if (!dull) {                                           // first a soft glow under the big ones, so it never veils a neighbour's petals
       for (const p of blooms) {
@@ -417,9 +519,7 @@
           for (const q of f.seeds) { const sx = p.x + q[0] * sr, sy = p.y + q[1] * sr; ctx.moveTo(sx + sd, sy); ctx.arc(sx, sy, sd, 0, 6.283); }
           ctx.fill();
         }
-      } else if (bud > 0) {                                // a bud first
-        ctx.fillStyle = f.pal.outer; ctx.beginPath(); ctx.arc(p.x, p.y, 1.8 * bud, 0, 6.283); ctx.fill();
-      }
+      } else if (bud > 0) drawBud(p, bud);                      // a bud first
     }
 
     if (!dull) {                                           // soft vignette so the edges fall away
