@@ -6,7 +6,7 @@ GitHub Pages site, served straight from `master` (no build step). Mostly old exp
 
 | Path | What |
 |---|---|
-| `/` (`index.html`) | Flowers: an endless field that spells "bradish". `/?hello` spells something else; `/?victorian` (or `/?victorian&hello`) paints it as a Victorian watercolour on vellum. Code: `js/flowers.js` |
+| `/` (`index.html`) | Flowers: an endless field that spells "bradish". `/?hello` spells something else; `/?victorian` (or `/?victorian&hello`) paints it as a Victorian watercolour on vellum; `/?morris` draws it as William Morris-style wallpaper. Code: `js/flowers.js` |
 | `/flowers` | Same page (kept so old links work) |
 | `/tiles` | The previous homepage: drifting d3 tiles |
 | `404.html` | Flowers again, grey, spelling "404" |
