@@ -11,7 +11,10 @@
  *
  * Styles: how the field looks is one entry in STYLES (colours, timing, how flowers and leaves are made and
  * painted); the engine below only ever asks the current style. Every style with a `ui` is in the picker
- * (bottom left), in table order; the first is the default. To add one, add an entry.
+ * (bottom left), in table order; the first is the default. To add one, add an entry. Picking a style restyles
+ * the field in place (applyStyle): the same plants, stems and leaf positions; flowers, leaf sizes and stem widths
+ * are redone from draws stored on each sample (a flower is seeded by its sample, so going back brings the same
+ * flowers back), with a short crossfade. The address is updated, so a reload keeps the style.
  *   victorian  pastel watercolour washes on vellum, dainty flowers, unhurried growth
  *   neon       the original night garden, turned up: saturated colour, additive glows, bright rims
  *   morris     William Morris-style wallpaper: indigo ground, two-tone acanthus leaves, outlined flowers
@@ -25,10 +28,21 @@
   "use strict";
 
   // ---- small helpers ------------------------------------------------------------------------------------
-  const R = (a, b) => a + Math.random() * (b - a);
+  // rnd is Math.random, except while a flower is being made: then it is a generator seeded from the sample
+  // (withSeed), so a sample always gets the same flower from a style, and switching back brings it back.
+  let rnd = Math.random;
+  function withSeed(seed, fn) {
+    let a = seed >>> 0;
+    rnd = () => {                                  // mulberry32
+      a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    try { return fn(); } finally { rnd = Math.random; }
+  }
+  const R = (a, b) => a + rnd() * (b - a);
   const hsl = (h, s, l, a) => `hsla(${h | 0},${s | 0}%,${l | 0}%,${a === undefined ? 1 : a})`;
   const grey = (l, a) => `hsla(0,0%,${l | 0}%,${a === undefined ? 1 : a})`;
-  const pick = list => { let w = Math.random() * list.reduce((n, f) => n + f[0], 0); for (const x of list) if ((w -= x[0]) < 0) return x; return list[0]; };
+  const pick = list => { let w = rnd() * list.reduce((n, f) => n + f[0], 0); for (const x of list) if ((w -= x[0]) < 0) return x; return list[0]; };
   const ranged = f => [R(f[0][0], f[0][1]), R(f[1][0], f[1][1]), R(f[2][0], f[2][1])];   // [hue, sat, light] from [range, range, range]
   const ease = t => t <= 0 ? 0 : t >= 1 ? 1 : ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;   // cubic in-out
   // stems come in SHADES fixed shades; a style gives a function of t (0..1) and the hump peaks a little below the middle
@@ -88,8 +102,8 @@
   // ---- classic flowers (neon and dull): 4-9 petals, an inner ring, a dark heart with a gold centre -------
   function classicFlower(palette) {
     return (t0, big) => {
-      const u = Math.random(), size = 2 + 9.5 * Math.pow(u, 1.5);          // mostly small, the odd big one
-      const pal = palette(), n = 4 + (Math.random() * 6 | 0);              // 4-9 petals
+      const u = rnd(), size = 2 + 9.5 * Math.pow(u, 1.5);          // mostly small, the odd big one
+      const pal = palette(), n = 4 + (rnd() * 6 | 0);              // 4-9 petals
       const rot = R(0, 6.283);
       const shape = Math.min(R(0.32, 0.6), 2.6 / n);                        // fat or slim, but never so fat that petals merge
       const tip = R(0.25, 0.8);                                             // pointed or rounded petal tips
@@ -103,8 +117,8 @@
       };
       const layers = [ring(n, 1, 0, pal.outer)];
       // the inner ring has the same count and sits in the gaps of the outer one
-      if (size > 3.5 || Math.random() < 0.5) layers.push(ring(n, R(0.56, 0.68), 3.1415 / n, pal.inner));
-      return { size, t1: t0 + OPEN[0] + Math.random() * OPEN[1], pal, layers, seeds: seedRing(5 + (Math.random() * 3 | 0), 0.6, 0.72), tip, spin: R(-0.9, 0.9) };
+      if (size > 3.5 || rnd() < 0.5) layers.push(ring(n, R(0.56, 0.68), 3.1415 / n, pal.inner));
+      return { size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, seeds: seedRing(5 + (rnd() * 3 | 0), 0.6, 0.72), tip, spin: R(-0.9, 0.9) };
     };
   }
   // edge(f, s) -> [colour, width] or null: how each petal layer is outlined
@@ -174,12 +188,12 @@
     };
   }
   function makeDainty(t0, big) {     // big: on the text, where they must be large enough to spell the word
-    const u = Math.random(), size = big ? 2.6 + 4 * Math.pow(u, 1.5) : 1.4 + 4.6 * u * u, r = Math.random();
-    let kind = "plain", fi, n = 5 + (Math.random() * 4 | 0), shape = R(0.32, 0.55), tip = R(0.4, 0.9), lens = null, eye = 1;
+    const u = rnd(), size = big ? 2.6 + 4 * Math.pow(u, 1.5) : 1.4 + 4.6 * u * u, r = rnd();
+    let kind = "plain", fi, n = 5 + (rnd() * 4 | 0), shape = R(0.32, 0.55), tip = R(0.4, 0.9), lens = null, eye = 1;
     if (r < 0.18) { kind = "forget"; fi = 3; n = 5; shape = 0.5; tip = 0.95; }                        // forget-me-not
-    else if (r < 0.32) { kind = "daisy"; fi = 6; n = 12 + (Math.random() * 5 | 0); shape = R(0.16, 0.2); tip = 0.4; eye = 1.4; }
+    else if (r < 0.32) { kind = "daisy"; fi = 6; n = 12 + (rnd() * 5 | 0); shape = R(0.16, 0.2); tip = 0.4; eye = 1.4; }
     else if (r < 0.42) { kind = "violet"; fi = 7; n = 5; shape = 0.5; tip = 0.8; lens = [1.3, 0.9, 0.82, 0.82, 0.9]; }
-    else if (r < 0.55) { kind = "rosette"; fi = [0, 1, 5][Math.random() * 3 | 0]; n = 5; shape = 0.52; tip = 0.92; }
+    else if (r < 0.55) { kind = "rosette"; fi = [0, 1, 5][rnd() * 3 | 0]; n = 5; shape = 0.52; tip = 0.92; }
     shape = Math.min(shape, 2.6 / n);
     const pal = wash(fi), rot = R(0, 6.283);
     const ring = (scale, off, fill) => {
@@ -191,9 +205,9 @@
     };
     const layers = [ring(1, 0, pal.outer)];
     if (kind === "rosette") layers.push(ring(0.7, 0.63, pal.outer), ring(0.45, 1.26, pal.outer));     // glazes deepen to the heart
-    else if (kind === "plain" && Math.random() < 0.5) layers.push(ring(R(0.56, 0.68), 3.1415 / n, pal.inner));
-    const seeds = kind === "daisy" || kind === "plain" ? seedRing(5 + (Math.random() * 3 | 0), 0.6, 0.75) : [[0, 0]];
-    return { size, t1: t0 + OPEN[0] + Math.random() * OPEN[1], pal, layers, seeds, tip, spin: R(-0.6, 0.6), eye, rosette: kind === "rosette",
+    else if (kind === "plain" && rnd() < 0.5) layers.push(ring(R(0.56, 0.68), 3.1415 / n, pal.inner));
+    const seeds = kind === "daisy" || kind === "plain" ? seedRing(5 + (rnd() * 3 | 0), 0.6, 0.75) : [[0, 0]];
+    return { size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, seeds, tip, spin: R(-0.6, 0.6), eye, rosette: kind === "rosette",
       drift: [R(-0.4, 0.4), R(-0.4, 0.4)] };                       // where its glow (the bleed) sits, in flower sizes
   }
   function paintDainty(p, f, o, raw, s) {
@@ -217,14 +231,14 @@
     madder: [[2, 10], [55, 65], [45, 52]], rose: [[350, 358], [45, 58], [66, 74]], weld: [[40, 47], [68, 80], [58, 64]],
     cream: [[40, 48], [50, 62], [86, 90]], blue: [[204, 214], [32, 44], [62, 70]], pink: [[352, 360], [40, 55], [80, 85]],
   };
-  const any = list => list[Math.random() * list.length | 0];
+  const any = list => list[rnd() * list.length | 0];
   function block(outer, inner) {             // flat colours, a dark line of the same hue, weld centre with dark seeds
     const [h, sat, l] = ranged(DYES[outer]), [h2, s2, l2] = ranged(DYES[inner]);
     return { outer: hsl(h, sat, l), inner: hsl(h2, s2, l2), deep: hsl(h, sat, Math.max(14, l - 36)), line: hsl(h - 4, sat * 0.9, Math.max(13, l - 38)),
       centre: hsl(R(40, 47), 75, R(56, 62)), seed: hsl(18, 40, 20) };
   }
   function makeMorris(t0, big) {
-    const u = Math.random(), size = big ? 4.2 + 4 * Math.pow(u, 1.5) : 2 + 4 * u * u, r = Math.random(), rot = R(0, 6.283);
+    const u = rnd(), size = big ? 4.2 + 4 * Math.pow(u, 1.5) : 2 + 4 * u * u, r = rnd(), rot = R(0, 6.283);
     const ring = (n, len, w, tip, off, fill, stripes) => {
       const petals = [];
       for (let i = 0; i < n; i++) petals.push({ a: rot + off + (i + R(-0.04, 0.04)) * 6.283 / n, len: len * R(0.96, 1.04), w, t: tip, bow: R(-0.03, 0.03) });
@@ -232,7 +246,7 @@
     };
     let kind, pal, layers, eye = 0;
     if (r < 0.3) {
-      kind = "rosette"; const n = 5 + (Math.random() * 3 | 0), w = Math.min(0.55, 2.6 / n);
+      kind = "rosette"; const n = 5 + (rnd() * 3 | 0), w = Math.min(0.55, 2.6 / n);
       pal = block(any(["madder", "rose", "blue", "weld"]), any(["cream", "pink", "weld"]));
       layers = [ring(n, 1, w, 0.9, 0, pal.outer, true), ring(n, 0.6, w, 0.85, Math.PI / n, pal.inner, false)]; eye = 0.3;
     } else if (r < 0.55) {
@@ -240,13 +254,13 @@
       layers = [{ petals: [-0.42, 0.42].map(a => ({ a, len: 0.95, w: 0.46, t: 0.2, bow: a * 0.12 })), fill: pal.outer, stripes: true },
         { petals: [{ a: 0, len: 1.08, w: 0.5, t: 0.15, bow: 0 }], fill: pal.inner, stripes: true }];
     } else if (r < 0.75) {
-      kind = "daisy"; const n = 13 + (Math.random() * 4 | 0); pal = block("cream", "weld");
+      kind = "daisy"; const n = 13 + (rnd() * 4 | 0); pal = block("cream", "weld");
       layers = [ring(n, 1, 0.17, 0.45, 0, pal.outer, false)]; eye = 0.38;
     } else {
-      kind = "star"; pal = block(Math.random() < 0.6 ? "blue" : "pink", "cream");
+      kind = "star"; pal = block(rnd() < 0.6 ? "blue" : "pink", "cream");
       layers = [ring(5, 1, 0.5, 0.95, 0, pal.outer, false)]; eye = 0.22;
     }
-    return { size: kind === "star" ? size * 0.7 : size, t1: t0 + OPEN[0] + Math.random() * OPEN[1], pal, layers, kind, eye, spin: kind === "tulip" ? 0 : R(-0.5, 0.5) };
+    return { size: kind === "star" ? size * 0.7 : size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, kind, eye, spin: kind === "tulip" ? 0 : R(-0.5, 0.5) };
   }
   function paintMorris(p, f, o, raw, s) {    // each layer's outline first, then its colour fades in
     const fillA = Math.max(0, Math.min(1, (raw - 0.15) / 0.5)), lw = Math.min(f.size * 0.11, Math.max(0.28, 0.9 / zoom));
@@ -376,8 +390,7 @@
   const query = location.search ? decodeURIComponent(location.search.slice(1)) : "";
   const parts = query ? query.split("&") : [];
   const textParts = parts.filter(p => !STYLES[p]);
-  const style = cfg.dull ? "dull" : STYLES[cfg.style] ? cfg.style : parts.find(p => PICKER.includes(p)) || PICKER[0];
-  const ST = STYLES[style];
+  const firstStyle = cfg.dull ? "dull" : STYLES[cfg.style] ? cfg.style : parts.find(p => PICKER.includes(p)) || PICKER[0];
   const text = cfg.text || textParts.join("&") || "bradish";
 
   // ---- tunables -----------------------------------------------------------------------------------------
@@ -388,43 +401,53 @@
   const ZOOM_OUT = 0.35, ZOOM_IN = 10;           // how far the user may zoom (css px per world unit)
   const GROW_MARGIN = 160;      // plant this far beyond the viewport, so slow scrolling reveals finished flowers
   const SNAP = 64;              // only re-plan growth when the view has moved this far
-  const [STEP_HOME, STEP_AWAY] = ST.time.step;
-  const STEM_MS = ST.time.stem, BLOOM_MS = ST.time.bloom, BUD_MS = ST.time.bud, LEAF_MS = ST.time.leaf, OPEN = ST.time.open;
   // Stems: shade and width drift from stem to stem along a plant. Each stem is a filled outline whose width runs
   // smoothly from its parent's to its own, drawn in a few pieces whose shades grade the same way, so there
   // is no step where two stems meet.
   const PIECES = 3, STEPS = 4;                  // pieces per stem (one shade each), outline points per piece
   const FORK = 0.35;                            // radians a side shoot may leave its parent's end direction by (a first shoot: 0)
   const CONE = 0.55;                            // first tries for a new shoot are within this many radians either side of straight on
-  const LEAF_COLOURS = ST.leaves.length;
   const leafPaths = () => Array.from({ length: LEAF_COLOURS }, () => [new Path2D(), new Path2D(), new Path2D(), new Path2D()]);   // blade, rib, side veins, shaded half
 
-  document.documentElement.style.background = ST.bg;
-  document.body.style.background = ST.bg;
+  // The current style, and what the engine reads from it. The style can change while the page runs
+  // (applyStyle, further down), so these are set here and nowhere else.
+  let style, ST, STEP_HOME, STEP_AWAY, STEM_MS, BLOOM_MS, BUD_MS, LEAF_MS, OPEN, LEAF_COLOURS;
+  function useStyle(name) {
+    style = name; ST = STYLES[name];
+    [STEP_HOME, STEP_AWAY] = ST.time.step;
+    STEM_MS = ST.time.stem; BLOOM_MS = ST.time.bloom; BUD_MS = ST.time.bud; LEAF_MS = ST.time.leaf; OPEN = ST.time.open;
+    LEAF_COLOURS = ST.leaves.length;
+  }
+  useStyle(firstStyle);
 
   // ---- canvas + camera ----------------------------------------------------------------------------------
   const canvas = document.createElement("canvas");
   canvas.style.cssText = "position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab";
   (document.getElementById("app") || document.body).appendChild(canvas);
   // soft vignette so the edges fall away: a fixed overlay, so the canvas never repaints it
-  const shade = ST.vignette ? document.createElement("div") : null;
-  if (shade) { shade.style.cssText = "position:fixed;inset:0;pointer-events:none"; canvas.after(shade); }
+  const shade = document.createElement("div");
+  shade.style.cssText = "position:fixed;inset:0;pointer-events:none"; canvas.after(shade);
   const ctx = canvas.getContext("2d");
 
-  // the style picker, bottom left: plain links that keep the text (?neon&hello), styled to suit the page
-  if (ST.ui) {
-    const u = ST.ui, css = document.createElement("style");
-    css.textContent = `.fl-styles{position:fixed;z-index:1;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:2px;padding:3px;border-radius:999px;background:${u.bg};border:1px solid ${u.line};-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font:${u.font};line-height:1;user-select:none;-webkit-user-select:none}
+  // the style picker, bottom left: links that keep the text (?neon&hello), styled to suit the page. A plain click
+  // restyles the field in place and updates the address; the links still work as links (new tab, no script).
+  const pickerCss = u => `.fl-styles{position:fixed;z-index:1;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:2px;padding:3px;border-radius:999px;background:${u.bg};border:1px solid ${u.line};-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font:${u.font};line-height:1;user-select:none;-webkit-user-select:none}
 .fl-styles a{color:${u.fg};text-decoration:none;padding:8px 12px;border-radius:999px;opacity:.6;transition:opacity .2s,background-color .2s}
 .fl-styles a:hover,.fl-styles a:focus-visible{opacity:1;outline:none;background:${u.on}}
 .fl-styles a[aria-current]{opacity:1;background:${u.on};text-shadow:${u.glow || "none"}}`;
-    document.head.appendChild(css);
-    const nav = document.createElement("nav");
+  const pickerStyle = ST.ui ? document.createElement("style") : null, nav = ST.ui ? document.createElement("nav") : null;
+  if (nav) {
+    document.head.appendChild(pickerStyle);
     nav.className = "fl-styles"; nav.setAttribute("aria-label", "style");
     for (const name of PICKER) {
       const a = document.createElement("a"), q = [name === PICKER[0] ? "" : name, ...textParts.map(encodeURIComponent)].filter(Boolean).join("&");
-      a.textContent = name; a.href = location.pathname + (q ? "?" + q : "");
-      if (name === style) a.setAttribute("aria-current", "page");
+      a.textContent = name; a.href = location.pathname + (q ? "?" + q : ""); a.dataset.style = name;
+      a.addEventListener("click", e => {
+        if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;     // new tab / window: a normal link
+        e.preventDefault();
+        history.replaceState(history.state, "", a.href);
+        applyStyle(name);
+      });
       nav.appendChild(a);
     }
     document.body.appendChild(nav);
@@ -433,7 +456,8 @@
   // Paper (the painted styles): a tile with soft mottling, faint fibres and grain, made once and laid under each frame.
   // It is fixed to the world, so it pans and zooms with the flowers like the sheet they are painted on; one paper
   // pixel is one device pixel at the starting zoom (paper.k, world units per paper pixel, set on the first resize).
-  const paper = ST.paper ? (() => {
+  let paper = null, paperK = 0;
+  function makePaper() {
     const P = ST.paper, rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a === undefined ? R(c[3], c[4]) : a})`;
     const n = 512, c = document.createElement("canvas"), g = c.getContext("2d");
     c.width = c.height = n;
@@ -461,8 +485,27 @@
     const img = g.getImageData(0, 0, n, n), d = img.data;    // grain
     for (let i = 0; i < d.length; i += 4) { const k = (Math.random() - 0.5) * 9; d[i] += k; d[i + 1] += k; d[i + 2] += k; }
     g.putImageData(img, 0, 0);
-    return { n, k: 0, pat: ctx.createPattern(c, "repeat") };
-  })() : null;
+    return { n, pat: ctx.createPattern(c, "repeat") };
+  }
+
+  // Everything round the flowers that comes from the style: ground, paper, vignette, picker.
+  function dress() {
+    document.documentElement.style.background = ST.bg;
+    document.body.style.background = ST.bg;
+    paper = ST.paper ? makePaper() : null;
+    shadeBg();
+    if (nav) {
+      pickerStyle.textContent = pickerCss(ST.ui);
+      for (const a of nav.children) {
+        if (a.dataset.style === style) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+      }
+    }
+  }
+  function shadeBg() {
+    if (!ST.vignette) { shade.style.background = "none"; return; }
+    const [r, g, b, a, clear, full] = ST.vignette;
+    shade.style.background = `radial-gradient(circle at 50% 50%, rgba(${r},${g},${b},0) ${Math.min(vw, vh) * clear}px, rgba(${r},${g},${b},${a}) ${Math.hypot(vw, vh) * full}px)`;
+  }
 
   let vw = 0, vh = 0, dpr = 1, zoom = 1;       // viewport (css px), device pixel ratio, css px per world unit
   let base = 1, uz = cfg.zoom || 1;            // zoom = base (from the viewport width) x uz (the user's zoom)
@@ -479,11 +522,8 @@
     base = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, vw / HOME.w));
     zoom = zt = clampZoom(base * uz); uz = zoom / base;
     canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
-    if (paper && !paper.k) paper.k = 1 / (zoom * dpr);
-    if (shade) {
-      const [r, g, b, a, clear, full] = ST.vignette;
-      shade.style.background = `radial-gradient(circle at 50% 50%, rgba(${r},${g},${b},0) ${Math.min(vw, vh) * clear}px, rgba(${r},${g},${b},${a}) ${Math.hypot(vw, vh) * full}px)`;
-    }
+    if (!paperK) paperK = 1 / (zoom * dpr);
+    shadeBg();
     dirty = true;
   }
   const clampZoom = z => Math.max(ZOOM_OUT, Math.min(ZOOM_IN, z));
@@ -553,6 +593,21 @@
       e * (p.c1x - p.px) + f * (p.c2x - p.c1x) + g * (p.x - p.c2x), e * (p.c1y - p.py) + f * (p.c2y - p.c1y) + g * (p.y - p.c2y)];
   }
 
+  // What the style decides about a sample, from its style-free draws (used when planting and when restyling).
+  function makeFlower(p, t0, text) {
+    const f = withSeed(p.seed, () => ST.flower(t0, text));
+    f.budA = p.budA;
+    return f;
+  }
+  function shapeLeaf(l) {
+    const LF = ST.leaf, at = (r, u) => r[0] + u * (r[1] - r[0]);
+    l.col = l.cu * LEAF_COLOURS | 0;
+    l.len = l.ink ? at([8, 9.5], l.u[0]) : at(LF.len, l.u[0]);
+    l.w = at(LF.w, l.u[1]);
+    l.lobes = LF.lobes ? at(LF.lobes, l.u[2]) : 0;
+    return l;
+  }
+
   function plant(x, y, parent, now) {
     const gi = Math.floor(x / CELL), gj = Math.floor(y / CELL), cx = Math.floor(gi / N), cy = Math.floor(gj / N);
     let ch = chunks.get(key(cx, cy));
@@ -566,6 +621,9 @@
       x, y, px: parent ? parent.x : x, py: parent ? parent.y : y, t0, dur, queued: true,
       bend: R(-0.3, 0.3), leaves: null,
       flower: null,
+      // style-free draws, so a restyle can redo what the style decides: the flower's seed, the stray-flower
+      // lottery ticket, which way a bud nods
+      seed: Math.random() * 4294967296 >>> 0, lot: Math.random(), budA: 0,
     };
     // shade and width: a small drift from the parent; width heads for the style's on- or off-text width
     const wTarget = (text ? ST.stemW[0] : ST.stemW[1]) + ST.stemW[2] * Math.random();
@@ -588,19 +646,17 @@
       p.c2x = x - Math.cos(ea) * l2; p.c2y = y - Math.sin(ea) * l2;
       p.ta = ea;
     } else { p.c1x = p.c2x = x; p.c1y = p.c2y = y; }
-    if (text || Math.random() < ST.stray) {
-      p.flower = ST.flower(t0, text);
-      p.flower.budA = (parent ? p.ta : R(0, 6.283)) + R(-0.9, 0.9);   // buds nod roughly the way the stem grew
-    }
+    p.budA = (parent ? p.ta : R(0, 6.283)) + R(-0.9, 0.9);   // buds nod roughly the way the stem grew
+    if (text || p.lot < ST.stray) p.flower = makeFlower(p, t0, text);
     if (parent && Math.random() < ST.leafP[p.flower ? (text ? 0 : 1) : 2]) {   // many stems carry a leaf, some a pair
-      const side = Math.random() < 0.5 ? 1 : -1, pair = Math.random() < 0.4, col = Math.random() * LEAF_COLOURS | 0, LF = ST.leaf;
+      const side = Math.random() < 0.5 ? 1 : -1, pair = Math.random() < 0.4, cu = Math.random();
       const leaf = (t, sd, ink = Math.random() < (cfg.ink || 0.01)) => {  // t: how far along the stem it sprouts; ink: 1 in 100 is signed
         const [lx, ly, tx, ty] = stemAt(p, t);
-        return {
+        return shapeLeaf({
           x: lx, y: ly,
-          a: Math.atan2(ty, tx) + sd * R(0.55, 1.1), len: ink ? R(8, 9.5) : R(LF.len[0], LF.len[1]), w: R(LF.w[0], LF.w[1]), lobes: LF.lobes ? R(LF.lobes[0], LF.lobes[1]) : 0, bow: -sd * R(0.02, 0.2), col, t0: t0 + STEM_MS + R(0, 300),
-          ink,
-        };
+          a: Math.atan2(ty, tx) + sd * R(0.55, 1.1), bow: -sd * R(0.02, 0.2), t0: t0 + STEM_MS + R(0, 300),
+          ink, cu, u: [Math.random(), Math.random(), Math.random()],    // colour and size as fractions, the style maps them
+        });
       };
       p.leaves = pair ? [leaf(R(0.3, 0.45), side), leaf(R(0.5, 0.65), -side)] : [leaf(R(0.35, 0.6), side)];
     }
@@ -673,6 +729,42 @@
   function replant(x, y) {
     chunks.clear(); queue = []; grown = null; seedAt = { x, y };
     buildMask();
+  }
+
+  // Switch style in place: the same plants (samples, stems, where the leaves sprout) take the new style's look.
+  // Each sample's flower, leaf sizes and stem width are redone from its style-free draws; what is already grown
+  // shows grown at once, what is still growing carries on. The cached chunk paths are dropped and rebuilt.
+  function applyStyle(name) {
+    if (!STYLES[name] || name === style) return;
+    const before = canvas.cloneNode();                      // the old look, faded out over the new one
+    before.getContext("2d").drawImage(canvas, 0, 0);
+    before.style.pointerEvents = "none"; before.style.transition = "opacity .45s ease-out";
+    canvas.after(before);
+    requestAnimationFrame(() => requestAnimationFrame(() => { before.style.opacity = 0; }));
+    setTimeout(() => before.remove(), 600);
+
+    const [on0, off0] = ST.stemW;
+    useStyle(name);
+    const [on1, off1] = ST.stemW, k = (on1 - off1) / (on0 - off0);
+    const width = w => Math.max(0.15, off1 + (w - off0) * k);   // the old on/off-text widths land on the new ones
+    buildMask();
+    dress();
+    const now = performance.now(), past = now - 1e6;
+    for (const ch of chunks.values()) {
+      ch.stems = null; ch.leaves = null;
+      for (const p of ch.pts) {
+        const done = p.kept;                                 // the stem has finished growing
+        p.kept = false;
+        p.w = width(p.w); p.w0 = width(p.w0);
+        const text = onText(p.x, p.y);
+        p.flower = text || p.lot < ST.stray ? makeFlower(p, done ? past : p.t0, text) : null;
+        if (p.leaves) for (const l of p.leaves) {
+          shapeLeaf(l); l.kept = false; l.geo = null;
+          if (done) l.t0 = Math.min(l.t0, past);
+        }
+      }
+    }
+    dirty = true;
   }
 
   // ---- drawing ------------------------------------------------------------------------------------------
@@ -789,7 +881,7 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     if (paper) {
-      const q = s * paper.k;
+      const q = s * paperK;
       paper.pat.setTransform(new DOMMatrix([q, 0, 0, q, ox, oy]));
       ctx.fillStyle = paper.pat;
     } else ctx.fillStyle = ST.bg;
@@ -1013,9 +1105,10 @@
   }
 
   resize();
+  dress();
   buildMask();
   requestAnimationFrame(frame);
 
   // for poking at from the console
-  window.flowers = { cam, target, replant, zoomBy, stats: () => ({ chunks: chunks.size, samples: [...chunks.values()].reduce((n, c) => n + c.pts.length, 0), zoom }) };
+  window.flowers = { cam, target, replant, zoomBy, style: applyStyle, stats: () => ({ chunks: chunks.size, samples: [...chunks.values()].reduce((n, c) => n + c.pts.length, 0), zoom }) };
 })();
