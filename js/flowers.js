@@ -9,16 +9,19 @@
  *
  * Zoom: pinch, ctrl/cmd + wheel, or the + and - keys (0 resets); it zooms about the pointer.
  *
- * Optional config before loading:  window.FLOWERS = { text: "404", dull: true, zoom: 2, x: 0, y: 0 }
+ * Optional config before loading:  window.FLOWERS = { text: "404", dull: true, style: "victorian", zoom: 2, x: 0, y: 0 }
  * Default text is the query string (bradi.sh/flowers?hello) or "bradish".
+ * Victorian watercolour (pastel washes on vellum, dainty flowers, slower growth): ?victorian or ?victorian&hello.
  */
 (function () {
   "use strict";
 
   const cfg = window.FLOWERS || {};
   const query = location.search ? decodeURIComponent(location.search.slice(1)) : "";
-  const text = cfg.text || query || "bradish";
+  const parts = query ? query.split("&") : [];
   const dull = !!cfg.dull;
+  const vic = !dull && (cfg.style === "victorian" || parts.includes("victorian"));
+  const text = cfg.text || parts.filter(p => p !== "victorian").join("&") || "bradish";
 
   // ---- tunables -----------------------------------------------------------------------------------------
   const RADIUS = 10;            // minimum distance between samples (world units)
@@ -28,18 +31,43 @@
   const ZOOM_OUT = 0.35, ZOOM_IN = 10;           // how far the user may zoom (css px per world unit)
   const GROW_MARGIN = 160;      // plant this far beyond the viewport, so slow scrolling reveals finished flowers
   const SNAP = 64;              // only re-plan growth when the view has moved this far
-  const STEP_HOME = 100;        // ms per generation inside the home frame (as the original)
-  const STEP_AWAY = 35;         // ms per generation elsewhere, so growth keeps up with scrolling
+  const STEP_HOME = vic ? 170 : 100;   // ms per generation inside the home frame (as the original)
+  const STEP_AWAY = vic ? 55 : 35;     // ms per generation elsewhere, so growth keeps up with scrolling
   const STRAY = 0.012;          // chance that a sample off the text flowers anyway
-  const STEM_MS = 200, BLOOM_MS = 1000;
+  const STEM_MS = vic ? 300 : 200, BLOOM_MS = vic ? 2200 : 1000, BUD_MS = vic ? 500 : 250, LEAF_MS = vic ? 1000 : 500;
+  const OPEN = vic ? [1000, 1500] : [500, 900];   // a flower opens this long (+ up to the second) after its stem starts
 
   // ---- colour -------------------------------------------------------------------------------------------
   // A night garden: deep green-black ground so colour glows. The "dull" 404 version stays grey on white.
-  const BG = dull ? "#fff" : "#0c1411";
+  // Victorian: warm vellum, everything painted with "multiply" so translucent washes glaze like watercolour.
+  const BG = dull ? "#fff" : vic ? "#f1e7d0" : "#0c1411";
   document.documentElement.style.background = BG;
+  document.body.style.background = BG;
   const R = (a, b) => a + Math.random() * (b - a);
   const hsl = (h, s, l, a) => `hsla(${h | 0},${s | 0}%,${l | 0}%,${a === undefined ? 1 : a})`;
   const grey = (l, a) => `hsla(0,0%,${l | 0}%,${a === undefined ? 1 : a})`;
+  const pick = list => { let w = Math.random() * list.reduce((n, f) => n + f[0], 0); for (const x of list) if ((w -= x[0]) < 0) return x; return list[0]; };
+  // watercolour families: [weight, hue range, saturation range, lightness range]; weight 0 = only when a flower asks for it
+  const WASHES = [
+    [22, [345, 360], [35, 55], [80, 87]],     // 0 blush
+    [16, [335, 350], [25, 40], [70, 78]],     // 1 dusty rose
+    [16, [255, 280], [25, 45], [76, 84]],     // 2 lavender
+    [12, [205, 218], [45, 62], [74, 82]],     // 3 forget-me-not blue
+    [12, [48, 56], [55, 75], [80, 86]],       // 4 primrose
+    [10, [18, 30], [45, 65], [80, 86]],       // 5 peach
+    [8, [40, 50], [30, 45], [92, 95]],        // 6 ivory
+    [0, [268, 285], [35, 50], [66, 74]],      // 7 violet
+  ];
+  function wash(fi) {
+    const f = fi === undefined ? pick(WASHES) : WASHES[fi];
+    const h = R(f[1][0], f[1][1]), sat = R(f[2][0], f[2][1]), l = R(f[3][0], f[3][1]);
+    return {
+      outer: hsl(h, sat, l, R(0.55, 0.7)), inner: hsl(h + R(-8, 8), sat * 0.8, Math.min(95, l + R(4, 8)), 0.45),
+      deep: hsl(h - 6, sat, l - 14, 0.4), edge: hsl(h - 8, Math.min(70, sat + 15), l - 32, 0.42),   // pigment pooled at the wet edge
+      halo: [hsl(h, sat, l, 0.13), hsl(h, sat, l, 0.05), hsl(h, sat, l, 0)],                    // a pale bleed past the lines
+      centre: hsl(R(38, 50), R(55, 75), R(52, 64), 0.9), seed: hsl(R(25, 35), 45, R(30, 40), 0.7),
+    };
+  }
   // flower families: [weight, hue range, saturation range, lightness range]
   const FAMILIES = [
     [30, [4, 18], [80, 95], [62, 74]],        // salmon / coral
@@ -51,7 +79,8 @@
     [6, [50, 60], [60, 100], [88, 94]],       // cream
   ];
   const WSUM = FAMILIES.reduce((n, f) => n + f[0], 0);
-  function palette() {
+  function palette(fi) {
+    if (vic) return wash(fi);
     if (dull) { const l = R(15, 70); return { outer: grey(l), inner: grey(l + 12), deep: grey(l - 10), edge: grey(l - 14, 0.5), halo: grey(l, 0), centre: grey(l - 8), seed: grey(l + 25) }; }
     let w = Math.random() * WSUM, f = FAMILIES[0];
     for (const x of FAMILIES) { if ((w -= x[0]) < 0) { f = x; break; } }
@@ -73,10 +102,14 @@
   const CONE = 0.55;                            // first tries for a new shoot are within this many radians either side of straight on
   const stemShades = Array.from({ length: SHADES }, (_, i) => {
     const t = i / (SHADES - 1);
-    return dull ? grey(10 + t * 60) : hsl(92 + t * 50, 38 + t * 14, 20 + (1 - Math.abs(t - 0.4) * 1.4) * 14);
+    return dull ? grey(10 + t * 60) : vic ? hsl(68 + t * 40, 16 + t * 12, 54 + (1 - Math.abs(t - 0.4) * 1.4) * 12)
+      : hsl(92 + t * 50, 38 + t * 14, 20 + (1 - Math.abs(t - 0.4) * 1.4) * 14);
   });
-  const leafShades = dull ? [grey(55), grey(70)] : [hsl(112, 42, 34), hsl(96, 46, 42), hsl(135, 36, 30)];
-  const veinShades = dull ? [grey(80, 0.8), grey(90, 0.8)] : [hsl(105, 45, 56, 0.75), hsl(88, 52, 64, 0.75), hsl(128, 40, 50, 0.75)];
+  const leafShades = dull ? [grey(55), grey(70)] : vic ? [hsl(95, 24, 60, 0.78), hsl(78, 30, 64, 0.78), hsl(118, 20, 55, 0.78)]
+    : [hsl(112, 42, 34), hsl(96, 46, 42), hsl(135, 36, 30)];
+  const veinShades = dull ? [grey(80, 0.8), grey(90, 0.8)] : vic ? [hsl(95, 25, 38, 0.5), hsl(80, 30, 40, 0.5), hsl(120, 20, 34, 0.5)]
+    : [hsl(105, 45, 56, 0.75), hsl(88, 52, 64, 0.75), hsl(128, 40, 50, 0.75)];
+  const leafEdges = [hsl(95, 25, 40, 0.3), hsl(80, 30, 42, 0.3), hsl(118, 20, 36, 0.3)];   // victorian: pooled leaf edges
 
   // ---- canvas + camera ----------------------------------------------------------------------------------
   const canvas = document.createElement("canvas");
@@ -86,6 +119,38 @@
   const shade = dull ? null : document.createElement("div");
   if (shade) { shade.style.cssText = "position:fixed;inset:0;pointer-events:none"; canvas.after(shade); }
   const ctx = canvas.getContext("2d");
+
+  // Vellum: a tile of cream with soft mottling, faint fibres and grain, made once and laid under each frame
+  // (it pans with the flowers but keeps its own scale, like the sheet they are painted on).
+  const paper = vic ? (() => {
+    const n = 512, c = document.createElement("canvas"), g = c.getContext("2d");
+    c.width = c.height = n;
+    g.fillStyle = BG; g.fillRect(0, 0, n, n);
+    const wrap = fn => { for (const ox of [-n, 0, n]) for (const oy of [-n, 0, n]) fn(ox, oy); };
+    for (let i = 0; i < 120; i++) {                      // mottling: soft blobs, a shade darker or lighter (faint, so the tile never shows)
+      const x = R(0, n), y = R(0, n), r = R(20, 70), col = Math.random() < 0.5 ? [150, 110, 60, R(0.008, 0.02)] : [255, 251, 238, R(0.03, 0.06)];
+      wrap((ox, oy) => {
+        const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        gr.addColorStop(0, `rgba(${col})`); gr.addColorStop(1, `rgba(${col.slice(0, 3)},0)`);
+        g.fillStyle = gr; g.fillRect(x + ox - r, y + oy - r, 2 * r, 2 * r);
+      });
+    }
+    g.lineCap = "round";
+    for (let i = 0; i < 260; i++) {                      // fibres
+      const x = R(0, n), y = R(0, n), a = R(0, 6.283), L = R(6, 30), b = R(-6, 6);
+      g.strokeStyle = Math.random() < 0.6 ? `rgba(120,90,50,${R(0.04, 0.09)})` : `rgba(255,252,240,${R(0.15, 0.3)})`;
+      g.lineWidth = R(0.4, 1);
+      wrap((ox, oy) => {
+        g.beginPath(); g.moveTo(x + ox, y + oy);
+        g.quadraticCurveTo(x + ox + Math.cos(a) * L / 2 - Math.sin(a) * b, y + oy + Math.sin(a) * L / 2 + Math.cos(a) * b, x + ox + Math.cos(a) * L, y + oy + Math.sin(a) * L);
+        g.stroke();
+      });
+    }
+    const img = g.getImageData(0, 0, n, n), d = img.data;    // grain
+    for (let i = 0; i < d.length; i += 4) { const k = (Math.random() - 0.5) * 9; d[i] += k; d[i + 1] += k; d[i + 2] += k; }
+    g.putImageData(img, 0, 0);
+    return { n, pat: ctx.createPattern(c, "repeat") };
+  })() : null;
 
   let vw = 0, vh = 0, dpr = 1, zoom = 1;       // viewport (css px), device pixel ratio, css px per world unit
   let base = 1, uz = cfg.zoom || 1;            // zoom = base (from the viewport width) x uz (the user's zoom)
@@ -102,7 +167,9 @@
     base = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, vw / HOME.w));
     zoom = zt = clampZoom(base * uz); uz = zoom / base;
     canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
-    if (shade) shade.style.background = `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) ${Math.min(vw, vh) * 0.35}px, rgba(0,0,0,0.55) ${Math.hypot(vw, vh) * 0.6}px)`;
+    if (shade) shade.style.background = vic   // old paper: warmer and a touch darker towards the edges
+      ? `radial-gradient(circle at 50% 50%, rgba(140,95,40,0) ${Math.min(vw, vh) * 0.4}px, rgba(140,95,40,0.22) ${Math.hypot(vw, vh) * 0.62}px)`
+      : `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) ${Math.min(vw, vh) * 0.35}px, rgba(0,0,0,0.55) ${Math.hypot(vw, vh) * 0.6}px)`;
     dirty = true;
   }
   const clampZoom = z => Math.max(ZOOM_OUT, Math.min(ZOOM_IN, z));
@@ -122,15 +189,16 @@
   let mask = null;
   function buildMask() {
     const c = document.createElement("canvas"), m = c.getContext("2d", { willReadFrequently: true });
-    const family = "Avenir, Helvetica, Arial, sans-serif";
-    m.font = `${HOME.font}px ${family}`;
+    const family = vic ? 'Didot, "Bodoni 72", "Bodoni MT", "Playfair Display", Georgia, serif' : "Avenir, Helvetica, Arial, sans-serif";
+    const weight = vic ? "bold " : "";
+    m.font = `${weight}${HOME.font}px ${family}`;
     // shrink the text so it fits the screen it is first drawn on (narrow phones, long ?text)
-    const fit = Math.min(1, 0.92 * (vw / base) / m.measureText(text).width, 0.9 * (vh / base) / HOME.font);
+    const fit = Math.min(1, (vic ? 0.84 : 0.92) * (vw / base) / m.measureText(text).width, 0.9 * (vh / base) / HOME.font);
     const size = HOME.font * fit;
-    m.font = `${size}px ${family}`;
+    m.font = `${weight}${size}px ${family}`;
     const w = Math.ceil(m.measureText(text).width) + 4, h = Math.ceil(size * 1.4);
     c.width = w; c.height = h;
-    m.font = `${size}px ${family}`; m.textAlign = "center"; m.textBaseline = "middle";
+    m.font = `${weight}${size}px ${family}`; m.textAlign = "center"; m.textBaseline = "middle";
     m.fillText(text, w / 2, h / 2);
     const rgba = m.getImageData(0, 0, w, h).data, on = new Uint8Array(w * h);
     for (let i = 0; i < on.length; i++) on[i] = rgba[i * 4 + 3] > 127 ? 1 : 0;
@@ -164,7 +232,33 @@
     return true;
   }
 
-  function makeFlower(t0) {
+  // Victorian: small, delicate flowers of a few cottage kinds, in pastel washes.
+  function makeDainty(t0, big) {     // big: on the text, where they must be large enough to spell the word
+    const u = Math.random(), size = big ? 2.6 + 4 * Math.pow(u, 1.5) : 1.4 + 4.6 * u * u, r = Math.random();
+    let kind = "plain", fi, n = 5 + (Math.random() * 4 | 0), shape = R(0.32, 0.55), tip = R(0.4, 0.9), lens = null, eye = 1;
+    if (r < 0.18) { kind = "forget"; fi = 3; n = 5; shape = 0.5; tip = 0.95; }                        // forget-me-not
+    else if (r < 0.32) { kind = "daisy"; fi = 6; n = 12 + (Math.random() * 5 | 0); shape = R(0.16, 0.2); tip = 0.4; eye = 1.4; }
+    else if (r < 0.42) { kind = "violet"; fi = 7; n = 5; shape = 0.5; tip = 0.8; lens = [1.3, 0.9, 0.82, 0.82, 0.9]; }
+    else if (r < 0.55) { kind = "rosette"; fi = [0, 1, 5][Math.random() * 3 | 0]; n = 5; shape = 0.52; tip = 0.92; }
+    shape = Math.min(shape, 2.6 / n);
+    const pal = palette(fi), rot = R(0, 6.283);
+    const ring = (scale, off, fill) => {
+      const petals = [];
+      for (let i = 0; i < n; i++) {
+        petals.push({ a: rot + off + (i + R(-0.08, 0.08)) * 6.283 / n, len: scale * (lens ? lens[i] : 1) * R(0.92, 1.08), w: shape * R(0.88, 1.12), bow: R(-0.06, 0.06) });
+      }
+      return { petals, fill };
+    };
+    const layers = [ring(1, 0, pal.outer)];
+    if (kind === "rosette") layers.push(ring(0.7, 0.63, pal.outer), ring(0.45, 1.26, pal.outer));     // glazes deepen to the heart
+    else if (kind === "plain" && Math.random() < 0.5) layers.push(ring(R(0.56, 0.68), 3.1415 / n, pal.inner));
+    const seeds = [[0, 0]];
+    if (kind === "daisy" || kind === "plain") for (let i = 0, k = 5 + (Math.random() * 3 | 0), a0 = R(0, 6.283); i < k; i++) { const a = a0 + (i + R(-0.12, 0.12)) * 6.283 / k, d = R(0.6, 0.75); seeds.push([Math.cos(a) * d, Math.sin(a) * d]); }
+    return { size, t1: t0 + OPEN[0] + Math.random() * OPEN[1], pal, layers, seeds, tip, spin: R(-0.6, 0.6), eye, rosette: kind === "rosette", wash: [R(-0.4, 0.4), R(-0.4, 0.4)] };
+  }
+
+  function makeFlower(t0, big) {
+    if (vic) return makeDainty(t0, big);
     const u = Math.random(), size = 2 + 9.5 * Math.pow(u, 1.5);          // mostly small, the odd big one
     const pal = palette(), n = 4 + (Math.random() * 6 | 0);              // 4-9 petals
     const rot = R(0, 6.283);
@@ -183,7 +277,7 @@
     if (size > 3.5 || Math.random() < 0.5) layers.push(ring(n, R(0.56, 0.68), 3.1415 / n, pal.inner));
     const seeds = [[0, 0]];                                               // one in the middle and a ring round it
     for (let i = 0, k = 5 + (Math.random() * 3 | 0), a0 = R(0, 6.283); i < k; i++) { const a = a0 + (i + R(-0.12, 0.12)) * 6.283 / k, r = R(0.6, 0.72); seeds.push([Math.cos(a) * r, Math.sin(a) * r]); }
-    return { size, t1: t0 + 500 + Math.random() * 900, pal, layers, seeds, tip, spin: R(-0.9, 0.9) };
+    return { size, t1: t0 + OPEN[0] + Math.random() * OPEN[1], pal, layers, seeds, tip, spin: R(-0.9, 0.9) };
   }
 
   // point and (unnormalised) direction at t along a stem's cubic
@@ -209,7 +303,7 @@
       flower: null,
     };
     // shade and width: a small drift from the parent; width heads for 1-2 off the text and 3-4 on it
-    const wTarget = (text ? 3 : 1) + Math.random();
+    const wTarget = vic ? (text ? 1 : 0.5) + 0.4 * Math.random() : (text ? 3 : 1) + Math.random();   // victorian: fine pen-like stems
     p.sh = parent ? Math.max(0, Math.min(SHADES - 1, parent.sh + R(-1.3, 1.3))) : R(0, SHADES - 1);
     p.w = parent ? parent.w + Math.max(-0.5, Math.min(0.5, wTarget - parent.w)) : wTarget;
     p.sh0 = parent ? parent.sh : p.sh; p.w0 = parent ? parent.w : p.w;
@@ -230,16 +324,16 @@
       p.ta = ea;
     } else { p.c1x = p.c2x = x; p.c1y = p.c2y = y; }
     if (text || Math.random() < STRAY) {
-      p.flower = makeFlower(t0);
+      p.flower = makeFlower(t0, text);
       p.flower.budA = (parent ? p.ta : R(0, 6.283)) + R(-0.9, 0.9);   // buds nod roughly the way the stem grew
     }
-    if (parent && Math.random() < (p.flower ? 0.3 : 0.5)) {   // many stems carry a leaf, some a pair
+    if (parent && Math.random() < (p.flower ? 0.3 : vic ? 0.6 : 0.5)) {   // many stems carry a leaf, some a pair
       const side = Math.random() < 0.5 ? 1 : -1, pair = Math.random() < 0.4, col = Math.random() * leafShades.length | 0;
       const leaf = (t, sd, ink = Math.random() < (cfg.ink || 0.01)) => {  // t: how far along the stem it sprouts; ink: 1 in 100 is signed
         const [lx, ly, tx, ty] = stemAt(p, t);
         return {
           x: lx, y: ly,
-          a: Math.atan2(ty, tx) + sd * R(0.55, 1.1), len: ink ? R(8, 9.5) : R(4.5, 8.5), w: R(0.3, 0.44), bow: -sd * R(0.02, 0.2), col, t0: t0 + STEM_MS + R(0, 300),
+          a: Math.atan2(ty, tx) + sd * R(0.55, 1.1), len: ink ? R(8, 9.5) : vic ? R(3.5, 6.5) : R(4.5, 8.5), w: R(0.3, 0.44), bow: -sd * R(0.02, 0.2), col, t0: t0 + STEM_MS + R(0, 300),
           ink,
         };
       };
@@ -323,7 +417,6 @@
   const buckets = new Array(SHADES);
   const blooms = [];
 
-  const LEAF_MS = 500;
   const growing = [];                           // [leaf, chunk] for leaves still unfolding this frame
 
   // A leaf: a pointed blade with a slight curl, added to `blade`; its midrib to `rib`; side veins to `side`.
@@ -357,6 +450,14 @@
     if (f.glow) return f.glow;
     const c = document.createElement("canvas"), g = c.getContext("2d"), n = 64;
     c.width = c.height = n;
+    if (vic) {                                     // a wash is never round: a few overlapping soft blots
+      for (let k = 0; k < 5; k++) {
+        const x = R(20, 44), y = R(20, 44), r = R(10, 20), gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, f.pal.halo[0]); gr.addColorStop(0.6, f.pal.halo[1]); gr.addColorStop(1, f.pal.halo[2]);
+        g.fillStyle = gr; g.fillRect(0, 0, n, n);
+      }
+      return f.glow = c;
+    }
     const gr = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
     gr.addColorStop(0, f.pal.halo[0]); gr.addColorStop(0.45, f.pal.halo[1]); gr.addColorStop(1, f.pal.halo[2]);
     g.fillStyle = gr; g.fillRect(0, 0, n, n);
@@ -421,7 +522,7 @@
     ctx.font = "600 10px Georgia, serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const k = INK_SIZE / 10, widths = [...INK].map(c => ctx.measureText(c).width * k), total = widths.reduce((a, b) => a + b, 0);
     let d = (len[N] - total) / 2;
-    ctx.fillStyle = dull ? grey(92) : "hsla(80, 70%, 86%, 0.95)";
+    ctx.fillStyle = dull ? grey(92) : vic ? "hsla(25, 45%, 26%, 0.85)" : "hsla(80, 70%, 86%, 0.95)";
     const c = ctx.getTransform();
     for (let j = 0; j < INK.length; j++) {
       const [x, y, a] = at(d + widths[j] / 2);
@@ -449,11 +550,17 @@
 
   function draw(now) {
     let moving = false;
+    const s = zoom * dpr, ox = canvas.width / 2 - cam.x * s, oy = canvas.height / 2 - cam.y * s;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = BG;
+    ctx.globalCompositeOperation = "source-over";
+    if (paper) {
+      const m = v => ((v % paper.n) + paper.n) % paper.n;
+      paper.pat.setTransform(new DOMMatrix([1, 0, 0, 1, m(ox), m(oy)]));
+      ctx.fillStyle = paper.pat;
+    } else ctx.fillStyle = BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const s = zoom * dpr;
-    ctx.setTransform(s, 0, 0, s, canvas.width / 2 - cam.x * s, canvas.height / 2 - cam.y * s);
+    ctx.setTransform(s, 0, 0, s, ox, oy);
+    if (vic) ctx.globalCompositeOperation = "multiply";      // paint is translucent: layers darken where they overlap
 
     buckets.fill(null);
     const shown = [];
@@ -490,12 +597,14 @@
     }
 
     ctx.setLineDash([]);
+    if (vic) ctx.globalCompositeOperation = "source-over";   // stems are opaque: multiply would darken every joint
     for (let i = 0; i < SHADES; i++) {
       ctx.fillStyle = stemShades[i];
       for (const ch of shown) if (ch.stems[i]) ctx.fill(ch.stems[i]);
       if (buckets[i]) ctx.fill(buckets[i]);
     }
 
+    if (vic) ctx.globalCompositeOperation = "multiply";
     // Leaves, one fill per shade, then the veins: a midrib, and side veins once there are enough pixels to
     // show them. A fully grown leaf goes into its chunk's paths once; unfolding ones are drawn fresh.
     const midrib = s >= 0.9, sideVeins = s >= 1.7;
@@ -516,6 +625,7 @@
       ctx.fillStyle = leafShades[i];
       for (const t of sets) ctx.fill(t[0]);
       if (!midrib) continue;
+      if (vic) { ctx.strokeStyle = leafEdges[i]; ctx.lineWidth = 0.3; for (const t of sets) ctx.stroke(t[0]); }
       ctx.strokeStyle = veinShades[i];
       ctx.lineWidth = 0.32;
       for (const t of sets) ctx.stroke(t[1]);              // (a signed leaf keeps its midrib too: the letters sit on it)
@@ -530,16 +640,17 @@
     if (!dull) {                                           // first a soft glow under the big ones, so it never veils a neighbour's petals
       for (const p of blooms) {
         const f = p.flower;
-        if (f.size <= 5) continue;
-        const o = ease((now - f.t1) / BLOOM_MS), r = f.size * 3.4 * o;
+        if (f.size <= (vic ? 1.8 : 5)) continue;
+        const o = ease((now - f.t1) / BLOOM_MS), r = f.size * (vic ? 2.9 : 3.4) * o;
         if (o <= 0.02) continue;
-        ctx.drawImage(glow(f), p.x - r, p.y - r, 2 * r, 2 * r);
+        const wx = vic ? f.wash[0] * f.size : 0, wy = vic ? f.wash[1] * f.size : 0;   // the bleed sits a little off the flower
+        ctx.drawImage(glow(f), p.x + wx - r, p.y + wy - r, 2 * r, 2 * r);
       }
     }
 
     for (const p of blooms) {
       const f = p.flower, raw = Math.max(0, Math.min(1, (now - f.t1) / BLOOM_MS)), o = ease(raw) * (1 + 0.1 * Math.sin(Math.PI * raw));
-      const bud = ease((now - p.t0 - STEM_MS) / 250);
+      const bud = ease((now - p.t0 - STEM_MS) / BUD_MS);
       if (raw < 1) moving = true;
       if (o > 0.02 && f.size * 1.75 * o * s < 2.5) {        // too small to see petals: a dot of its colour
         ctx.fillStyle = f.pal.outer; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 1.2 * o, 0, 6.283); ctx.fill();
@@ -548,7 +659,20 @@
         for (const layer of f.layers) {
           ctx.beginPath(); petalPath(f, p.x, p.y, layer, o, rot);
           ctx.fillStyle = layer.fill; ctx.fill();
-          if (s >= 1.2) { ctx.strokeStyle = f.pal.edge; ctx.lineWidth = 0.22; ctx.stroke(); }   // a fine outline, so each petal reads
+          if (vic) {                                         // pigment pooled at the edge: the watercolour tell
+            if (s >= 0.6) { ctx.strokeStyle = f.pal.edge; ctx.lineWidth = Math.min(f.size * 0.12, Math.max(0.3, 0.8 / zoom)); ctx.lineJoin = "round"; ctx.stroke(); }
+          } else if (s >= 1.2) { ctx.strokeStyle = f.pal.edge; ctx.lineWidth = 0.22; ctx.stroke(); }   // a fine outline, so each petal reads
+        }
+        if (vic) {                                           // a small ochre eye (a rosette shows only its shadowed heart)
+          const e = f.size * 0.2 * f.eye * o;
+          ctx.fillStyle = f.rosette ? f.pal.deep : f.pal.centre;
+          ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.45 * o, e), 0, 6.283); ctx.fill();
+          if (f.seeds.length > 1 && f.size > 2.5 && f.size * 0.04 * s >= 0.4) {
+            const sd = f.size * 0.04; ctx.fillStyle = f.pal.seed; ctx.beginPath();
+            for (const q of f.seeds) { const sx = p.x + q[0] * e, sy = p.y + q[1] * e; ctx.moveTo(sx + sd, sy); ctx.arc(sx, sy, sd, 0, 6.283); }
+            ctx.fill();
+          }
+          continue;
         }
         ctx.fillStyle = f.pal.deep; ctx.beginPath(); ctx.arc(p.x, p.y, f.size * 0.5 * o, 0, 6.283); ctx.fill();
         ctx.fillStyle = f.pal.centre; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, f.size * 0.36) * o, 0, 6.283); ctx.fill();
