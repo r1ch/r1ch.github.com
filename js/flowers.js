@@ -332,7 +332,7 @@
   }
 
   // ---- the styles ---------------------------------------------------------------------------------------
-  // bg            ground colour;  paper: a world-fixed texture tile (blot/fibre colours [r, g, b, alpha range], dark: share
+  // bg            ground colour (#rrggbb);  paper: world-fixed mottled paper (blot/fibre colours [r, g, b, alpha range], dark: share
   //               of dark fibres);  vignette: [r, g, b, edge alpha, clear radius, full radius] (fractions of the screen)
   // font, fit     the text mask: [family, weight, thicken (world units of outline added to every stroke)], and the share
   //               of the screen width the word may take;  webfont: a Google Fonts family spec, loaded before the mask is drawn
@@ -345,11 +345,13 @@
   // glow          { sprite, min size, scale (flower sizes), blend } under the flowers;  ink: the signed leaf's colour
   // flower(t0, big) -> a flower (needs size, t1, pal.outer/deep for the dot and bud);  paint(p, f, o, raw, s): an open flower
   // ui            picker colours; styles without one are not offered
+  // the word is set in one face in every picked style, so switching styles doesn't change the lettering (thicken may differ)
+  const WORD_FONT = ['"Alegreya", ' + SERIF, "700 ", 3], WORD_WEBFONT = "Alegreya:wght@700";
   const STYLES = {
     victorian: {
       bg: "#f1e7d0", vignette: [140, 95, 40, 0.22, 0.4, 0.62],
       paper: { blot: [[150, 110, 60, 0.008, 0.02], [255, 251, 238, 0.03, 0.06]], fibre: [[120, 90, 50, 0.04, 0.09], [255, 252, 240, 0.15, 0.3]], dark: 0.6 },
-      font: ['"Playfair Display", ' + SERIF, "700 ", 3], webfont: "Playfair+Display:wght@700", fit: 0.9, time: GENTLE, stray: 0.012,
+      font: WORD_FONT, webfont: WORD_WEBFONT, fit: 0.9, time: GENTLE, stray: 0.012,
       stemW: [1, 0.5, 0.4], leafP: [0.3, 0.3, 0.6], leaf: { len: [3.5, 6.5], w: [0.3, 0.44] },
       blend: "multiply",
       stems: shades(t => hsl(68 + t * 40, 16 + t * 12, 54 + hump(t) * 12)),
@@ -362,7 +364,7 @@
     },
     neon: {
       bg: "#06070c", vignette: [0, 0, 0, 0.6, 0.35, 0.6],
-      font: [SANS, ""], fit: 0.92, time: BRISK, stray: 0.012,
+      font: [WORD_FONT[0], WORD_FONT[1], 0], webfont: WORD_WEBFONT, fit: 0.92, time: BRISK, stray: 0.012,   // big glowing flowers: no thickening
       stemW: [3, 1, 1], leafP: [0.3, 0.3, 0.5], leaf: { len: [4.5, 8.5], w: [0.3, 0.44] },
       stems: shades(t => hsl(148 + t * 34, 60 + t * 20, 18 + hump(t) * 16)),
       leaves: [hsl(150, 70, 30), hsl(165, 75, 34), hsl(135, 65, 28)],
@@ -376,7 +378,7 @@
     morris: {
       bg: "#1f2d44", vignette: [5, 10, 20, 0.4, 0.4, 0.62],
       paper: { blot: [[5, 10, 25, 0.03, 0.07], [95, 125, 165, 0.02, 0.05]], fibre: [[5, 10, 25, 0.08, 0.15], [130, 160, 200, 0.04, 0.09]], dark: 0.5 },
-      font: ['"Alegreya", ' + SERIF, "700 ", 3], webfont: "Alegreya:wght@700", fit: 0.9, time: GENTLE, stray: 0.02,
+      font: WORD_FONT, webfont: WORD_WEBFONT, fit: 0.9, time: GENTLE, stray: 0.02,
       stemW: [2.2, 1.1, 0.6], leafP: [0.2, 0.45, 0.62], leaf: { len: [10, 17], w: [0.26, 0.36], lobes: [1.8, 3.2], shape: lobedLeaf },
       stems: shades(t => hsl(70 + t * 35, 16 + t * 10, 40 + hump(t) * 12)), stemLine: ["#121b29", 0.7],
       leaves: [hsl(88, 24, 50), hsl(165, 18, 48), hsl(70, 28, 52)], leafShade: [hsl(100, 26, 28), hsl(170, 24, 26), hsl(82, 28, 28)],
@@ -463,26 +465,58 @@
     document.body.appendChild(nav);
   }
 
-  // Paper (the painted styles): a tile with soft mottling, faint fibres and grain, made once and laid under each frame.
-  // It is fixed to the world, so it pans and zooms with the flowers like the sheet they are painted on; one paper
-  // pixel is one device pixel at the starting zoom (paper.k, world units per paper pixel, set on the first resize).
-  let paper = null, paperK = 0;
-  function makePaper() {
-    const P = ST.paper, rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a === undefined ? R(c[3], c[4]) : a})`;
-    const n = 512, c = document.createElement("canvas"), g = c.getContext("2d");
+  // Paper (the painted styles), fixed to the world so it pans and zooms with the flowers like the sheet they are
+  // painted on; one paper pixel is one device pixel at the starting zoom (paperK, world units per paper pixel, set on
+  // the first resize). Two layers, so nothing visibly repeats:
+  //  - mottling: Perlin noise summed at a few scales (MOTTLE), coloured towards the dark or light blot colour. It is
+  //    endless: baked lazily into opaque world-anchored tiles (ground colour included), a few per frame, and cached.
+  //  - fibres and grain: two transparent tiles of different sizes laid over each other, so their repeat is huge.
+  const MOTTLE = [[1500, 1], [560, 0.7], [210, 0.45], [80, 0.25]];    // [wavelength in paper px, weight]
+  const NCELL = 8, NTILE = 64;                  // noise sampled every NCELL paper px; NTILE x NTILE cells per tile
+  const perm = new Uint8Array(512), gx = new Float32Array(256), gy = new Float32Array(256);
+  for (let i = 0; i < 256; i++) { perm[i] = i; gx[i] = Math.cos(i / 256 * 6.2832); gy[i] = Math.sin(i / 256 * 6.2832); }
+  for (let i = 255; i > 0; i--) { const j = Math.random() * (i + 1) | 0, t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+  for (let i = 0; i < 256; i++) perm[i + 256] = perm[i];
+  function perlin(x, y) {                      // classic 2D gradient noise, about -0.7..0.7
+    const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, X = xi & 255, Y = yi & 255;
+    const u = fx * fx * fx * (fx * (fx * 6 - 15) + 10), v = fy * fy * fy * (fy * (fy * 6 - 15) + 10);
+    const a = perm[perm[X] + Y], b = perm[perm[X + 1] + Y], c = perm[perm[X] + Y + 1], d = perm[perm[X + 1] + Y + 1];
+    const n00 = gx[a] * fx + gy[a] * fy, n10 = gx[b] * (fx - 1) + gy[b] * fy;
+    const n01 = gx[c] * fx + gy[c] * (fy - 1), n11 = gx[d] * (fx - 1) + gy[d] * (fy - 1);
+    const top = n00 + u * (n10 - n00); return top + v * (n01 + u * (n11 - n01) - top);
+  }
+  const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const MOTTLE_W = MOTTLE.reduce((n, o) => n + o[1], 0);
+  function mottleTile(tx, ty) {
+    const P = ST.paper, bg = hexRgb(ST.bg), [dk, lt] = P.blot, c = document.createElement("canvas");
+    c.width = c.height = NTILE;
+    const g = c.getContext("2d"), img = g.createImageData(NTILE, NTILE), d = img.data;
+    const aD = dk[4] * 1.6, aL = lt[4] * 1.6;  // the strongest a blot gets, where the noise peaks
+    for (let j = 0, i = 0; j < NTILE; j++) {
+      const y = ((ty * NTILE + j) + 0.5) * NCELL;
+      for (let k = 0; k < NTILE; k++, i += 4) {
+        const x = ((tx * NTILE + k) + 0.5) * NCELL;
+        let n = 0;
+        for (const [L, w] of MOTTLE) n += w * perlin(x / L + L, y / L);    // + L: each scale reads a different patch
+        const t = Math.max(-1, Math.min(1, n / MOTTLE_W / 0.3)), [col, a] = t < 0 ? [dk, -t * aD] : [lt, t * aL];
+        d[i] = bg[0] + (col[0] - bg[0]) * a; d[i + 1] = bg[1] + (col[1] - bg[1]) * a; d[i + 2] = bg[2] + (col[2] - bg[2]) * a; d[i + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  }
+  function fibreTile(n, count, grain) {
+    const P = ST.paper, rgba = c => `rgba(${c[0]},${c[1]},${c[2]},${R(c[3], c[4])})`;
+    const c = document.createElement("canvas"), g = c.getContext("2d");
     c.width = c.height = n;
-    g.fillStyle = ST.bg; g.fillRect(0, 0, n, n);
     const wrap = fn => { for (const ox of [-n, 0, n]) for (const oy of [-n, 0, n]) fn(ox, oy); };
-    for (let i = 0; i < 120; i++) {                      // mottling: soft blobs, a shade darker or lighter (faint, so the tile never shows)
-      const x = R(0, n), y = R(0, n), r = R(20, 70), c = P.blot[Math.random() < 0.5 ? 0 : 1], col = rgba(c);
-      wrap((ox, oy) => {
-        const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
-        gr.addColorStop(0, col); gr.addColorStop(1, rgba(c, 0));
-        g.fillStyle = gr; g.fillRect(x + ox - r, y + oy - r, 2 * r, 2 * r);
-      });
+    if (grain) {                               // grain: faint light and dark specks on every pixel
+      const img = g.createImageData(n, n), d = img.data;
+      for (let i = 0; i < d.length; i += 4) { const k = Math.random() - 0.5; d[i] = d[i + 1] = d[i + 2] = k < 0 ? 0 : 255; d[i + 3] = Math.abs(k) * 18; }
+      g.putImageData(img, 0, 0);
     }
     g.lineCap = "round";
-    for (let i = 0; i < 260; i++) {                      // fibres
+    for (let i = 0; i < count; i++) {
       const x = R(0, n), y = R(0, n), a = R(0, 6.283), L = R(6, 30), b = R(-6, 6);
       g.strokeStyle = rgba(P.fibre[Math.random() < P.dark ? 0 : 1]);
       g.lineWidth = R(0.4, 1);
@@ -492,10 +526,37 @@
         g.stroke();
       });
     }
-    const img = g.getImageData(0, 0, n, n), d = img.data;    // grain
-    for (let i = 0; i < d.length; i += 4) { const k = (Math.random() - 0.5) * 9; d[i] += k; d[i + 1] += k; d[i + 2] += k; }
-    g.putImageData(img, 0, 0);
-    return { n, pat: ctx.createPattern(c, "repeat") };
+    return ctx.createPattern(c, "repeat");
+  }
+  let paper = null, paperK = 0;
+  const makePaper = () => ({ tiles: new Map(), over: [fibreTile(512, 130, true), fibreTile(421, 90, false)] });
+  // Lays the paper over the whole canvas (device pixels; q = device px per paper px, (ox, oy) = where paper 0,0 is).
+  // Returns true while tiles in view are still missing (they show as plain ground until made).
+  function drawPaper(q, ox, oy) {
+    const span = NTILE * NCELL, tq = span * q, t0 = performance.now();
+    const x0 = Math.floor(-ox / tq), x1 = Math.floor((canvas.width - ox) / tq), y0 = Math.floor(-oy / tq), y1 = Math.floor((canvas.height - oy) / tq);
+    let missing = false;
+    ctx.imageSmoothingEnabled = true;
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+      const k = tx + "," + ty;
+      let t = paper.tiles.get(k);
+      if (!t) {
+        if (performance.now() - t0 > 6) { missing = true; continue; }       // the rest next frame
+        paper.tiles.set(k, t = mottleTile(tx, ty));
+      }
+      ctx.drawImage(t, ox + tx * tq - 0.5, oy + ty * tq - 0.5, tq + 1, tq + 1);   // a hair of overlap: no seams
+    }
+    if (paper.tiles.size > 1200) {             // forget tiles well away from the view
+      for (const k of paper.tiles.keys()) {
+        const [tx, ty] = k.split(",").map(Number);
+        if (tx < x0 - 4 || tx > x1 + 4 || ty < y0 - 4 || ty > y1 + 4) paper.tiles.delete(k);
+      }
+    }
+    for (const pat of paper.over) {
+      pat.setTransform(new DOMMatrix([q, 0, 0, q, ox, oy]));
+      ctx.fillStyle = pat; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    return missing;
   }
 
   // Everything round the flowers that comes from the style: ground, paper, vignette, picker.
@@ -891,12 +952,9 @@
     const blend = ST.blend || "source-over";
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
-    if (paper) {
-      const q = s * paperK;
-      paper.pat.setTransform(new DOMMatrix([q, 0, 0, q, ox, oy]));
-      ctx.fillStyle = paper.pat;
-    } else ctx.fillStyle = ST.bg;
+    ctx.fillStyle = ST.bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const paperPending = paper ? drawPaper(s * paperK, ox, oy) : false;
     ctx.setTransform(s, 0, 0, s, ox, oy);
 
     buckets.fill(null);
@@ -1006,7 +1064,7 @@
       else if (bud > 0) drawBud(p, bud);                      // a bud first
     }
 
-    return moving;
+    return moving || paperPending;
   }
 
   // ---- input --------------------------------------------------------------------------------------------
