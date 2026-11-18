@@ -121,7 +121,8 @@
   const ctx = canvas.getContext("2d");
 
   // Vellum: a tile of cream with soft mottling, faint fibres and grain, made once and laid under each frame
-  // (it pans with the flowers but keeps its own scale, like the sheet they are painted on).
+  // It is fixed to the world, so it pans and zooms with the flowers like the sheet they are painted on; one paper
+  // pixel is one device pixel at the starting zoom (paper.k, world units per paper pixel, set on the first resize).
   const paper = vic ? (() => {
     const n = 512, c = document.createElement("canvas"), g = c.getContext("2d");
     c.width = c.height = n;
@@ -149,7 +150,7 @@
     const img = g.getImageData(0, 0, n, n), d = img.data;    // grain
     for (let i = 0; i < d.length; i += 4) { const k = (Math.random() - 0.5) * 9; d[i] += k; d[i + 1] += k; d[i + 2] += k; }
     g.putImageData(img, 0, 0);
-    return { n, pat: ctx.createPattern(c, "repeat") };
+    return { n, k: 0, pat: ctx.createPattern(c, "repeat") };
   })() : null;
 
   let vw = 0, vh = 0, dpr = 1, zoom = 1;       // viewport (css px), device pixel ratio, css px per world unit
@@ -167,6 +168,7 @@
     base = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, vw / HOME.w));
     zoom = zt = clampZoom(base * uz); uz = zoom / base;
     canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+    if (paper && !paper.k) paper.k = 1 / (zoom * dpr);
     if (shade) shade.style.background = vic   // old paper: warmer and a touch darker towards the edges
       ? `radial-gradient(circle at 50% 50%, rgba(140,95,40,0) ${Math.min(vw, vh) * 0.4}px, rgba(140,95,40,0.22) ${Math.hypot(vw, vh) * 0.62}px)`
       : `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) ${Math.min(vw, vh) * 0.35}px, rgba(0,0,0,0.55) ${Math.hypot(vw, vh) * 0.6}px)`;
@@ -554,8 +556,8 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     if (paper) {
-      const m = v => ((v % paper.n) + paper.n) % paper.n;
-      paper.pat.setTransform(new DOMMatrix([1, 0, 0, 1, m(ox), m(oy)]));
+      const q = s * paper.k;
+      paper.pat.setTransform(new DOMMatrix([q, 0, 0, q, ox, oy]));
       ctx.fillStyle = paper.pat;
     } else ctx.fillStyle = BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
