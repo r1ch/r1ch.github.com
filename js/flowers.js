@@ -183,6 +183,7 @@
     return {
       outer: hsl(h, sat, l, R(0.55, 0.7)), inner: hsl(h + R(-8, 8), sat * 0.8, Math.min(95, l + R(4, 8)), 0.45),
       deep: hsl(h - 6, sat, l - 14, 0.4), edge: hsl(h - 8, Math.min(70, sat + 15), l - 32, 0.42),   // pigment pooled at the wet edge
+      ink: hsl(h - 10, Math.min(75, sat + 25), l - 44, 0.62),                                    // an inked edge, for the flowers on the word
       halo: [hsl(h, sat, l, 0.13), hsl(h, sat, l, 0.05), hsl(h, sat, l, 0)],                    // a pale bleed past the lines
       centre: hsl(R(38, 50), R(55, 75), R(52, 64), 0.9), seed: hsl(R(25, 35), 45, R(30, 40), 0.7),
     };
@@ -196,6 +197,7 @@
     else if (r < 0.55) { kind = "rosette"; fi = [0, 1, 5][rnd() * 3 | 0]; n = 5; shape = 0.52; tip = 0.92; }
     shape = Math.min(shape, 2.6 / n);
     const pal = wash(fi), rot = R(0, 6.283);
+    if (big) pal.edge = pal.ink;                                   // the word's flowers are inked round, so the letters read
     const ring = (scale, off, fill) => {
       const petals = [];
       for (let i = 0; i < n; i++) {
@@ -207,7 +209,7 @@
     if (kind === "rosette") layers.push(ring(0.7, 0.63, pal.outer), ring(0.45, 1.26, pal.outer));     // glazes deepen to the heart
     else if (kind === "plain" && rnd() < 0.5) layers.push(ring(R(0.56, 0.68), 3.1415 / n, pal.inner));
     const seeds = kind === "daisy" || kind === "plain" ? seedRing(5 + (rnd() * 3 | 0), 0.6, 0.75) : [[0, 0]];
-    return { size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, seeds, tip, spin: R(-0.6, 0.6), eye, rosette: kind === "rosette",
+    return { size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, seeds, tip, spin: R(-0.6, 0.6), eye, rosette: kind === "rosette", big,
       drift: [R(-0.4, 0.4), R(-0.4, 0.4)] };                       // where its glow (the bleed) sits, in flower sizes
   }
   function paintDainty(p, f, o, raw, s) {
@@ -216,7 +218,7 @@
       ctx.beginPath(); petalPath(f, p.x, p.y, layer, o, rot);
       ctx.fillStyle = layer.fill; ctx.fill();
       if (s >= 0.6) {                                    // pigment pooled at the edge: the watercolour tell
-        ctx.strokeStyle = f.pal.edge; ctx.lineWidth = Math.min(f.size * 0.12, Math.max(0.3, 0.8 / zoom)); ctx.lineJoin = "round"; ctx.stroke();
+        ctx.strokeStyle = f.pal.edge; ctx.lineWidth = Math.min(f.size * (f.big ? 0.16 : 0.12), Math.max(f.big ? 0.45 : 0.3, (f.big ? 1.2 : 0.8) / zoom)); ctx.lineJoin = "round"; ctx.stroke();
       }
     }
     const e = f.size * 0.2 * f.eye * o;                  // a small ochre eye (a rosette shows only its shadowed heart)
@@ -232,13 +234,14 @@
     cream: [[40, 48], [50, 62], [86, 90]], blue: [[204, 214], [32, 44], [62, 70]], pink: [[352, 360], [40, 55], [80, 85]],
   };
   const any = list => list[rnd() * list.length | 0];
+  const KEYLINE = hsl(44, 55, 86);
   function block(outer, inner) {             // flat colours, a dark line of the same hue, weld centre with dark seeds
     const [h, sat, l] = ranged(DYES[outer]), [h2, s2, l2] = ranged(DYES[inner]);
     return { outer: hsl(h, sat, l), inner: hsl(h2, s2, l2), deep: hsl(h, sat, Math.max(14, l - 36)), line: hsl(h - 4, sat * 0.9, Math.max(13, l - 38)),
       centre: hsl(R(40, 47), 75, R(56, 62)), seed: hsl(18, 40, 20) };
   }
   function makeMorris(t0, big) {
-    const u = rnd(), size = big ? 4.2 + 4 * Math.pow(u, 1.5) : 2 + 4 * u * u, r = rnd(), rot = R(0, 6.283);
+    const u = rnd(), size = big ? 4.2 + 4 * Math.pow(u, 1.5) : 1.6 + 3 * u * u, r = rnd(), rot = R(0, 6.283);
     const ring = (n, len, w, tip, off, fill, stripes) => {
       const petals = [];
       for (let i = 0; i < n; i++) petals.push({ a: rot + off + (i + R(-0.04, 0.04)) * 6.283 / n, len: len * R(0.96, 1.04), w, t: tip, bow: R(-0.03, 0.03) });
@@ -260,12 +263,18 @@
       kind = "star"; pal = block(rnd() < 0.6 ? "blue" : "pink", "cream");
       layers = [ring(5, 1, 0.5, 0.95, 0, pal.outer, false)]; eye = 0.22;
     }
-    return { size: kind === "star" ? size * 0.7 : size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, kind, eye, spin: kind === "tulip" ? 0 : R(-0.5, 0.5) };
+    return { size: kind === "star" ? size * 0.7 : size, t1: t0 + OPEN[0] + rnd() * OPEN[1], pal, layers, kind, eye, big, spin: kind === "tulip" ? 0 : R(-0.5, 0.5) };
   }
   function paintMorris(p, f, o, raw, s) {    // each layer's outline first, then its colour fades in
     const fillA = Math.max(0, Math.min(1, (raw - 0.15) / 0.5)), lw = Math.min(f.size * 0.11, Math.max(0.28, 0.9 / zoom));
     const rot = (1 - o) * f.spin + (f.kind === "tulip" ? f.budA : 0);
-    ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = f.pal.line;
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    if (f.big && fillA > 0) {                // the word's flowers sit on a cream keyline, so the letters stand off the ground
+      ctx.beginPath(); for (const layer of f.layers) petalPath(f, p.x, p.y, layer, o, rot);
+      if (f.eye) { ctx.moveTo(p.x + f.size * f.eye * o, p.y); ctx.arc(p.x, p.y, f.size * f.eye * o, 0, 6.283); }
+      ctx.globalAlpha = fillA; ctx.strokeStyle = KEYLINE; ctx.lineWidth = lw * 3.4; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = f.pal.line;
     for (const layer of f.layers) {
       ctx.beginPath(); petalPath(f, p.x, p.y, layer, o, rot);
       if (fillA > 0) { ctx.globalAlpha = fillA; ctx.fillStyle = layer.fill; ctx.fill(); ctx.globalAlpha = 1; }
@@ -325,7 +334,8 @@
   // ---- the styles ---------------------------------------------------------------------------------------
   // bg            ground colour;  paper: a world-fixed texture tile (blot/fibre colours [r, g, b, alpha range], dark: share
   //               of dark fibres);  vignette: [r, g, b, edge alpha, clear radius, full radius] (fractions of the screen)
-  // font, fit     the text mask: [family, weight], and the share of the screen width the word may take
+  // font, fit     the text mask: [family, weight, thicken (world units of outline added to every stroke)], and the share
+  //               of the screen width the word may take;  webfont: a Google Fonts family spec, loaded before the mask is drawn
   // time          growth timing (BRISK / GENTLE);  stray: chance a sample off the text flowers anyway
   // stemW         stem width [on the text, off it, + up to];  leafP: leaf chance [text flower, other flower, plain stem]
   // leaf          { len, w, lobes: ranges; shape: a leaf builder (default the plain blade) }
@@ -339,7 +349,7 @@
     victorian: {
       bg: "#f1e7d0", vignette: [140, 95, 40, 0.22, 0.4, 0.62],
       paper: { blot: [[150, 110, 60, 0.008, 0.02], [255, 251, 238, 0.03, 0.06]], fibre: [[120, 90, 50, 0.04, 0.09], [255, 252, 240, 0.15, 0.3]], dark: 0.6 },
-      font: [SERIF, "bold "], fit: 0.84, time: GENTLE, stray: 0.012,
+      font: ['"Playfair Display", ' + SERIF, "700 ", 3], webfont: "Playfair+Display:wght@700", fit: 0.9, time: GENTLE, stray: 0.012,
       stemW: [1, 0.5, 0.4], leafP: [0.3, 0.3, 0.6], leaf: { len: [3.5, 6.5], w: [0.3, 0.44] },
       blend: "multiply",
       stems: shades(t => hsl(68 + t * 40, 16 + t * 12, 54 + hump(t) * 12)),
@@ -366,7 +376,7 @@
     morris: {
       bg: "#1f2d44", vignette: [5, 10, 20, 0.4, 0.4, 0.62],
       paper: { blot: [[5, 10, 25, 0.03, 0.07], [95, 125, 165, 0.02, 0.05]], fibre: [[5, 10, 25, 0.08, 0.15], [130, 160, 200, 0.04, 0.09]], dark: 0.5 },
-      font: [SERIF, ""], fit: 0.84, time: GENTLE, stray: 0.05,
+      font: ['"Alegreya", ' + SERIF, "700 ", 3], webfont: "Alegreya:wght@700", fit: 0.9, time: GENTLE, stray: 0.02,
       stemW: [2.2, 1.1, 0.6], leafP: [0.2, 0.45, 0.62], leaf: { len: [10, 17], w: [0.26, 0.36], lobes: [1.8, 3.2], shape: lobedLeaf },
       stems: shades(t => hsl(70 + t * 35, 16 + t * 10, 40 + hump(t) * 12)), stemLine: ["#121b29", 0.7],
       leaves: [hsl(88, 24, 50), hsl(165, 18, 48), hsl(70, 28, 52)], leafShade: [hsl(100, 26, 28), hsl(170, 24, 26), hsl(82, 28, 28)],
@@ -543,16 +553,17 @@
   let mask = null;
   function buildMask() {
     const c = document.createElement("canvas"), m = c.getContext("2d", { willReadFrequently: true });
-    const [family, weight] = ST.font;
+    const [family, weight, thick = 0] = ST.font;
     m.font = `${weight}${HOME.font}px ${family}`;
     // shrink the text so it fits the screen it is first drawn on (narrow phones, long ?text)
     const fit = Math.min(1, ST.fit * (vw / base) / m.measureText(text).width, 0.9 * (vh / base) / HOME.font);
     const size = HOME.font * fit;
     m.font = `${weight}${size}px ${family}`;
-    const w = Math.ceil(m.measureText(text).width) + 4, h = Math.ceil(size * 1.4);
+    const w = Math.ceil(m.measureText(text).width + thick) + 4, h = Math.ceil(size * 1.4 + thick);
     c.width = w; c.height = h;
     m.font = `${weight}${size}px ${family}`; m.textAlign = "center"; m.textBaseline = "middle";
     m.fillText(text, w / 2, h / 2);
+    if (thick) { m.lineWidth = thick; m.lineJoin = "round"; m.strokeText(text, w / 2, h / 2); }   // no stroke thinner than a couple of flowers
     const rgba = m.getImageData(0, 0, w, h).data, on = new Uint8Array(w * h);
     for (let i = 0; i < on.length; i++) on[i] = rgba[i * 4 + 3] > 127 ? 1 : 0;
     mask = { w, h, on };
@@ -1104,10 +1115,19 @@
     requestAnimationFrame(frame);
   }
 
+  // Web fonts for the text masks: every offered style's font is fetched at once (so a switch finds it ready); the
+  // field starts once the current one has loaded, or after a second and a half with whatever font there is.
+  const fontSpec = k => `${STYLES[k].font[1]}100px ${STYLES[k].font[0]}`;
+  const webfonts = [...new Set([style, ...PICKER])].filter(k => STYLES[k].webfont);
+  const fontsIn = !webfonts.length || !document.fonts ? Promise.resolve() : new Promise(ok => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet"; link.onload = link.onerror = ok;
+    link.href = "https://fonts.googleapis.com/css2?" + [...new Set(webfonts.map(k => STYLES[k].webfont))].map(f => "family=" + f).join("&") + "&display=block";
+    document.head.appendChild(link);
+  }).then(() => Promise.all(webfonts.map(k => document.fonts.load(fontSpec(k), text).catch(() => null))));
   resize();
   dress();
-  buildMask();
-  requestAnimationFrame(frame);
+  Promise.race([fontsIn, new Promise(ok => setTimeout(ok, 1500))]).then(() => { buildMask(); requestAnimationFrame(frame); });
 
   // for poking at from the console
   window.flowers = { cam, target, replant, zoomBy, style: applyStyle, stats: () => ({ chunks: chunks.size, samples: [...chunks.values()].reduce((n, c) => n + c.pts.length, 0), zoom }) };
