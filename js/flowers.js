@@ -23,7 +23,7 @@
  * The word is always one line, as large as the screen allows (its inked width, not its advance, is what is fitted).
  *
  * Stipple: the samples on the word are worked out first (a Poisson-disc set inside the mask) and shown at once as
- * dots, so the word can be read straight away. The growing field claims them: a sample with an unclaimed dot within
+ * pencil flecks, so the word can be read straight away. The growing field claims them: a sample with an unclaimed dot within
  * reach sends its next stem there, and the dot gives way to the flower that opens on it.
  *
  * The favicon is one flower of the current style, a different one each visit.
@@ -351,7 +351,7 @@
   // leaves, leafShade, leafEdge, veins, veinW   per leaf colour: fill, shaded half (lobed leaves), pooled edge, vein colour; [midrib, side] widths
   // glow          { sprite, min size, scale (flower sizes), blend } under the flowers;  ink: the signed leaf's colour
   // flower(t0, big) -> a flower (needs size, t1, pal.outer/deep for the dot and bud);  paint(p, f, o, raw, s): an open flower
-  // stipple       the dots that show the word before the flowers reach it: [colour, radius (world units; never under 1.2 css px)]
+  // stipple       the pencil flecks that show the word before the flowers reach it: [colour, line width (world units; never under 1.1 css px)]
   // ui            picker colours; styles without one are not offered
   // the word is set in one face in every picked style, so switching styles doesn't change the lettering (thicken may differ)
   const WORD_FONT = ['"Alegreya", ' + SERIF, "700 ", 3], WORD_WEBFONT = "Alegreya:wght@700";
@@ -368,7 +368,7 @@
       veins: [hsl(95, 25, 38, 0.5), hsl(80, 30, 40, 0.5), hsl(120, 20, 34, 0.5)], veinW: [0.32, 0.16],
       glow: { sprite: blotGlow, min: 1.8, scale: 2.9 }, ink: "hsla(25, 45%, 26%, 0.85)",
       flower: makeDainty, paint: paintDainty,
-      stipple: ["rgba(90,70,52,0.55)", 1.1],
+      stipple: ["rgba(80,68,56,0.7)", 0.7],
       ui: { fg: "#5b4630", bg: "rgba(241,231,208,0.72)", on: "rgba(91,70,48,0.12)", line: "rgba(91,70,48,0.2)", font: "italic 14px Georgia, serif" },
     },
     neon: {
@@ -380,7 +380,7 @@
       veins: [hsl(150, 100, 70, 0.8), hsl(170, 100, 72, 0.8), hsl(130, 100, 66, 0.8)], veinW: [0.32, 0.16],
       glow: { sprite: roundGlow, min: 2.5, scale: 4.2, blend: "lighter" }, ink: "hsla(160, 100%, 82%, 0.95)",
       flower: classicFlower(neonPalette),
-      stipple: ["rgba(150,235,255,0.6)", 1.3],
+      stipple: ["rgba(150,235,255,0.7)", 0.9],
       paint: classicPaint((f, s) => s >= 0.8 && [f.pal.rim, Math.min(f.size * 0.1, Math.max(0.22, 0.7 / zoom))]),   // a bright rim, like a lit tube
       ui: { fg: "#e8fbff", bg: "rgba(6,8,14,0.6)", on: "rgba(255,255,255,0.08)", line: "rgba(120,255,255,0.25)", font: "13px " + SANS,
         glow: "0 0 4px #5ff, 0 0 12px #f4c" },
@@ -395,7 +395,7 @@
       veins: [hsl(60, 40, 84, 0.8), hsl(60, 40, 84, 0.8), hsl(60, 40, 84, 0.8)], veinW: [0.4, 0.22],
       ink: "hsla(80, 70%, 86%, 0.95)",
       flower: makeMorris, paint: paintMorris,
-      stipple: ["rgba(239,227,196,0.55)", 1.1],
+      stipple: ["rgba(239,227,196,0.7)", 0.7],
       ui: { fg: "#efe3c4", bg: "rgba(20,30,46,0.72)", on: "rgba(239,227,196,0.14)", line: "rgba(239,227,196,0.25)", font: "14px Georgia, serif" },
     },
     dull: {
@@ -403,7 +403,7 @@
       stemW: [3, 1, 1], leafP: [0.3, 0.3, 0.5], leaf: { len: [4.5, 8.5], w: [0.3, 0.44] },
       stems: shades(t => grey(10 + t * 60)), leaves: [grey(55), grey(70)], veins: [grey(80, 0.8), grey(90, 0.8)], veinW: [0.32, 0.16],
       ink: grey(92),
-      stipple: ["rgba(0,0,0,0.3)", 1.1],
+      stipple: ["rgba(0,0,0,0.45)", 0.7],
       flower: classicFlower(greyPalette), paint: classicPaint((f, s) => s >= 1.2 && [f.pal.edge, 0.22]),   // a fine outline, so each petal reads
     },
   };
@@ -701,6 +701,13 @@
     const add = (x, y) => {
       const d = { x, y, k: key(Math.floor(x / CELL), Math.floor(y / CELL)), p: null,
         t: t0 + (x - x0) / mask.w * STIPPLE_IN + Math.random() * 120 };
+      // a pencil fleck: a short, slightly bent stroke, mostly leaning the way a right hand hatches; now and then a
+      // second one crossing it, or a tiny comma; three pressures
+      const r = Math.random(), a = r < 0.7 ? -1 + (Math.random() - 0.5) * 1.1 : Math.random() * 6.283;
+      d.len = 2.6 + Math.random() * 3.2; d.a = a; d.bend = (Math.random() - 0.5) * 0.9;
+      d.cross = Math.random() < 0.06 ? a + 1.2 + Math.random() * 0.8 : null;
+      if (Math.random() < 0.15) { d.len *= 0.45; d.bend = 1.6 * Math.sign(d.bend || 1); }
+      d.tone = Math.random() * 3 | 0;
       marks.push(d); markGrid.set(d.k, d); active.push(d);
     };
     const ok = (x, y) => onText(x, y) && freeOfMarks(x, y);
@@ -718,6 +725,14 @@
         }
         if (!placed) { active[i] = active[active.length - 1]; active.pop(); }
       }
+    }
+  }
+  const TONES = [1, 0.72, 0.48];
+  function fleck(g, d) {                       // into a path or the context; lengths never under ~2 css px
+    const L = Math.max(d.len, 2.2 / zoom) / 2;
+    for (const a of d.cross === null ? [d.a] : [d.a, d.cross]) {
+      const dx = Math.cos(a) * L, dy = Math.sin(a) * L, b = d.bend * L;
+      g.moveTo(d.x - dx, d.y - dy); g.quadraticCurveTo(d.x - dy * b / L, d.y + dx * b / L, d.x + dx, d.y + dy);
     }
   }
   // the nearest unclaimed dot within reach of (x, y) and inside b, or null
@@ -908,6 +923,7 @@
   }
 
   function replant(x, y) {
+    bake = null;
     chunks.clear(); queue = []; grown = null; seedAt = { x, y };
     buildMask(true);
   }
@@ -925,7 +941,7 @@
     setTimeout(() => before.remove(), 600);
 
     const [on0, off0] = ST.stemW;
-    useStyle(name);
+    useStyle(name); bake = null;
     const [on1, off1] = ST.stemW, k = (on1 - off1) / (on0 - off0);
     const width = w => Math.max(0.15, off1 + (w - off0) * k);   // the old on/off-text widths land on the new ones
     buildMask(false, true);
@@ -1055,19 +1071,60 @@
     ctx.strokeStyle = f.pal.deep; ctx.lineWidth = 0.18 * r; ctx.lineCap = "round"; ctx.stroke();
   }
 
+  // Drawing is almost all rasterising (JS is a few per cent of a frame), and once the field is full that is
+  // thousands of stems, leaves and flowers every frame. So while the camera is still, everything finished is
+  // painted once into `bake` (an offscreen copy of the screen) and each frame is that image plus whatever is
+  // still moving. Every quarter second what has finished since is painted onto the bake (a patch); when all is
+  // still the bake is redone once in the proper order. A moving camera, a restyle or a replant draws everything.
+  //   mode 0: everything;  1: only what had finished by now (a full bake);  2: the live layer – what is still moving, and
+  //   anything finished after T (the bake's time);  3: a patch – only what finished between T and now, onto the bake
+  let bake = null, busy = 0;
   function draw(now) {
+    const still = bake && bake.x === cam.x && bake.y === cam.y && bake.z === zoom &&
+      bake.c.width === canvas.width && bake.c.height === canvas.height;
+    if (!still) {
+      const moving = scene(now, 0, Infinity);
+      bake = { c: bake && bake.c || document.createElement("canvas"), x: cam.x, y: cam.y, z: zoom, t: -Infinity };
+      if (bake.c.width !== canvas.width || bake.c.height !== canvas.height) { bake.c.width = canvas.width; bake.c.height = canvas.height; }
+      return moving;
+    }
+    const full = () => {
+      const main = ctx;
+      ctx = bake.c.getContext("2d");
+      try { bake.pending = scene(now, 1, now) === "paper"; } finally { ctx = main; }
+      bake.t = bake.pending ? -Infinity : now;           // paper tiles still being made: bake again next frame
+      bake.patched = false;
+    };
+    if (bake.t === -Infinity) full();
+    else if (now - bake.t > 250) {                       // what finished since: painted on top of the bake
+      const main = ctx;
+      ctx = bake.c.getContext("2d");
+      try { scene(now, 3, bake.t); } finally { ctx = main; }
+      bake.t = now; bake.patched = true;
+    }
+    if (scene(now, 2, bake.t) || bake.pending) return true;
+    // All still. Patches lay late leaves over earlier flowers, so redo the bake once in the proper order.
+    if (bake.patched) { full(); scene(now, 2, bake.t); }
+    return false;
+  }
+  function scene(now, mode, T) {
     let moving = false;
     const s = zoom * dpr, ox = canvas.width / 2 - cam.x * s, oy = canvas.height / 2 - cam.y * s;
     const blend = ST.blend || "source-over";
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = ST.bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    const paperPending = paper ? drawPaper(s * paperK, ox, oy) : false;
+    let paperPending = false;
+    if (mode === 2) ctx.drawImage(bake.c, 0, 0);
+    else if (mode < 2) {
+      ctx.fillStyle = ST.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      paperPending = paper ? drawPaper(s * paperK, ox, oy) : false;
+    }
     ctx.setTransform(s, 0, 0, s, ox, oy);
-    if (marks.length) {                                    // the dots on the word, under everything; each gives way as its flower opens
-      const [col, rad] = ST.stipple, r = Math.max(rad, 1.2 / zoom), v = view(20), full = new Path2D();
-      ctx.fillStyle = col;
+    if (marks.length && (mode === 0 || mode === 2)) {                      // the flecks on the word, under the stems; each gives way as its flower opens
+      const [col, wid] = ST.stipple, w = Math.max(wid, 1.1 / zoom), v = view(20);
+      const tones = [new Path2D(), new Path2D(), new Path2D()];
+      ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = "round";
       for (const d of marks) {
         if (d.x < v.x0 || d.x > v.x1 || d.y < v.y0 || d.y > v.y1) continue;
         let a = ease((now - d.t) / 250);
@@ -1075,12 +1132,12 @@
           const f = d.p.flower, gone = f ? (now - f.t1) / BLOOM_MS : (now - d.p.t0 - d.p.dur) / STEM_MS;
           a *= 1 - ease(gone);
         }
-        if (a >= 1) { full.moveTo(d.x + r, d.y); full.arc(d.x, d.y, r, 0, 6.283); continue; }
         if (a <= 0.01) { if (!d.p || now < d.t) moving = true; continue; }
-        moving = true;
-        ctx.globalAlpha = a; disc(d.x, d.y, r);
+        if (a < 1) { moving = true; ctx.globalAlpha = a * TONES[d.tone]; ctx.beginPath(); fleck(ctx, d); ctx.stroke(); continue; }
+        fleck(tones[d.tone], d);
       }
-      ctx.globalAlpha = 1; ctx.fill(full);
+      for (let i = 0; i < 3; i++) { ctx.globalAlpha = TONES[i]; ctx.stroke(tones[i]); }
+      ctx.globalAlpha = 1; ctx.lineCap = "butt";
     }
 
     buckets.fill(null);
@@ -1088,6 +1145,10 @@
     growing.length = 0;
     blooms.length = 0;
     const v = view(40);
+    const bloomIn = p => {
+      const done = p.flower.t1 + BLOOM_MS;
+      return mode === 0 || (mode === 1 ? done <= T : mode === 2 ? done > T : done > T && done <= now);
+    };
     for (let cy = Math.floor(v.y0 / CHUNK); cy <= Math.floor(v.y1 / CHUNK); cy++) {
       for (let cx = Math.floor(v.x0 / CHUNK); cx <= Math.floor(v.x1 / CHUNK); cx++) {
         const ch = chunks.get(key(cx, cy));
@@ -1095,27 +1156,29 @@
         if (!ch.stems) ch.stems = new Array(SHADES).fill(null);
         shown.push(ch);
         for (const p of ch.pts) {
-          if (p.kept) {                                      // finished and already in the chunk's paths
-            if (p.flower) blooms.push(p);
-            if (p.leaves) for (const l of p.leaves) {
-              if (!l.kept) growing.push(l, ch);
-              else if (l.ink && s >= INK_ZOOM) inked.push(l.geo);
+          if (!p.kept) {
+            const age = now - p.t0;
+            if (age <= 0) { moving = true; continue; }
+            const u = Math.min(1, age / p.dur);                  // a growing stem is the curve cut off at u (steady, no easing)
+            if (u < 1) {
+              moving = true;
+              if (mode === 0 || mode === 2) for (let k = 0; k < PIECES; k++) stemPiece(p, u * k / PIECES, u * (k + 1) / PIECES, buckets);
+              continue;
             }
-            continue;
+            for (let k = 0; k < PIECES; k++) stemPiece(p, k / PIECES, (k + 1) / PIECES, ch.stems);   // done: into the chunk's paths
+            p.kept = true; p.keptAt = now;
           }
-          const age = now - p.t0;
-          if (age <= 0) { moving = true; continue; }
-          const u = Math.min(1, age / p.dur);                    // a growing stem is the curve cut off at u (steady, no easing)
-          if (u < 1) moving = true;
-          for (let k = 0; k < PIECES; k++) stemPiece(p, u * k / PIECES, u * (k + 1) / PIECES, u < 1 ? buckets : ch.stems);
-          if (u >= 1) {
-            p.kept = true;
-            if (p.flower) blooms.push(p);
-            if (p.leaves) for (const l of p.leaves) growing.push(l, ch);
+          const late = mode >= 2 && p.keptAt > T;              // finished since the bake: drawn live, or patched on
+          if (late) for (let k = 0; k < PIECES; k++) stemPiece(p, k / PIECES, (k + 1) / PIECES, buckets);
+          if (p.flower && bloomIn(p)) blooms.push(p);
+          if (p.leaves) for (const l of p.leaves) {
+            if (!l.kept || (mode >= 2 && l.keptAt > T)) growing.push(l, ch);
+            else if (mode < 2 && l.ink && s >= INK_ZOOM) inked.push(l.geo);
           }
         }
       }
     }
+    if (mode >= 2) shown.length = 0;                         // the chunks' finished paths are in the bake
 
     // Stems are opaque (a blend would darken every joint). An outline is every stem stroked first, then all
     // filled over it, so only the outer edge of the stroke shows and the seams between pieces stay hidden.
@@ -1139,12 +1202,15 @@
     const midrib = s >= 0.9, sideVeins = s >= 1.7;
     const fresh = leafPaths(), shape = ST.leaf.shape || leafBlade;
     for (let j = 0; j < growing.length; j += 2) {
-      const l = growing[j], ch = growing[j + 1], g = ease((now - l.t0) / LEAF_MS);
+      const l = growing[j], ch = growing[j + 1], g0 = ease((now - l.t0) / LEAF_MS), g = busy > 0.5 && g0 > 0.02 ? 1 : g0;
       if (g < 1) moving = true;
-      if (g <= 0.02) continue;
+      if (g <= 0.02 || (g < 1 && (mode === 1 || mode === 3))) continue;
       if (g < 1) { shape(l, g, fresh[l.col]); continue; }
-      l.geo = shape(l, 1, (ch.leaves || (ch.leaves = leafPaths()))[l.col]);
-      l.kept = true;
+      if (!l.kept) {                                       // done: into the chunk's paths
+        l.geo = shape(l, 1, (ch.leaves || (ch.leaves = leafPaths()))[l.col]);
+        l.kept = true; l.keptAt = now;
+      }
+      if (mode >= 2) shape(l, 1, fresh[l.col]);            // finished since the bake: drawn live too, or patched on
       if (l.ink && s >= INK_ZOOM) inked.push(l.geo);
     }
     for (let i = 0; i < LEAF_COLOURS; i++) {
@@ -1190,7 +1256,7 @@
       else if (bud > 0) drawBud(p, bud);                      // a bud first
     }
 
-    return moving || paperPending;
+    return mode === 1 && paperPending ? "paper" : moving || paperPending;
   }
 
   // ---- input --------------------------------------------------------------------------------------------
@@ -1282,6 +1348,7 @@
   // ---- main loop ----------------------------------------------------------------------------------------
   let last = performance.now();
   function frame(now) {
+    busy = 0.8 * busy + 0.2 * (now - last > 45);            // frames have been slow: leaves skip unfolding (one less thing per frame)
     const dt = Math.min(50, now - last); last = now;
     if (!drag && (fling.x || fling.y)) {                     // coast after a flick
       target.x += fling.x * dt; target.y += fling.y * dt;
