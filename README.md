@@ -6,10 +6,11 @@ GitHub Pages site, served straight from `master` (no build step). Mostly old exp
 
 | Path | What |
 |---|---|
-| `/` (`index.html`) | Flowers: an endless field that spells "bradish". `/?hello` spells something else. Three styles, picked bottom left or in the URL: Victorian watercolour on vellum (default), `/?neon` (the original night garden, glowing) and `/?morris` (William Morris-style wallpaper); combine as `/?neon&hello`. Code: `js/flowers.js` (each style is one entry in its `STYLES` table) |
+| `/` (`index.html`) | Flowers: an endless field that spells "bradish" (over two lines on a phone: `|` in the text marks where it may break). `/?hello` spells something else. The word is pencilled in first and the flowers grow over it; the favicon is a random flower of the current style. Three styles, picked bottom left or in the URL: Victorian watercolour on vellum (default), `/?neon` (the original night garden, glowing) and `/?morris` (William Morris-style wallpaper); combine as `/?neon&hello`. Code: `js/flowers.js` (each style is one entry in its `STYLES` table) |
 | `/flowers` | Same page (kept so old links work) |
 | `/tiles` | The previous homepage: drifting d3 tiles |
 | `404.html` | Flowers again, grey, spelling "404" |
+| `og.jpg`, `favicon.ico` | Link preview (the flowers spelling "hello") and the fallback icon |
 | `/g` | Link to the recipes site |
 | `/wordle/` | Wordle helper (installable web app: don't move it) |
 | `/faff/` | "Oh My Faff" and the lifts / piste-map prototypes (`lifts.html`, `lifts2.html`) |

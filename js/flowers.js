@@ -20,6 +20,13 @@
  *   morris     William Morris-style wallpaper: indigo ground, two-tone acanthus leaves, outlined flowers
  *   dull       the 404 page: grey on white (no picker)
  * The query string is an optional style name and the text: bradi.sh/flowers?hello, ?neon, ?morris&hello.
+ * A "|" in the text marks where it may break onto a second line on a narrow screen (else it breaks at spaces, else
+ * anywhere if it is 8 letters or more); the default is "brad|ish", so a phone gets "brad" over "ish" in letters twice the size.
+ *
+ * Underdrawing: the word is drawn at once in the style's sketch (pencil for victorian), so there is something to
+ * read while the flowers grow; it fades back to a faint trace as they come out over it.
+ *
+ * The favicon is one flower of the current style, a different one each visit.
  *
  * Optional config before loading:  window.FLOWERS = { text: "404", style: "dull", zoom: 2, x: 0, y: 0 }
  * (dull: true still works). Default text is "bradish".
@@ -344,6 +351,8 @@
   // leaves, leafShade, leafEdge, veins, veinW   per leaf colour: fill, shaded half (lobed leaves), pooled edge, vein colour; [midrib, side] widths
   // glow          { sprite, min size, scale (flower sizes), blend } under the flowers;  ink: the signed leaf's colour
   // flower(t0, big) -> a flower (needs size, t1, pal.outer/deep for the dot and bud);  paint(p, f, o, raw, s): an open flower
+  // sketch        the underdrawing: { line: outline colour, hatch: shading colour or null, guides: guideline colour or null,
+  //               w: outline width (world units), keep: how much of it is left once the flowers are out (0..1) }
   // ui            picker colours; styles without one are not offered
   // the word is set in one face in every picked style, so switching styles doesn't change the lettering (thicken may differ)
   const WORD_FONT = ['"Alegreya", ' + SERIF, "700 ", 3], WORD_WEBFONT = "Alegreya:wght@700";
@@ -360,6 +369,7 @@
       veins: [hsl(95, 25, 38, 0.5), hsl(80, 30, 40, 0.5), hsl(120, 20, 34, 0.5)], veinW: [0.32, 0.16],
       glow: { sprite: blotGlow, min: 1.8, scale: 2.9 }, ink: "hsla(25, 45%, 26%, 0.85)",
       flower: makeDainty, paint: paintDainty,
+      sketch: { line: "rgba(70,62,54,0.55)", hatch: "rgba(70,62,54,0.22)", guides: "rgba(70,62,54,0.16)", w: 0.8, keep: 0.4 },
       ui: { fg: "#5b4630", bg: "rgba(241,231,208,0.72)", on: "rgba(91,70,48,0.12)", line: "rgba(91,70,48,0.2)", font: "italic 14px Georgia, serif" },
     },
     neon: {
@@ -371,6 +381,7 @@
       veins: [hsl(150, 100, 70, 0.8), hsl(170, 100, 72, 0.8), hsl(130, 100, 66, 0.8)], veinW: [0.32, 0.16],
       glow: { sprite: roundGlow, min: 2.5, scale: 4.2, blend: "lighter" }, ink: "hsla(160, 100%, 82%, 0.95)",
       flower: classicFlower(neonPalette),
+      sketch: { line: "rgba(150,235,255,0.5)", hatch: null, guides: null, w: 2.2, keep: 0.25 },   // the tube, unlit
       paint: classicPaint((f, s) => s >= 0.8 && [f.pal.rim, Math.min(f.size * 0.1, Math.max(0.22, 0.7 / zoom))]),   // a bright rim, like a lit tube
       ui: { fg: "#e8fbff", bg: "rgba(6,8,14,0.6)", on: "rgba(255,255,255,0.08)", line: "rgba(120,255,255,0.25)", font: "13px " + SANS,
         glow: "0 0 4px #5ff, 0 0 12px #f4c" },
@@ -385,6 +396,7 @@
       veins: [hsl(60, 40, 84, 0.8), hsl(60, 40, 84, 0.8), hsl(60, 40, 84, 0.8)], veinW: [0.4, 0.22],
       ink: "hsla(80, 70%, 86%, 0.95)",
       flower: makeMorris, paint: paintMorris,
+      sketch: { line: "rgba(239,227,196,0.5)", hatch: "rgba(239,227,196,0.12)", guides: "rgba(239,227,196,0.12)", w: 0.7, keep: 0.3 },   // chalk on the block
       ui: { fg: "#efe3c4", bg: "rgba(20,30,46,0.72)", on: "rgba(239,227,196,0.14)", line: "rgba(239,227,196,0.25)", font: "14px Georgia, serif" },
     },
     dull: {
@@ -392,6 +404,7 @@
       stemW: [3, 1, 1], leafP: [0.3, 0.3, 0.5], leaf: { len: [4.5, 8.5], w: [0.3, 0.44] },
       stems: shades(t => grey(10 + t * 60)), leaves: [grey(55), grey(70)], veins: [grey(80, 0.8), grey(90, 0.8)], veinW: [0.32, 0.16],
       ink: grey(92),
+      sketch: { line: "rgba(0,0,0,0.3)", hatch: null, guides: null, w: 0.7, keep: 0 },
       flower: classicFlower(greyPalette), paint: classicPaint((f, s) => s >= 1.2 && [f.pal.edge, 0.22]),   // a fine outline, so each petal reads
     },
   };
@@ -403,13 +416,16 @@
   const parts = query ? query.split("&") : [];
   const textParts = parts.filter(p => !STYLES[p]);
   const firstStyle = cfg.dull ? "dull" : STYLES[cfg.style] ? cfg.style : parts.find(p => PICKER.includes(p)) || PICKER[0];
-  const text = cfg.text || textParts.join("&") || "bradish";
+  const text = cfg.text || textParts.join("&") || "brad|ish";
+  const word = text.replace(/\|/g, "");          // the text as read; "|" only marks a place it may break
 
   // ---- tunables -----------------------------------------------------------------------------------------
   const RADIUS = 10;            // minimum distance between samples (world units)
   const TRIES = 15;             // candidates per parent before it is retired
   const HOME = { w: 1200, h: 600, font: 300 };   // the original fixed frame; a viewport this wide shows it 1:1
-  const ZOOM_MIN = 0.4, ZOOM_MAX = 1.5;          // starting css px per world unit = clamp(viewport width / HOME.w)
+  const ZOOM_MIN = 0.75, ZOOM_MAX = 1.5;         // starting css px per world unit = clamp(viewport width / HOME.w); phones
+                                                 // stay at 0.75 so flowers aren't specks (the word breaks onto lines instead)
+  const LINE = 1.05;                             // line pitch, in font sizes, when the word is on more than one line
   const ZOOM_OUT = 0.35, ZOOM_IN = 10;           // how far the user may zoom (css px per world unit)
   const GROW_MARGIN = 160;      // plant this far beyond the viewport, so slow scrolling reveals finished flowers
   const SNAP = 64;              // only re-plan growth when the view has moved this far
@@ -435,11 +451,12 @@
   // ---- canvas + camera ----------------------------------------------------------------------------------
   const canvas = document.createElement("canvas");
   canvas.style.cssText = "position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab";
+  canvas.setAttribute("role", "img"); canvas.setAttribute("aria-label", `“${word}”, written in flowers`);
   (document.getElementById("app") || document.body).appendChild(canvas);
   // soft vignette so the edges fall away: a fixed overlay, so the canvas never repaints it
   const shade = document.createElement("div");
   shade.style.cssText = "position:fixed;inset:0;pointer-events:none"; canvas.after(shade);
-  const ctx = canvas.getContext("2d");
+  let ctx = canvas.getContext("2d");            // (only ever swapped for a moment, to paint the favicon)
 
   // the style picker, bottom left: links that keep the text (?neon&hello), styled to suit the page. A plain click
   // restyles the field in place and updates the address; the links still work as links (new tab, no script).
@@ -565,12 +582,34 @@
     document.body.style.background = ST.bg;
     paper = ST.paper ? makePaper() : null;
     shadeBg();
+    favicon();
     if (nav) {
       pickerStyle.textContent = pickerCss(ST.ui);
       for (const a of nav.children) {
         if (a.dataset.style === style) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
       }
     }
+  }
+  // The tab icon: one flower of the style, a new one each visit, on a disc of its ground. The style's own painter
+  // draws it, with the engine's canvas swapped for a little one just for the moment.
+  let icon = null;
+  function favicon() {
+    const n = 64, c = document.createElement("canvas"), g = c.getContext("2d");
+    c.width = c.height = n;
+    g.fillStyle = ST.bg; g.beginPath(); g.arc(n / 2, n / 2, n / 2, 0, 6.283); g.fill();
+    const f = withSeed(Math.random() * 4294967296 >>> 0, () => ST.flower(0, true));
+    f.budA = -Math.PI / 2;
+    const k = n * 0.42 / (f.size * 1.75), was = ctx;
+    ctx = g;
+    try {
+      g.setTransform(k, 0, 0, k, n / 2, n / 2); g.globalCompositeOperation = ST.blend || "source-over";
+      ST.paint({ x: 0, y: 0 }, f, 1, 1, k);
+    } catch (e) { return; } finally { ctx = was; }
+    if (!icon) {
+      for (const l of document.querySelectorAll('link[rel~="icon"]')) l.remove();
+      icon = document.createElement("link"); icon.rel = "icon"; icon.type = "image/png"; document.head.appendChild(icon);
+    }
+    icon.href = c.toDataURL("image/png");
   }
   function shadeBg() {
     if (!ST.vignette) { shade.style.background = "none"; return; }
@@ -611,24 +650,97 @@
   });
 
   // ---- the text mask (world units, centred on the origin) ----------------------------------------------
-  let mask = null;
-  function buildMask() {
+  let mask = null, sketch = null;
+  // The word's lines and font size (world units). One line unless a narrow screen fits the letters a good deal
+  // bigger on two or three; lines break at a "|" in the text, else at spaces, else anywhere, as evenly as they can.
+  function layout(m, family, weight) {
+    const W = ST.fit * (vw / base), H = vh / base;
+    m.font = `${weight}100px ${family}`;
+    const wid = t => m.measureText(t).width / 100;
+    const sep = text.includes("|") ? "|" : text.trim().includes(" ") ? " " : "";
+    const bits = sep ? text.split(sep).filter(Boolean) : text.length >= 8 ? [...text] : [text], glue = sep === " " ? " " : "";   // short words stay whole
+    const line = (a, b) => bits.slice(a, b).join(glue);
+    let best = null;
+    for (let n = 1; n <= Math.min(3, bits.length, bits.length > 40 ? 2 : 3); n++) {
+      let lines = null, widest = Infinity;
+      const cuts = n === 1 ? [[]] : n === 2 ? bits.slice(1).map((_, i) => [i + 1])
+        : bits.slice(1).flatMap((_, i) => bits.slice(i + 2).map((__, j) => [i + 1, i + j + 2]));
+      for (const c of cuts) {
+        const ends = [0, ...c, bits.length], ls = ends.slice(1).map((e, i) => line(ends[i], e));
+        const w = Math.max(...ls.map(wid));
+        if (w < widest) { widest = w; lines = ls; }
+      }
+      const size = Math.min(HOME.font, W / widest, n === 1 ? 0.9 * H : 0.55 * H / (n * LINE));
+      if (!best || size > best.size * 1.25) best = { lines, size };
+    }
+    return best;
+  }
+  // reveal: draw the sketch in (a first plant, a replant); otherwise it is shown as it is once the flowers are out
+  function buildMask(reveal) {
     const c = document.createElement("canvas"), m = c.getContext("2d", { willReadFrequently: true });
     const [family, weight, thick = 0] = ST.font;
-    m.font = `${weight}${HOME.font}px ${family}`;
-    // shrink the text so it fits the screen it is first drawn on (narrow phones, long ?text)
-    const fit = Math.min(1, ST.fit * (vw / base) / m.measureText(text).width, 0.9 * (vh / base) / HOME.font);
-    const size = HOME.font * fit;
-    m.font = `${weight}${size}px ${family}`;
-    const w = Math.ceil(m.measureText(text).width + thick) + 4, h = Math.ceil(size * 1.4 + thick);
+    const { lines, size } = layout(m, family, weight);       // fitted to the screen it is first drawn on
+    const font = `${weight}${size}px ${family}`;
+    m.font = font;
+    const w = Math.ceil(Math.max(...lines.map(l => m.measureText(l).width)) + thick) + 4;
+    const h = Math.ceil(size * (1.4 + LINE * (lines.length - 1)) + thick);
+    const ys = lines.map((_, i) => h / 2 + (i - (lines.length - 1) / 2) * size * LINE);
     c.width = w; c.height = h;
-    m.font = `${weight}${size}px ${family}`; m.textAlign = "center"; m.textBaseline = "middle";
-    m.fillText(text, w / 2, h / 2);
-    if (thick) { m.lineWidth = thick; m.lineJoin = "round"; m.strokeText(text, w / 2, h / 2); }   // no stroke thinner than a couple of flowers
+    m.font = font; m.textAlign = "center"; m.textBaseline = "middle";
+    lines.forEach((l, i) => m.fillText(l, w / 2, ys[i]));
+    if (thick) { m.lineWidth = thick; m.lineJoin = "round"; lines.forEach((l, i) => m.strokeText(l, w / 2, ys[i])); }   // no stroke thinner than a couple of flowers
     const rgba = m.getImageData(0, 0, w, h).data, on = new Uint8Array(w * h);
     for (let i = 0; i < on.length; i++) on[i] = rgba[i * 4 + 3] > 127 ? 1 : 0;
     mask = { w, h, on };
+    sketch = ST.sketch ? drawSketch(lines, ys, size, font, w, h) : null;
+    if (sketch) sketch.t0 = reveal ? performance.now() : -1e9;
   }
+  // The underdrawing, made once into an image at the mask's place: light guidelines run past the word, each letter
+  // is gone round two or three times by a hand that doesn't quite repeat itself, and shaded with uneven hatching.
+  function drawSketch(lines, ys, size, font, w, h) {
+    const SK = ST.sketch, pad = Math.round(size * 0.35), k = Math.min(2.5, 4096 / (w + 2 * pad), 4096 / h);
+    const c = document.createElement("canvas"), g = c.getContext("2d");
+    c.width = Math.ceil((w + 2 * pad) * k); c.height = Math.ceil(h * k);
+    g.scale(k, k); g.translate(pad, 0);
+    g.font = font; g.textAlign = "center"; g.textBaseline = "middle"; g.lineCap = g.lineJoin = "round";
+    const J = (a) => (Math.random() * 2 - 1) * a;
+    if (SK.guides) {                       // baseline, x-height, ascender line: ruled freehand, overshooting
+      const x = g.measureText("x"), b = g.measureText("b");
+      g.strokeStyle = SK.guides; g.lineWidth = SK.w * 0.7;
+      lines.forEach((l, i) => {
+        const lw = g.measureText(l).width, x0 = w / 2 - lw / 2 - pad * R(0.4, 0.9), x1 = w / 2 + lw / 2 + pad * R(0.4, 0.9);
+        for (const dy of [x.actualBoundingBoxDescent, -x.actualBoundingBoxAscent, -b.actualBoundingBoxAscent]) {
+          if (!isFinite(dy)) continue;
+          for (let pass = 0; pass < 2; pass++) {
+            g.beginPath(); g.moveTo(x0 + J(6), ys[i] + dy + J(0.8)); g.lineTo(x1 + J(6), ys[i] + dy + J(0.8)); g.stroke();
+          }
+        }
+      });
+    }
+    if (SK.hatch) {                        // hatching, kept inside the letters
+      const hc = document.createElement("canvas"), hg = hc.getContext("2d");
+      hc.width = c.width; hc.height = c.height;
+      hg.setTransform(k, 0, 0, k, pad * k, 0); hg.lineCap = "round"; hg.strokeStyle = SK.hatch;
+      const gap = Math.max(2.4, size * 0.022), slope = 1.2;
+      for (let x = -h / slope; x < w; x += gap * R(0.8, 1.2)) {
+        hg.lineWidth = SK.w * R(0.4, 0.8); hg.globalAlpha = R(0.5, 1);
+        hg.beginPath(); hg.moveTo(x + J(1), h); hg.lineTo(x + h / slope + J(1), 0); hg.stroke();
+      }
+      hg.globalAlpha = 1; hg.globalCompositeOperation = "destination-in"; hg.font = font; hg.textAlign = "center"; hg.textBaseline = "middle";
+      lines.forEach((l, i) => hg.fillText(l, w / 2, ys[i]));
+      g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(hc, 0, 0); g.restore();
+    }
+    g.strokeStyle = SK.line;
+    for (let pass = 0; pass < 3; pass++) {
+      g.lineWidth = SK.w * (pass ? R(0.5, 0.8) : 1);
+      lines.forEach((l, i) => {
+        g.save(); g.translate(w / 2 + J(0.9), ys[i] + J(0.9)); g.rotate(J(0.004));
+        g.globalAlpha = pass ? 0.6 : 1; g.strokeText(l, 0, 0); g.restore();
+      });
+    }
+    return { img: c, x: -w / 2 - pad, y: -h / 2, w: w + 2 * pad, h, t0: 0 };
+  }
+  const SKETCH_IN = 900, SKETCH_HOLD = 7000, SKETCH_OUT = 6000;   // ms: drawn in, left alone, faded back to keep
   function onText(x, y) {
     const mx = Math.floor(x + mask.w / 2), my = Math.floor(y + mask.h / 2);
     return mx >= 0 && mx < mask.w && my >= 0 && my < mask.h && mask.on[my * mask.w + mx] === 1;
@@ -800,7 +912,7 @@
 
   function replant(x, y) {
     chunks.clear(); queue = []; grown = null; seedAt = { x, y };
-    buildMask();
+    buildMask(true);
   }
 
   // Switch style in place: the same plants (samples, stems, where the leaves sprout) take the new style's look.
@@ -819,7 +931,7 @@
     useStyle(name);
     const [on1, off1] = ST.stemW, k = (on1 - off1) / (on0 - off0);
     const width = w => Math.max(0.15, off1 + (w - off0) * k);   // the old on/off-text widths land on the new ones
-    buildMask();
+    buildMask(false);
     dress();
     const now = performance.now(), past = now - 1e6;
     for (const ch of chunks.values()) {
@@ -956,6 +1068,16 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const paperPending = paper ? drawPaper(s * paperK, ox, oy) : false;
     ctx.setTransform(s, 0, 0, s, ox, oy);
+    if (sketch) {                                          // the underdrawing: drawn in left to right, then faded back
+      const a = now - sketch.t0, inn = ease(a / SKETCH_IN), keep = ST.sketch.keep;
+      ctx.globalAlpha = 1 - (1 - keep) * ease((a - SKETCH_HOLD) / SKETCH_OUT);
+      if (inn > 0 && ctx.globalAlpha > 0.01) {
+        const sw = sketch.img.width * inn;
+        ctx.drawImage(sketch.img, 0, 0, sw, sketch.img.height, sketch.x, sketch.y, sketch.w * inn, sketch.h);
+      }
+      ctx.globalAlpha = 1;
+      if (a < SKETCH_HOLD + SKETCH_OUT) moving = true;
+    }
 
     buckets.fill(null);
     const shown = [];
@@ -1182,11 +1304,13 @@
     link.rel = "stylesheet"; link.onload = link.onerror = ok;
     link.href = "https://fonts.googleapis.com/css2?" + [...new Set(webfonts.map(k => STYLES[k].webfont))].map(f => "family=" + f).join("&") + "&display=block";
     document.head.appendChild(link);
-  }).then(() => Promise.all(webfonts.map(k => document.fonts.load(fontSpec(k), text).catch(() => null))));
+  }).then(() => Promise.all(webfonts.map(k => document.fonts.load(fontSpec(k), word).catch(() => null))));
   resize();
   dress();
-  Promise.race([fontsIn, new Promise(ok => setTimeout(ok, 1500))]).then(() => { buildMask(); requestAnimationFrame(frame); });
+  Promise.race([fontsIn, new Promise(ok => setTimeout(ok, 1500))]).then(() => { buildMask(true); requestAnimationFrame(frame); });
 
   // for poking at from the console
+  if (window.console && !cfg.quiet) console.log("%c✿ bradi.sh", "font: italic 700 20px Georgia, serif; color: #b05a7a",
+    "\nhello, nosy. try bradi.sh/?your-name, ?neon&hello or ?morris – pinch or ctrl-scroll to zoom; one leaf in a hundred is signed.");
   window.flowers = { cam, target, replant, zoomBy, style: applyStyle, stats: () => ({ chunks: chunks.size, samples: [...chunks.values()].reduce((n, c) => n + c.pts.length, 0), zoom }) };
 })();
