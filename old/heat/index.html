@@ -50,7 +50,8 @@ AWS.config.apiVersions = {
 
 
 
-// (AWS credentials removed from history 2026-11-20)
+// The DynamoDB credentials that used to sit here were removed (and the key revoked) on 2026-11-20, so this page no longer loads data.
+var dynamodb = new AWS.DynamoDB();
 
 var params = {
   TableName : "hive-history",
